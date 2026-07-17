@@ -1,11 +1,14 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
+using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -52,6 +55,32 @@ internal static class CombatCardPrediction
         }
 
         return predictionTips;
+    }
+
+    public static CombatCardPredictionProjection? Predict(CardModel card, Creature? target)
+    {
+        if (!CombatCardPredictionProjector.HasEnabledFeature() ||
+            !card.IsMutable ||
+            card.Owner?.Creature.CombatState is null ||
+            !CardOnPlayMirrors.CanMirror(card) ||
+            !card.TryResolveTarget(ref target) ||
+            !CombatPredictionSimulator.TryCreate(card.Owner, out var simulator))
+        {
+            return null;
+        }
+
+        try
+        {
+            var predictedCard = simulator.State.FindCard(card) ?? new PredictedCard(card);
+            simulator.ManualPlay(predictedCard, target);
+            return new CombatCardPredictionProjector(card, simulator).Project();
+        }
+        catch (Exception ex)
+        {
+            Entry.Logger.Warn(
+                $"Combat card prediction failed for {card.Id} targeting {target?.CombatId}: {ex}");
+            return null;
+        }
     }
 
     private static bool ShouldShowCombatPlayPrediction(CardModel card)

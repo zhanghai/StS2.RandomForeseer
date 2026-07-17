@@ -31,19 +31,20 @@ internal sealed class CombatPredictionHistory(PredictionTrace trace)
         return _entryCounts.TryGetValue(typeof(TEntry), out var count) ? count : 0;
     }
 
-    public PredictionRisk GetRisk(IReadOnlyList<CombatPredictionHistoryEntry> entries)
+    public PredictionRisk GetRisk(IEnumerable<CombatPredictionHistoryEntry> entries)
     {
-        if (entries.Count == 0)
+        return GetRiskThrough(entries.Max());
+    }
+
+    public PredictionRisk GetRiskThrough(CombatPredictionHistoryEntry? lastEntry)
+    {
+        if (lastEntry is null)
         {
             return PredictionRisk.None;
         }
 
-        foreach (var entry in entries)
-        {
-            ValidateOwnership(entry);
-        }
-
-        return GetRiskThrough(entries.Max(static entry => entry.Index));
+        ValidateOwnership(lastEntry);
+        return GetRiskThrough(lastEntry.Index);
     }
 
     public PredictionRisk GetCurrentRisk()

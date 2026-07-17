@@ -22,6 +22,16 @@ internal static class CardOnPlayMirrors
 
     private static readonly Registry Registry = CreateRegistry();
 
+    public static bool CanMirror(CardModel card)
+    {
+        return Registry.Query(card) is MirrorDispatchKind.Handled;
+    }
+
+    public static bool IsOnPlayInvocation(PredictionInvocation invocation)
+    {
+        return ReferenceEquals(invocation.Method, OnPlay.BaseMethod);
+    }
+
     public static MirrorDispatchResult Invoke(
         CombatPredictionSimulator simulator,
         PredictedCard card,

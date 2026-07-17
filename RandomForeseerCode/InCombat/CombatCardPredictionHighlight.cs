@@ -11,10 +11,11 @@ internal static class CombatCardPredictionHighlight
     private static readonly Color PredictionHighlightColor = new(1f, 0.36f, 0f, 0.98f);
     private static HashSet<CardModel> _highlightedCards = [];
 
-    public static void Show(IReadOnlyList<CardModel> cards)
+    public static void Show(IEnumerable<CardModel> cards)
     {
-        var cardsToRefresh = _highlightedCards.Concat(cards).Distinct().ToArray();
-        _highlightedCards = cards.ToHashSet();
+        var cardsToRefresh = _highlightedCards;
+        _highlightedCards = [.. cards];
+        cardsToRefresh.UnionWith(_highlightedCards);
         RefreshHandCards(cardsToRefresh);
     }
 
@@ -25,15 +26,13 @@ internal static class CombatCardPredictionHighlight
 
     public static void ApplyHighlightToHolder(NHandCardHolder holder)
     {
-        if (!holder.IsNodeReady() ||
-            holder.CardNode is not { Model: { } card } cardNode ||
-            !_highlightedCards.Contains(card))
+        if (holder.IsNodeReady() &&
+            holder.CardNode is { Model: { } card } cardNode &&
+            _highlightedCards.Contains(card))
         {
-            return;
+            cardNode.CardHighlight.AnimShow();
+            cardNode.CardHighlight.Modulate = PredictionHighlightColor;
         }
-
-        cardNode.CardHighlight.AnimShow();
-        cardNode.CardHighlight.Modulate = PredictionHighlightColor;
     }
 
     private static void RefreshHandCards(IEnumerable<CardModel> cards)

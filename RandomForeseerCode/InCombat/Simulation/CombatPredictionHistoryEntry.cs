@@ -4,12 +4,22 @@ using RandomForeseer.RandomForeseerCode.Common;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
-internal abstract class CombatPredictionHistoryEntry
+internal abstract class CombatPredictionHistoryEntry : IComparable<CombatPredictionHistoryEntry>
 {
     // The property setters are provided for the sake of object initializers; they should not be modified
     // after construction.
     public int Index { get; set; }
     public PredictionTraceFrame? Trace { get; set; }
+
+    public int CompareTo(CombatPredictionHistoryEntry? other)
+    {
+        if (other is null)
+        {
+            return 1;
+        }
+
+        return Index.CompareTo(other.Index);
+    }
 }
 
 internal sealed class CombatPredictionRiskEntry : CombatPredictionHistoryEntry

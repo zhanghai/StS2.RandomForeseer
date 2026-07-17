@@ -45,6 +45,11 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
         _lookups.Add(type, new(MirrorDispatchKind.Ignored, null));
     }
 
+    public MirrorDispatchKind Query(TBase receiver)
+    {
+        return Lookup(receiver.GetType()).Kind;
+    }
+
     public MirrorDispatchResult Invoke(TBase receiver, TContext context)
     {
         var (kind, handler) = Lookup(receiver.GetType());
