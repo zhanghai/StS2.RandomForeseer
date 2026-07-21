@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -16,26 +17,26 @@ internal static class EndlessConveyorPrediction
         return option.TextKey switch
         {
             "ENDLESS_CONVEYOR.pages.INITIAL.options.OBSERVE_CHEF" =>
-                PredictionHoverTips.Cards(OutOfCombatPredictionUtils.PredictUpgradedDeckCardsByNextItem(
+                [.. OutOfCombatPredictionUtils.PredictUpgradedDeckCardsByNextItem(
                     player,
                     1,
                     card => card.IsUpgradable,
-                    endlessConveyor.Rng.Clone())),
+                    endlessConveyor.Rng.Clone()).ToPredictionHoverTips()],
             "ENDLESS_CONVEYOR.pages.ALL.options.FRIED_EEL" =>
-                PredictionHoverTips.Cards(CardRewardPrediction.PredictCards(
+                [.. CardRewardPrediction.PredictCards(
                     player,
                     1,
-                    CardCreationOptions.ForNonCombatWithDefaultOdds([ModelDb.CardPool<ColorlessCardPool>()]))),
+                    CardCreationOptions.ForNonCombatWithDefaultOdds([ModelDb.CardPool<ColorlessCardPool>()])).ToPredictionHoverTips()],
             "ENDLESS_CONVEYOR.pages.ALL.options.JELLY_LIVER" =>
-                PredictionHoverTips.Cards(PredictJellyLiver(endlessConveyor)),
+                [.. PredictJellyLiver(endlessConveyor).ToPredictionHoverTips()],
             "ENDLESS_CONVEYOR.pages.ALL.options.SUSPICIOUS_CONDIMENT" =>
-                PredictionHoverTips.Potions(OutOfCombatPredictionUtils.PredictUniformPotions(player, 1)),
+                [.. OutOfCombatPredictionUtils.PredictUniformPotions(player, 1).ToPredictionHoverTips()],
             "ENDLESS_CONVEYOR.pages.ALL.options.SPICY_SNAPPY" =>
-                PredictionHoverTips.Cards(OutOfCombatPredictionUtils.PredictUpgradedDeckCardsByNextItem(
+                [.. OutOfCombatPredictionUtils.PredictUpgradedDeckCardsByNextItem(
                     player,
                     1,
                     card => card.IsUpgradable,
-                    endlessConveyor.Rng.Clone())),
+                    endlessConveyor.Rng.Clone()).ToPredictionHoverTips()],
             _ => []
         };
     }

@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -13,12 +14,12 @@ internal static class WhisperingHollowPrediction
         return option.TextKey switch
         {
             "WHISPERING_HOLLOW.pages.INITIAL.options.GOLD" =>
-                PredictionHoverTips.Potions(PredictionUtils.PredictPotionRewards(
+                [.. PredictionUtils.PredictPotionRewards(
                     whisperingHollow.Owner!,
                     2,
-                    whisperingHollow.Owner!.PlayerRng.Rewards.Clone())),
+                    whisperingHollow.Owner!.PlayerRng.Rewards.Clone()).ToPredictionHoverTips()],
             "WHISPERING_HOLLOW.pages.INITIAL.options.HUG" =>
-                PredictionHoverTips.Cards(PredictHug(whisperingHollow)),
+                [.. PredictHug(whisperingHollow).ToPredictionHoverTips()],
             _ => []
         };
     }

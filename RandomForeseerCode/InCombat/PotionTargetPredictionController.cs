@@ -1,4 +1,5 @@
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -151,5 +152,19 @@ internal static class PotionTargetPredictionController
         public NTargetManager TargetManager { get; } = targetManager;
 
         public NCreature? Target { get; set; }
+    }
+}
+
+[HarmonyPatch(typeof(NPotionHolder), "TargetNode", [typeof(TargetType)])]
+internal static class PotionTargetPredictionPatch
+{
+    private static void Prefix(NPotionHolder __instance, TargetType targetType, out long __state)
+    {
+        __state = PotionTargetPredictionController.Begin(__instance, targetType);
+    }
+
+    private static void Postfix(NPotionHolder __instance, long __state, ref Task __result)
+    {
+        __result = PotionTargetPredictionController.CleanupAfterCompletion(__instance, __state, __result);
     }
 }

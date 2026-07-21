@@ -3,7 +3,7 @@ using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -56,7 +56,7 @@ internal static class PunchOffPrediction
         var potion = PotionFactory.CreateRandomPotionOutOfCombat(player, context.Rng.Rewards);
 
         var tips = OutOfCombatPredictionUtils.RelicTipsWithPickup(player, relics).ToList();
-        tips.AddRange(PredictionHoverTips.Potions([potion]));
+        tips.Add(PredictionHoverTipFactory.Potion(potion));
         return tips;
     }
 }

@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -56,6 +57,6 @@ internal static class TinkerTimePrediction
             return (CardModel)card;
         });
 
-        return PredictionHoverTips.Cards(cards);
+        return [.. cards.ToPredictionHoverTips()];
     }
 }

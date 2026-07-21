@@ -2,7 +2,7 @@ using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -12,10 +12,10 @@ internal static class PotionCourierPrediction
     {
         var player = potionCourier.Owner!;
         return option.TextKey == "POTION_COURIER.pages.INITIAL.options.RANSACK"
-            ? PredictionHoverTips.Potions(OutOfCombatPredictionUtils.PredictUniformPotions(
+            ? [.. OutOfCombatPredictionUtils.PredictUniformPotions(
                 player,
                 1,
-                filter: potion => potion.Rarity == PotionRarity.Uncommon))
+                filter: potion => potion.Rarity == PotionRarity.Uncommon).ToPredictionHoverTips()]
             : [];
     }
 }

@@ -7,7 +7,7 @@ using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Rooms;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using STS2RitsuLib.Settings;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -123,8 +123,8 @@ internal static class EndTurnPredictionController
         if (RandomForeseerSettings.EndTurnPredictionDisplayMode is EndTurnPredictionDisplayMode.EndTurnButtonHover &&
             _focusedEndTurnButton != null)
         {
-            List<IHoverTip> hoverTips = [PredictionHoverTips.Text("end_turn_prediction_indicator")];
-            PredictionHoverTips.AddDriftWarningIfNeeded(hoverTips, "end_turn", prediction.Risk);
+            List<IHoverTip> hoverTips = [PredictionHoverTipFactory.Text("end_turn_prediction_indicator")];
+            hoverTips.AddDriftWarning("end_turn", prediction.Risk);
 
             EndTurnButtonHoverTipHelper.ShowHoverTips(_focusedEndTurnButton, hoverTips);
         }

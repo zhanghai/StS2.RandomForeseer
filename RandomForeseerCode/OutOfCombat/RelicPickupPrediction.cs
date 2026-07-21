@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
 
@@ -35,86 +36,88 @@ internal static class RelicPickupPrediction
             {
                 // Neow
                 ArcaneScroll when IsSingleplayerUnfairPredictionAllowed(relic) =>
-                    PredictionHoverTips.Cards(PredictRareCharacterCards(context, 1)),
-                HeftyTablet => PredictionHoverTips.Cards(PredictRareCharacterCards(context, 3)),
+                    [.. PredictRareCharacterCards(context, 1).ToPredictionHoverTips()],
+                HeftyTablet => [.. PredictRareCharacterCards(context, 3).ToPredictionHoverTips()],
                 Kaleidoscope =>
-                    PredictionHoverTips.CardBundles(PredictKaleidoscopeBundles(context)),
+                    [.. PredictKaleidoscopeBundles(context).ToPredictionCardBundleHoverTips()],
                 LargeCapsule when IsSingleplayerUnfairPredictionAllowed(relic) =>
-                    PredictionHoverTips.Relics(OutOfCombatPredictionUtils.PredictRelicRewards(
+                    [.. OutOfCombatPredictionUtils.PredictRelicRewards(
                         context,
-                        relic.DynamicVars["Relics"].IntValue)),
-                LeadPaperweight => PredictionHoverTips.Cards(PredictColorlessCards(context, 2)),
+                        relic.DynamicVars["Relics"].IntValue).ToPredictionHoverTips()],
+                LeadPaperweight => [.. PredictColorlessCards(context, 2).ToPredictionHoverTips()],
                 LeafyPoultice when IsSingleplayerUnfairPredictionAllowed(relic) =>
-                    PredictionHoverTips.Cards(PredictLeafyPoultice(player)),
+                    [.. PredictLeafyPoultice(player).ToPredictionHoverTips()],
                 LostCoffer => PredictLostCofferTips(context),
-                MassiveScroll => PredictionHoverTips.Cards(PredictMultiplayerCards(context, 3)),
+                MassiveScroll => [.. PredictMultiplayerCards(context, 3).ToPredictionHoverTips()],
                 NeowsBones => PredictNeowsBonesTips(context, relic),
                 NewLeaf when IsSingleplayerUnfairPredictionAllowed(relic) =>
-                    PredictionHoverTips.Cards(PredictNewLeaf(player)),
+                    [.. PredictNewLeaf(player).ToPredictionHoverTips()],
                 PhialHolster when IsSingleplayerUnfairPredictionAllowed(relic) =>
-                    PredictionHoverTips.Potions(PotionFactory.CreateRandomPotionsOutOfCombat(
+                    [.. PotionFactory.CreateRandomPotionsOutOfCombat(
                         player,
                         relic.DynamicVars["Potions"].IntValue,
-                        player.RunState.Rng.CombatPotionGeneration.Clone())),
+                        player.RunState.Rng.CombatPotionGeneration.Clone()).ToPredictionHoverTips()],
                 ScrollBoxes =>
-                    PredictionHoverTips.CardBundles(PredictScrollBoxes(context), isVanillaCardBundle: true),
+                    [.. PredictScrollBoxes(context)
+                        .ToPredictionCardBundleHoverTips(PredictionCardBundleKind.ScrollBoxes)],
                 SilkenTress silkenTress when IsAllModesUnfairPredictionAllowed() =>
                     RewardPagePredictionContext.HasOtherPendingReward(silkenTress)
-                        ? [PredictionHoverTips.Text("silken_tress_reward_offset")]
+                        ? [PredictionHoverTipFactory.Text("silken_tress_reward_offset")]
                         : PredictSilkenTressRewardTips(context, silkenTress),
                 SmallCapsule =>
-                    PredictionHoverTips.Relics(OutOfCombatPredictionUtils.PredictRelicRewards(context, 1)),
+                    [.. OutOfCombatPredictionUtils.PredictRelicRewards(context, 1).ToPredictionHoverTips()],
 
                 // Darv
                 Astrolabe when IsSingleplayerUnfairPredictionAllowed() =>
-                    PredictionHoverTips.CardBundles(PredictAstrolabeBundles(player), isTransform: true),
-                CallingBell => PredictionHoverTips.Relics(OutOfCombatPredictionUtils.PredictRelicRewards(
+                    [.. PredictAstrolabeBundles(player)
+                        .ToPredictionCardBundleHoverTips(PredictionCardBundleKind.Transform)],
+                CallingBell => [.. OutOfCombatPredictionUtils.PredictRelicRewards(
                     player,
-                    [RelicRarity.Common, RelicRarity.Uncommon, RelicRarity.Rare])),
+                    [RelicRarity.Common, RelicRarity.Uncommon, RelicRarity.Rare]).ToPredictionHoverTips()],
                 PandorasBox when IsSingleplayerUnfairPredictionAllowed() =>
-                    PredictionHoverTips.Cards(PredictPandorasBox(player)),
+                    [.. PredictPandorasBox(player).ToPredictionHoverTips()],
 
                 // Orobas
                 AlchemicalCoffer when IsSingleplayerUnfairPredictionAllowed() =>
-                    PredictionHoverTips.Potions(PotionFactory.CreateRandomPotionsOutOfCombat(
+                    [.. PotionFactory.CreateRandomPotionsOutOfCombat(
                         player,
                         relic.DynamicVars["PotionSlots"].IntValue,
-                        player.RunState.Rng.CombatPotionGeneration.Clone())),
-                GlassEye => PredictionHoverTips.CardBundles(PredictGlassEyeBundles(context)),
+                        player.RunState.Rng.CombatPotionGeneration.Clone()).ToPredictionHoverTips()],
+                GlassEye => [.. PredictGlassEyeBundles(context).ToPredictionCardBundleHoverTips()],
                 SandCastle when IsSingleplayerUnfairPredictionAllowed() =>
-                    PredictionHoverTips.Cards(PredictSandCastle(player, relic.DynamicVars.Cards.IntValue)),
-                SeaGlass seaGlass => PredictionHoverTips.CardBundles(PredictSeaGlassBundles(context, seaGlass)),
+                    [.. PredictSandCastle(player, relic.DynamicVars.Cards.IntValue).ToPredictionHoverTips()],
+                SeaGlass seaGlass => [.. PredictSeaGlassBundles(context, seaGlass).ToPredictionCardBundleHoverTips()],
 
                 // Tezcatara
                 ToyBox =>
-                    PredictionHoverTips.Relics(PredictToyBoxRelics(context, relic.DynamicVars["Relics"].IntValue)),
+                    [.. PredictToyBoxRelics(context, relic.DynamicVars["Relics"].IntValue).ToPredictionHoverTips()],
 
                 // Vakuu
                 DistinguishedCape when IsSingleplayerUnfairPredictionAllowed() =>
-                    PredictionHoverTips.Cards(PredictCurses(context, relic.DynamicVars["Curses"].IntValue)),
+                    [.. PredictCurses(context, relic.DynamicVars["Curses"].IntValue).ToPredictionHoverTips()],
 
                 // Non-Ancient relics
-                Cauldron => PredictionHoverTips.Potions(PredictionUtils.PredictPotionRewards(
+                Cauldron => [.. PredictionUtils.PredictPotionRewards(
                     player,
                     relic.DynamicVars["Potions"].IntValue,
-                    player.PlayerRng.Rewards.Clone())),
-                FragrantMushroom => PredictionHoverTips.Cards(OutOfCombatPredictionUtils.PredictUpgradedDeckCards(
+                    player.PlayerRng.Rewards.Clone()).ToPredictionHoverTips()],
+                FragrantMushroom => [.. OutOfCombatPredictionUtils.PredictUpgradedDeckCards(
                     player,
                     relic.DynamicVars.Cards.IntValue,
-                    card => card.IsUpgradable)),
-                Orrery => PredictionHoverTips.CardBundles(OutOfCombatPredictionUtils.PredictCardRewardBundles(
+                    card => card.IsUpgradable).ToPredictionHoverTips()],
+                Orrery => [.. OutOfCombatPredictionUtils.PredictCardRewardBundles(
                     player,
                     relic.DynamicVars.Cards.IntValue,
                     3,
-                    () => OutOfCombatPredictionUtils.CreateCharacterCardRewardOptions(player))),
-                WarPaint => PredictionHoverTips.Cards(OutOfCombatPredictionUtils.PredictUpgradedDeckCards(
+                    () => OutOfCombatPredictionUtils.CreateCharacterCardRewardOptions(player)).ToPredictionCardBundleHoverTips()],
+                WarPaint => [.. OutOfCombatPredictionUtils.PredictUpgradedDeckCards(
                     player,
                     relic.DynamicVars.Cards.IntValue,
-                    card => card.Type == CardType.Skill && card.IsUpgradable)),
-                Whetstone => PredictionHoverTips.Cards(OutOfCombatPredictionUtils.PredictUpgradedDeckCards(
+                    card => card.Type == CardType.Skill && card.IsUpgradable).ToPredictionHoverTips()],
+                Whetstone => [.. OutOfCombatPredictionUtils.PredictUpgradedDeckCards(
                     player,
                     relic.DynamicVars.Cards.IntValue,
-                    card => card.Type == CardType.Attack && card.IsUpgradable)),
+                    card => card.Type == CardType.Attack && card.IsUpgradable).ToPredictionHoverTips()],
                 _ => []
             };
         }
@@ -248,10 +251,10 @@ internal static class RelicPickupPrediction
     private static IReadOnlyList<IHoverTip> PredictLostCofferTips(RunPredictionContext context)
     {
         var options = OutOfCombatPredictionUtils.CreateCharacterCardRewardOptions(context.Player);
-        var tips = PredictionHoverTips.Cards(CardRewardPrediction.PredictCards(context, 3, options));
+        var tips = CardRewardPrediction.PredictCards(context, 3, options).ToPredictionHoverTips().ToList();
 
         var potion = PotionFactory.CreateRandomPotionOutOfCombat(context.Player, context.Rng.Rewards);
-        tips = tips.Concat(PredictionHoverTips.Potions([potion])).ToList();
+        tips.Add(PredictionHoverTipFactory.Potion(potion));
         return tips;
     }
 
@@ -265,7 +268,7 @@ internal static class RelicPickupPrediction
         context.Rng.Rewards.Shuffle(validRelics);
 
         var predictedRelics = validRelics.Take(relic.DynamicVars["Relics"].IntValue).ToList();
-        var tips = PredictionHoverTips.Relics(predictedRelics).ToList();
+        var tips = predictedRelics.ToPredictionHoverTips().ToList();
 
         if (IsSingleplayerUnfairPredictionAllowed() && predictedRelics is [var firstRelic, var secondRelic])
         {
@@ -282,11 +285,11 @@ internal static class RelicPickupPrediction
 
             if (firstCurses.SequenceEqual(secondCurses))
             {
-                tips.AddRange(PredictionHoverTips.Cards(firstCurses));
+                tips.AddRange(firstCurses.ToPredictionHoverTips());
             }
             else
             {
-                tips.Add(PredictionHoverTips.Text("neows_bones_pickup_order", description =>
+                tips.Add(PredictionHoverTipFactory.Text("neows_bones_pickup_order", description =>
                 {
                     description.Add("FirstRelic", firstRelic.Title.GetFormattedText());
                     description.Add("SecondRelic", secondRelic.Title.GetFormattedText());
@@ -401,7 +404,7 @@ internal static class RelicPickupPrediction
             options,
             extraResultModifiers: [previewRelic]);
 
-        return PredictionHoverTips.Cards(cards);
+        return [.. cards.ToPredictionHoverTips()];
     }
 
     private static IReadOnlyList<CardModel> PredictNewLeaf(Player player)

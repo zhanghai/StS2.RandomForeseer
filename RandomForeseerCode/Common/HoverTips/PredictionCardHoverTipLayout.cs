@@ -1,35 +1,39 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Godot;
-using HarmonyLib;
-using MegaCrit.Sts2.Core.Assets;
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
-using MegaCrit.Sts2.Core.Nodes.Cards;
-using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
-using MegaCrit.Sts2.Core.Nodes.Relics;
 
-namespace RandomForeseer.RandomForeseerCode.Common;
+namespace RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
+/// <summary>
+/// Stores the UI metadata needed to recognize prediction card controls and position their fallback layout.
+/// </summary>
 internal static class PredictionCardHoverTipLayoutState
 {
     internal static readonly StringName PredictionCardMetaKey = $"{Entry.ModId}_PredictionCard";
     private static readonly ConditionalWeakTable<NHoverTipCardContainer, PredictionCardHoverTipSourceRect> SourceRects = [];
 
+    /// <summary>
+    /// Marks a card or bundle root so the container layout patch knows that custom prediction layout is required.
+    /// </summary>
     public static void MarkPredictionCard(Control? control)
     {
         control?.SetMeta(PredictionCardMetaKey, Variant.From(true));
     }
 
+    /// <summary>
+    /// Returns whether a top-level card-container child participates in prediction layout.
+    /// </summary>
     public static bool IsPredictionCard(Control control)
     {
         return control.HasMeta(PredictionCardMetaKey);
     }
 
+    /// <summary>
+    /// Returns whether the container has at least one top-level prediction card or bundle control.
+    /// </summary>
     public static bool HasPredictionCard(NHoverTipCardContainer container)
     {
         return container
@@ -38,15 +42,26 @@ internal static class PredictionCardHoverTipLayoutState
             .Any(IsPredictionCard);
     }
 
+    /// <summary>
+    /// Records the hovered object's bounds and alignment before vanilla positioning runs.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="NHoverTipCardContainer.LayoutResizeAndReposition"/> receives only a side anchor, which is
+    /// insufficient for a centered top/bottom fallback. Alignment prefixes must call this only after prediction card
+    /// controls have been created. The weak-table entry follows the container lifetime.
+    /// </remarks>
     public static void RecordSourceRect(
         NHoverTipCardContainer container,
         Rect2 sourceRect,
         HoverTipAlignment alignment = HoverTipAlignment.None,
         float textGap = 0f)
     {
-        SourceRects.AddOrUpdate(container, new PredictionCardHoverTipSourceRect(sourceRect, alignment, textGap));
+        SourceRects.AddOrUpdate(container, new(sourceRect, alignment, textGap));
     }
 
+    /// <summary>
+    /// Retrieves source geometry previously recorded for this card container.
+    /// </summary>
     public static bool TryGetSourceRect(
         NHoverTipCardContainer container,
         [NotNullWhen(true)] out PredictionCardHoverTipSourceRect? sourceRect)
@@ -55,123 +70,17 @@ internal static class PredictionCardHoverTipLayoutState
     }
 }
 
-internal sealed class PredictionCardHoverTipSourceRect(
-    Rect2 rect,
-    HoverTipAlignment alignment,
-    float textGap)
-{
-    public Rect2 Rect { get; } = rect;
+/// <summary>
+/// Captures source geometry and spacing needed to reconstruct layout after vanilla alignment.
+/// </summary>
+internal sealed record PredictionCardHoverTipSourceRect(
+    Rect2 Rect,
+    HoverTipAlignment Alignment,
+    float TextGap);
 
-    public HoverTipAlignment Alignment { get; } = alignment;
-
-    public float TextGap { get; } = textGap;
-}
-
-internal static class PredictionCardHoverTipBundleFactory
-{
-    private const string CardHoverTipScenePath = "res://scenes/ui/card_hover_tip.tscn";
-    private const float Padding = 4f;
-    private const float BundleCardScale = 1f;
-    private const float BundleCardSeparation = 45f;
-
-    public static Control CreateAndAddBundleTip(
-        NHoverTipCardContainer parent,
-        IReadOnlyList<IReadOnlyList<CardModel>> bundles)
-    {
-        var root = new Control
-        {
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        parent.AddChildSafely(root);
-
-        var nextX = 0f;
-        var stacks = bundles
-            .Select(bundle => CreateAndAddStack(root, bundle))
-            .ToList();
-        var height = stacks
-            .Select(stack => stack.Size.Y)
-            .DefaultIfEmpty(0f)
-            .Max();
-
-        foreach (var stack in stacks)
-        {
-            stack.Position = new Vector2(nextX, height - stack.Size.Y);
-            nextX += stack.Size.X + Padding;
-        }
-
-        root.Size = new Vector2(Mathf.Max(0f, nextX - Padding), height);
-        return root;
-    }
-
-    private static Control CreateAndAddStack(Control parent, IReadOnlyList<CardModel> cards)
-    {
-        var stack = new Control
-        {
-            MouseFilter = Control.MouseFilterEnum.Ignore
-        };
-        parent.AddChildSafely(stack);
-
-        var size = Vector2.Zero;
-
-        for (var i = 0; i < cards.Count; i++)
-        {
-            var cardNode = CreateAndAddCardTipControl(stack, cards[i]);
-            var centerIndex = (cards.Count - 1) / 2f;
-            var offset = new Vector2(-1f, 1f) * BundleCardSeparation * (i - centerIndex) * BundleCardScale;
-            cardNode.Scale = Vector2.One * BundleCardScale;
-            cardNode.Position = offset;
-
-            var brightness = cards.Count <= 1
-                ? 1f
-                : 0.5f + i / (float)(cards.Count - 1) * 0.5f;
-            cardNode.Modulate = new Color(brightness, brightness, brightness);
-
-            size = new Vector2(
-                Mathf.Max(size.X, offset.X + cardNode.Size.X * BundleCardScale),
-                Mathf.Max(size.Y, offset.Y + cardNode.Size.Y * BundleCardScale));
-        }
-
-        var children = stack.GetChildren().OfType<Control>().ToList();
-        var minX = children
-            .OfType<Control>()
-            .Select(child => child.Position.X)
-            .DefaultIfEmpty(0f)
-            .Min();
-        var minY = children
-            .Select(child => child.Position.Y)
-            .DefaultIfEmpty(0f)
-            .Min();
-        if (minX < 0f || minY < 0f)
-        {
-            var adjustment = new Vector2(
-                minX < 0f ? -minX : 0f,
-                minY < 0f ? -minY : 0f);
-            foreach (var child in children)
-            {
-                child.Position += adjustment;
-            }
-
-            size += adjustment;
-        }
-
-        stack.Size = size;
-        return stack;
-    }
-
-    private static Control CreateAndAddCardTipControl(Control parent, CardModel card)
-    {
-#pragma warning disable RITSU013
-        var control = PreloadManager.Cache.GetScene(CardHoverTipScenePath).Instantiate<Control>();
-#pragma warning restore RITSU013
-        parent.AddChildSafely(control);
-
-        var node = control.GetNode<NCard>("%Card");
-        node.Model = card;
-        node.UpdateVisuals(PileType.Deck, CardPreviewMode.Normal);
-        return control;
-    }
-}
-
+/// <summary>
+/// Sizes and positions mixed prediction card and bundle controls while preserving vanilla alignment when it fits.
+/// </summary>
 internal static class PredictionCardHoverTipLayout
 {
     private const float Padding = 4f;
@@ -181,6 +90,16 @@ internal static class PredictionCardHoverTipLayout
     private const float MinScale = 0.55f;
     internal const float CardHolderTextGap = 10f;
 
+    /// <summary>
+    /// Attempts to apply prediction-aware sizing, wrapping and provisional side placement to a card container.
+    /// </summary>
+    /// <remarks>
+    /// This method runs from a prefix on vanilla card-container layout. It returns <see langword="true"/> only when
+    /// it has fully handled that method and the original should be skipped. When source geometry is available, this
+    /// stage deliberately leaves final top/bottom fallback to <see cref="ApplyFallbackLayoutIfStillOverflowing"/>,
+    /// which runs after vanilla has attempted to align the complete text-and-card HoverTip set.
+    /// </remarks>
+    /// <returns><see langword="true"/> when custom layout was applied; otherwise <see langword="false"/>.</returns>
     public static bool TryLayoutPredictionCardTips(
         NHoverTipCardContainer container,
         Vector2 globalStartLocation,
@@ -189,13 +108,13 @@ internal static class PredictionCardHoverTipLayout
         var tips = container.GetChildren().OfType<Control>().ToList();
         if (!tips.Any(PredictionCardHoverTipLayoutState.IsPredictionCard))
         {
-            return true;
+            return false;
         }
 
         var game = NGame.Instance;
         if (game == null)
         {
-            return true;
+            return false;
         }
 
         var viewportSize = game.GetViewportRect().Size;
@@ -208,7 +127,7 @@ internal static class PredictionCardHoverTipLayout
         {
             container.Size = naturalSize;
             container.GlobalPosition = sidePosition;
-            return false;
+            return true;
         }
 
         // Vanilla positions card tips here, then NHoverTipSet.SetAlignment*/CorrectHorizontalOverflow decides
@@ -225,16 +144,23 @@ internal static class PredictionCardHoverTipLayout
                 GetSidePosition(globalStartLocation, alignment, scaledSize),
                 scaledSize,
                 viewportSize);
-            return false;
+            return true;
         }
 
         // Do not choose the mod's top/bottom fallback yet. The NHoverTipSet postfix below runs after vanilla's
         // CorrectHorizontalOverflow, so vertical fallback is reserved for cases vanilla still cannot keep visible.
         container.GlobalPosition = GetSidePosition(globalStartLocation, alignment, scaledSize);
 
-        return false;
+        return true;
     }
 
+    /// <summary>
+    /// Chooses the smallest row count and largest useful scale that can fit the available viewport width.
+    /// </summary>
+    /// <remarks>
+    /// Multiple tips prefer one row and do not scale below <see cref="MinScale"/> until additional rows are tried.
+    /// A single oversized tip has no wrapping alternative, so it may scale below that threshold.
+    /// </remarks>
     private static WrappedLayout GetBestWrappedLayout(IReadOnlyList<Control> tips, float availableWidth)
     {
         var naturalWidth = GetWrappedLayoutSize(tips, scale: 1f, rows: 1).X;
@@ -265,6 +191,13 @@ internal static class PredictionCardHoverTipLayout
         return new WrappedLayout(tips.Count, MinScale);
     }
 
+    /// <summary>
+    /// Applies scale and row-major positions to the controls and returns their resulting bounding size.
+    /// </summary>
+    /// <remarks>
+    /// Controls in each row are bottom-aligned so ordinary cards and differently sized bundle stacks can be mixed.
+    /// Unlike <see cref="GetWrappedLayoutSize"/>, this method mutates every supplied control.
+    /// </remarks>
     private static Vector2 ApplyWrappedLayout(IReadOnlyList<Control> tips, float scale, int rows)
     {
         var rowCount = Mathf.Max(1, rows);
@@ -312,6 +245,9 @@ internal static class PredictionCardHoverTipLayout
         return size;
     }
 
+    /// <summary>
+    /// Measures the same row-major layout produced by <see cref="ApplyWrappedLayout"/> without mutating controls.
+    /// </summary>
     private static Vector2 GetWrappedLayoutSize(IReadOnlyList<Control> tips, float scale, int rows)
     {
         var rowCount = Mathf.Max(1, rows);
@@ -344,6 +280,9 @@ internal static class PredictionCardHoverTipLayout
         return new Vector2(width, height);
     }
 
+    /// <summary>
+    /// Converts vanilla's side anchor into the prediction container's top-left position, including the extra gap.
+    /// </summary>
     private static Vector2 GetSidePosition(
         Vector2 globalStartLocation,
         HoverTipAlignment alignment,
@@ -356,6 +295,9 @@ internal static class PredictionCardHoverTipLayout
         };
     }
 
+    /// <summary>
+    /// Centers a container above its source when possible, otherwise below it, then clamps it to the viewport.
+    /// </summary>
     private static Vector2 GetVerticalFallbackPosition(
         Rect2 sourceRect,
         Vector2 size,
@@ -376,6 +318,9 @@ internal static class PredictionCardHoverTipLayout
         return ClampToViewport(new Vector2(x, bottomY), size, viewportSize);
     }
 
+    /// <summary>
+    /// Clamps both axes to the viewport margin; oversized content is pinned to the leading margin.
+    /// </summary>
     private static Vector2 ClampToViewport(Vector2 position, Vector2 size, Vector2 viewportSize)
     {
         return new Vector2(
@@ -383,6 +328,9 @@ internal static class PredictionCardHoverTipLayout
             Clamp(position.Y, ViewportMargin, viewportSize.Y - ViewportMargin - size.Y));
     }
 
+    /// <summary>
+    /// Returns whether a proposed container rectangle fits inside the viewport margin on both axes.
+    /// </summary>
     private static bool FitsWithinViewport(Vector2 position, Vector2 size, Vector2 viewportSize)
     {
         return position.X >= ViewportMargin &&
@@ -391,6 +339,9 @@ internal static class PredictionCardHoverTipLayout
             position.Y + size.Y <= viewportSize.Y - ViewportMargin;
     }
 
+    /// <summary>
+    /// Measures a candidate by its worst single-axis overflow beyond the configured viewport margin.
+    /// </summary>
     private static float GetMaxViewportOverflow(Vector2 position, Vector2 size, Vector2 viewportSize)
     {
         var overflowX = MathF.Max(
@@ -402,6 +353,9 @@ internal static class PredictionCardHoverTipLayout
         return MathF.Max(0f, MathF.Max(overflowX, overflowY));
     }
 
+    /// <summary>
+    /// Clamps only the horizontal coordinate, preserving a candidate's vertical fallback position.
+    /// </summary>
     private static Vector2 ClampHorizontalToViewport(Vector2 position, Vector2 size, Vector2 viewportSize)
     {
         return new Vector2(
@@ -409,11 +363,17 @@ internal static class PredictionCardHoverTipLayout
             position.Y);
     }
 
+    /// <summary>
+    /// Tests horizontal visibility without applying the prediction viewport margin used during initial placement.
+    /// </summary>
     private static bool FitsHorizontallyWithinViewport(Rect2 rect, Vector2 viewportSize)
     {
         return rect.Position.X >= 0f && rect.End.X <= viewportSize.X;
     }
 
+    /// <summary>
+    /// Clamps a coordinate while handling content larger than the available interval by pinning it to <paramref name="min"/>.
+    /// </summary>
     private static float Clamp(float value, float min, float max)
     {
         return max < min
@@ -421,6 +381,13 @@ internal static class PredictionCardHoverTipLayout
             : Mathf.Clamp(value, min, max);
     }
 
+    /// <summary>
+    /// Applies prediction top/bottom fallback only when vanilla alignment still leaves cards or the combined set off-screen.
+    /// </summary>
+    /// <remarks>
+    /// Call this from an <c>NHoverTipSet</c> alignment postfix, after vanilla has positioned and horizontally corrected
+    /// both containers. It is a no-op without recorded source geometry or prediction card controls.
+    /// </remarks>
     public static void ApplyFallbackLayoutIfStillOverflowing(NHoverTipSet tipSet)
     {
         var cardContainer = tipSet._cardHoverTipContainer;
@@ -460,6 +427,9 @@ internal static class PredictionCardHoverTipLayout
         ApplyFallbackLayout(tipSet, sourceRect, viewportSize);
     }
 
+    /// <summary>
+    /// Repositions text near its requested side and cards above or below the source, resolving overlap when needed.
+    /// </summary>
     private static void ApplyFallbackLayout(
         NHoverTipSet tipSet,
         PredictionCardHoverTipSourceRect sourceRect,
@@ -486,6 +456,9 @@ internal static class PredictionCardHoverTipLayout
         }
     }
 
+    /// <summary>
+    /// Reconstructs the requested left/right text position from the original source rect and clamps it on-screen.
+    /// </summary>
     private static Vector2 GetFallbackTextPosition(
         Control textContainer,
         PredictionCardHoverTipSourceRect sourceRect,
@@ -502,6 +475,9 @@ internal static class PredictionCardHoverTipLayout
         return ClampToViewport(new Vector2(x, y), textSize, viewportSize);
     }
 
+    /// <summary>
+    /// Computes the normal centered vertical card fallback before text-overlap resolution is considered.
+    /// </summary>
     private static Vector2 GetFallbackCardPosition(
         Vector2 cardSize,
         Rect2 sourceRect,
@@ -510,6 +486,13 @@ internal static class PredictionCardHoverTipLayout
         return GetVerticalFallbackPosition(sourceRect, cardSize, viewportSize);
     }
 
+    /// <summary>
+    /// Selects a card position that avoids the text container while minimizing viewport overflow and source distance.
+    /// </summary>
+    /// <remarks>
+    /// Candidate ordering first minimizes overflow, then prefers placement above the source, then the shortest distance
+    /// back to the source. Horizontal candidates are placed on the side opposite the text.
+    /// </remarks>
     private static Vector2 GetFallbackCardPositionAvoidingText(
         Vector2 cardSize,
         Rect2 sourceRect,
@@ -553,133 +536,8 @@ internal static class PredictionCardHoverTipLayout
         });
     }
 
+    /// <summary>
+    /// Describes the row count and uniform scale selected for a wrapped card-tip layout.
+    /// </summary>
     private readonly record struct WrappedLayout(int Rows, float Scale);
-}
-
-[HarmonyPatch(typeof(NHoverTipCardContainer))]
-internal static class PredictionCardHoverTipContainerPatches
-{
-    private static readonly Color DimmedCardModulate = new(0.6f, 0.6f, 0.6f);
-
-    [HarmonyPatch(nameof(NHoverTipCardContainer.Add))]
-    [HarmonyPrefix]
-    private static bool AddPredictionCardBundleTip(NHoverTipCardContainer __instance, CardHoverTip cardTip)
-    {
-        if (cardTip is not PredictionCardBundleHoverTip bundleTip)
-        {
-            return true;
-        }
-
-        var control = PredictionCardHoverTipBundleFactory.CreateAndAddBundleTip(__instance, bundleTip.Bundles);
-        PredictionCardHoverTipLayoutState.MarkPredictionCard(control);
-        return false;
-    }
-
-    [HarmonyPatch(nameof(NHoverTipCardContainer.Add))]
-    [HarmonyPostfix]
-    private static void MarkPredictionCardTip(NHoverTipCardContainer __instance, CardHoverTip cardTip)
-    {
-        if (cardTip is not PredictionCardHoverTip predictionTip)
-        {
-            return;
-        }
-
-        var control = __instance.GetChildren().OfType<Control>().LastOrDefault();
-        PredictionCardHoverTipLayoutState.MarkPredictionCard(control);
-        if (predictionTip.IsDimmed)
-        {
-            control?.GetNode<NCard>("%Card").Modulate = DimmedCardModulate;
-        }
-    }
-
-    [HarmonyPatch(nameof(NHoverTipCardContainer.LayoutResizeAndReposition))]
-    [HarmonyPrefix]
-    private static bool LayoutPredictionCardTips(
-        NHoverTipCardContainer __instance,
-        Vector2 globalStartLocation,
-        HoverTipAlignment alignment)
-    {
-        return PredictionCardHoverTipLayout.TryLayoutPredictionCardTips(
-            __instance,
-            globalStartLocation,
-            alignment);
-    }
-}
-
-[HarmonyPatch(typeof(NHoverTipSet))]
-internal static class PredictionCardHoverTipSetAlignmentPatches
-{
-    [HarmonyPatch(nameof(NHoverTipSet.SetAlignmentForCardHolder))]
-    [HarmonyPrefix]
-    private static void RecordCardHolderSourceRect(NHoverTipSet __instance, NCardHolder holder)
-    {
-        var container = __instance._cardHoverTipContainer;
-        if (!ShouldRecordSourceRect(container))
-        {
-            return;
-        }
-
-        // LayoutResizeAndReposition only receives a side anchor. Record the hovered card rect so fallback
-        // placement can center above the card instead of guessing from the left/right edge.
-        PredictionCardHoverTipLayoutState.RecordSourceRect(
-            container,
-            holder.Hitbox.GetGlobalRect(),
-            HoverTip.GetHoverTipAlignment(holder),
-            PredictionCardHoverTipLayout.CardHolderTextGap);
-    }
-
-    [HarmonyPatch(nameof(NHoverTipSet.SetAlignmentForCardHolder))]
-    [HarmonyPostfix]
-    private static void ApplyCardHolderFallbackLayout(NHoverTipSet __instance)
-    {
-        PredictionCardHoverTipLayout.ApplyFallbackLayoutIfStillOverflowing(__instance);
-    }
-
-    [HarmonyPatch(nameof(NHoverTipSet.SetAlignmentForRelic))]
-    [HarmonyPrefix]
-    private static void RecordRelicSourceRect(NHoverTipSet __instance, NRelic relic)
-    {
-        var container = __instance._cardHoverTipContainer;
-        if (!ShouldRecordSourceRect(container))
-        {
-            return;
-        }
-
-        PredictionCardHoverTipLayoutState.RecordSourceRect(
-            container,
-            relic.Icon.GetGlobalRect(),
-            HoverTip.GetHoverTipAlignment(relic));
-    }
-
-    [HarmonyPatch(nameof(NHoverTipSet.SetAlignmentForRelic))]
-    [HarmonyPostfix]
-    private static void ApplyRelicFallbackLayout(NHoverTipSet __instance)
-    {
-        PredictionCardHoverTipLayout.ApplyFallbackLayoutIfStillOverflowing(__instance);
-    }
-
-    [HarmonyPatch(nameof(NHoverTipSet.SetAlignment))]
-    [HarmonyPrefix]
-    private static void RecordControlSourceRect(NHoverTipSet __instance, Control node, HoverTipAlignment alignment)
-    {
-        var container = __instance._cardHoverTipContainer;
-        if (!ShouldRecordSourceRect(container))
-        {
-            return;
-        }
-
-        PredictionCardHoverTipLayoutState.RecordSourceRect(container, node.GetGlobalRect(), alignment);
-    }
-
-    [HarmonyPatch(nameof(NHoverTipSet.SetAlignment))]
-    [HarmonyPostfix]
-    private static void ApplyControlFallbackLayout(NHoverTipSet __instance)
-    {
-        PredictionCardHoverTipLayout.ApplyFallbackLayoutIfStillOverflowing(__instance);
-    }
-
-    private static bool ShouldRecordSourceRect(NHoverTipCardContainer? container)
-    {
-        return container != null && PredictionCardHoverTipLayoutState.HasPredictionCard(container);
-    }
 }

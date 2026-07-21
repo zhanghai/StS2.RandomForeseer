@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Random;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -17,7 +18,7 @@ internal static class ReflectionsPrediction
         }
 
         var player = reflections.Owner!;
-        return PredictionHoverTips.Cards(PredictTouchAMirror(player.Deck.Cards, reflections.Rng));
+        return [.. PredictTouchAMirror(player.Deck.Cards, reflections.Rng).ToPredictionHoverTips()];
     }
 
     private static IReadOnlyList<CardModel> PredictTouchAMirror(IReadOnlyList<CardModel> deckCards, Rng realRng)

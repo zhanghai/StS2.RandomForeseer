@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -11,11 +12,11 @@ internal static class TabletOfTruthPrediction
     {
         var upgradeCount = GetRandomUpgradeCountBeforeFinalAllUpgrade(option);
         return upgradeCount > 0
-            ? PredictionHoverTips.Cards(OutOfCombatPredictionUtils.PredictUpgradedDeckCardsByNextItem(
+            ? [.. OutOfCombatPredictionUtils.PredictUpgradedDeckCardsByNextItem(
                 tabletOfTruth.Owner!,
                 upgradeCount.Value,
                 card => card.IsUpgradable,
-                tabletOfTruth.Rng.Clone()))
+                tabletOfTruth.Rng.Clone()).ToPredictionHoverTips()]
             : [];
     }
 

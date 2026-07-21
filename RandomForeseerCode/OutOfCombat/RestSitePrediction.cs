@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
 
@@ -39,13 +40,13 @@ internal static class RestSitePrediction
                 {
                     var options = CardCreationOptions.ForRoom(player, RoomType.Monster)
                         .WithFlags(CardCreationFlags.IsCardReward);
-                    tips.AddRange(PredictionHoverTips.Cards(CardRewardPrediction.PredictCards(context, 3, options)));
+                    tips.AddRange(CardRewardPrediction.PredictCards(context, 3, options).ToPredictionHoverTips());
                     break;
                 }
                 case TinyMailbox:
                 {
                     var potions = PredictionUtils.PredictPotionRewards(player, 2, context.Rng.Rewards);
-                    tips.AddRange(PredictionHoverTips.Potions(potions));
+                    tips.AddRange(potions.ToPredictionHoverTips());
                     break;
                 }
             }

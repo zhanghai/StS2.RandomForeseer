@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -49,8 +50,8 @@ internal sealed record DrawPilePredictionResult(IReadOnlyList<PredictedCard> Car
 
     public IReadOnlyList<IHoverTip> ToHoverTips()
     {
-        var tips = PredictionHoverTips.Cards(Cards.Select(card => card.Preview)).ToList();
-        PredictionHoverTips.AddDriftWarningIfNeeded(tips, "draw_pile", Risk);
+        var tips = Cards.Select(card => card.Preview).ToPredictionHoverTips().ToList();
+        tips.AddDriftWarning("draw_pile", Risk);
         return tips;
     }
 }

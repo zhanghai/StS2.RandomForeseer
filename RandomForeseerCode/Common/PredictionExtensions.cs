@@ -52,4 +52,28 @@ internal static class PredictionExtensions
     {
         return player.GetUnlockedCards(ModelDb.CardPool<CurseCardPool>());
     }
+
+    public static string GetTitle(this AbstractModel model)
+    {
+        try
+        {
+            return model switch
+            {
+                CardModel card => card.Title,
+                RelicModel relic => relic.Title.GetFormattedText(),
+                PowerModel power => power.Title.GetFormattedText(),
+                PotionModel potion => potion.Title.GetFormattedText(),
+                ModifierModel modifier => modifier.Title.GetFormattedText(),
+                AfflictionModel affliction => affliction.Title.GetFormattedText(),
+                EnchantmentModel enchantment => enchantment.Title.GetFormattedText(),
+                OrbModel orb => orb.Title.GetFormattedText(),
+                MonsterModel monster => monster.Title.GetFormattedText(),
+                _ => model.Id.Entry
+            };
+        }
+        catch
+        {
+            return model.Id.Entry;
+        }
+    }
 }

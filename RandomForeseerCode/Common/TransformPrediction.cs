@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Random;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.Common;
 
@@ -39,22 +40,18 @@ internal static class TransformPrediction
             .Distinct()
             .ToList();
 
-        var textTip = PredictionHoverTips.Text(
-            tipKey,
-            description =>
-            {
-                description.Add("TransformedCard", transformedCard);
-                description.Add("HasOtherTransformedCards", otherTransformedCards.Count > 0);
-                description.Add("OtherTransformedCards", otherTransformedCards);
-            });
+        var textTip = PredictionHoverTipFactory.Text(tipKey, description =>
+        {
+            description.Add("TransformedCard", transformedCard);
+            description.Add("HasOtherTransformedCards", otherTransformedCards.Count > 0);
+            description.Add("OtherTransformedCards", otherTransformedCards);
+        });
 
         var cardTips = replacements
-            .Select((replacement, index) => (IHoverTip)new PredictionCardHoverTip(
-                replacement,
-                isDimmed: index != activeIndex))
-            .ToList();
+            .Select((replacement, index) =>
+                PredictionHoverTipFactory.Card(replacement, isDimmed: index != activeIndex));
 
-        return cardTips.Prepend(textTip).ToList();
+        return [textTip, ..cardTips];
     }
 
     private static IReadOnlyList<CardModel> PredictReplacements(

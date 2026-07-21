@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -35,7 +36,7 @@ internal static class OrbPrediction
                 .OfType<CombatPredictionOrbChanneledEntry>()
                 .Where(entry => ReferenceEquals(entry.Trace?.Source, card))
                 .Select(entry => entry.Orb);
-            extraTips.AddRange(PredictionHoverTips.Orbs(channeledOrbs));
+            extraTips.AddRange(channeledOrbs.ToPredictionHoverTips());
         }
 
         return new(DamagePredictionResult.FromDamageHistory(simulator), extraTips);
@@ -87,7 +88,7 @@ internal sealed record OrbPredictionResult(
         }
 
         var hoverTips = ExtraHoverTips.ToList();
-        PredictionHoverTips.AddDriftWarningIfNeeded(hoverTips, "orb", DamagePrediction.Risk);
+        hoverTips.AddDriftWarning("orb", DamagePrediction.Risk);
         return hoverTips;
     }
 }

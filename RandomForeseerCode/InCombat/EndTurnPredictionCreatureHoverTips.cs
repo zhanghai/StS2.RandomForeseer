@@ -1,8 +1,8 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -19,7 +19,7 @@ internal static class EndTurnPredictionCreatureHoverTips
         TipsByTarget.Clear();
 
         var warningTips = new List<IHoverTip>();
-        PredictionHoverTips.AddDriftWarningIfNeeded(warningTips, "end_turn", prediction.Risk);
+        warningTips.AddDriftWarning("end_turn", prediction.Risk);
 
         foreach (var target in prediction.Targets)
         {
@@ -28,7 +28,7 @@ internal static class EndTurnPredictionCreatureHoverTips
                 continue;
             }
 
-            var detailTip = PredictionHoverTips.Text("end_turn_damage_details", description =>
+            var detailTip = PredictionHoverTipFactory.Text("end_turn_damage_details", description =>
             {
                 description.Add("Creature", target.Target.Name);
                 description.Add("TotalDamage", target.TotalDamage);
@@ -57,7 +57,7 @@ internal static class EndTurnPredictionCreatureHoverTips
     private static string FormatDamageLine(DamagePredictionLine line)
     {
         var loc = PredictionLocalization.Text("end_turn_damage_details.line");
-        loc.Add("Source", PredictionHoverTips.GetModelName(line.Source));
+        loc.Add("Source", line.Source.GetTitle());
         loc.Add("Damage", line.Damage);
         loc.Add("UnblockedDamage", line.UnblockedDamage);
         loc.Add("BlockStatus", GetBlockStatus(line.Damage, line.UnblockedDamage));

@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Random;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -28,7 +29,7 @@ internal static class CombatCardGenerationPrediction
             return [];
         }
 
-        return PredictionHoverTips.Cards(PredictPotionCards(context));
+        return [.. PredictPotionCards(context).ToPredictionHoverTips()];
     }
 
     private static bool ShouldShowPotionCardPrediction(PotionPredictionContext context)
@@ -148,8 +149,8 @@ internal sealed record CombatCardGenerationPredictionResult(
         var bundles = CardBundles
             .Select(bundle => bundle.Select(card => card.Preview).ToList())
             .ToList();
-        var tips = PredictionHoverTips.CardBundles(bundles).ToList();
-        PredictionHoverTips.AddDriftWarningIfNeeded(tips, "card_generation", Risk);
+        var tips = bundles.ToPredictionCardBundleHoverTips().ToList();
+        tips.AddDriftWarning("card_generation", Risk);
         return tips;
     }
 }

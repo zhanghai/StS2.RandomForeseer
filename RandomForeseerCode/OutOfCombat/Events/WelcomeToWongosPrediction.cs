@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -16,11 +17,11 @@ internal static class WelcomeToWongosPrediction
             "WELCOME_TO_WONGOS.pages.INITIAL.options.BARGAIN_BIN" =>
                 OutOfCombatPredictionUtils.RelicTipsWithPickup(player, OutOfCombatPredictionUtils.PredictRelicRewards(player, [RelicRarity.Common], relic => relic.IsAllowedInShops)),
             "WELCOME_TO_WONGOS.pages.INITIAL.options.LEAVE" =>
-                PredictionHoverTips.Cards(OutOfCombatPredictionUtils.PredictDowngradedDeckCardsByNextItem(
+                [.. OutOfCombatPredictionUtils.PredictDowngradedDeckCardsByNextItem(
                     player,
                     1,
                     card => card.IsUpgraded,
-                    welcomeToWongos.Rng.Clone())),
+                    welcomeToWongos.Rng.Clone()).ToPredictionHoverTips()],
             _ => []
         };
     }

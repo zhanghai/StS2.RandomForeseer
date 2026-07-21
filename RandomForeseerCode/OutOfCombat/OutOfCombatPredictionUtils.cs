@@ -7,10 +7,10 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.PotionPools;
 using MegaCrit.Sts2.Core.Random;
-using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
 
@@ -245,7 +245,7 @@ internal static class OutOfCombatPredictionUtils
 
     public static IReadOnlyList<IHoverTip> RelicTipsWithPickup(Player player, IReadOnlyList<RelicModel> relics)
     {
-        var tips = PredictionHoverTips.Relics(relics).ToList();
+        var tips = relics.ToPredictionHoverTips().ToList();
         foreach (var relic in relics)
         {
             // TODO: Add a context-based overload once relic pickup prediction is fully

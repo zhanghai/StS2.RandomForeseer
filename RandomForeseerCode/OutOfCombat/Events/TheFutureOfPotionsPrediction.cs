@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -41,6 +42,6 @@ internal static class TheFutureOfPotionsPrediction
             .Select(PredictionUtils.ToUpgradedCard)
             .ToList();
 
-        return PredictionHoverTips.Cards(cards);
+        return [.. cards.ToPredictionHoverTips()];
     }
 }

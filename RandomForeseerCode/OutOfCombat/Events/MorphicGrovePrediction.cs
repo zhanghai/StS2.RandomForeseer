@@ -2,7 +2,7 @@ using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -11,7 +11,7 @@ internal static class MorphicGrovePrediction
     public static IReadOnlyList<IHoverTip> GetHoverTips(MorphicGrove morphicGrove, EventOption option)
     {
         return option.TextKey == "MORPHIC_GROVE.pages.INITIAL.options.GROUP"
-            ? PredictionHoverTips.CardBundles(PredictGroup(morphicGrove), isTransform: true)
+            ? [.. PredictGroup(morphicGrove).ToPredictionCardBundleHoverTips(PredictionCardBundleKind.Transform)]
             : [];
     }
 

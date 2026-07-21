@@ -3,7 +3,7 @@ using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Runs;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -15,18 +15,18 @@ internal static class InfestedAutomatonPrediction
         return option.TextKey switch
         {
             "INFESTED_AUTOMATON.pages.INITIAL.options.STUDY" =>
-                PredictionHoverTips.Cards(CardRewardPrediction.PredictCards(
+                [.. CardRewardPrediction.PredictCards(
                     player,
                     1,
-                    CardCreationOptions.ForNonCombatWithDefaultOdds([player.Character.CardPool], card => card.Type == CardType.Power))),
+                    CardCreationOptions.ForNonCombatWithDefaultOdds([player.Character.CardPool], card => card.Type == CardType.Power)).ToPredictionHoverTips()],
             "INFESTED_AUTOMATON.pages.INITIAL.options.TOUCH_CORE" =>
-                PredictionHoverTips.Cards(CardRewardPrediction.PredictCards(
+                [.. CardRewardPrediction.PredictCards(
                     player,
                     1,
                     CardCreationOptions.ForNonCombatWithDefaultOdds(
                             [player.Character.CardPool],
                             card => card.EnergyCost is { Canonical: 0, CostsX: false })
-                        .WithFlags(CardCreationFlags.NoCardPoolModifications))),
+                        .WithFlags(CardCreationFlags.NoCardPoolModifications)).ToPredictionHoverTips()],
             _ => []
         };
     }

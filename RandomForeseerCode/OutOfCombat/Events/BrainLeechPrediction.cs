@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Runs;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -16,17 +16,17 @@ internal static class BrainLeechPrediction
         return option.TextKey switch
         {
             "BRAIN_LEECH.pages.INITIAL.options.SHARE_KNOWLEDGE" =>
-                PredictionHoverTips.Cards(CardRewardPrediction.PredictCards(
+                [.. CardRewardPrediction.PredictCards(
                     player,
                     brainLeech.DynamicVars["FromCardChoiceCount"].IntValue,
-                    CardCreationOptions.ForNonCombatWithDefaultOdds([player.Character.CardPool]))),
+                    CardCreationOptions.ForNonCombatWithDefaultOdds([player.Character.CardPool])).ToPredictionHoverTips()],
             "BRAIN_LEECH.pages.INITIAL.options.RIP" =>
-                PredictionHoverTips.CardBundles(OutOfCombatPredictionUtils.PredictCardRewardBundles(
+                [.. OutOfCombatPredictionUtils.PredictCardRewardBundles(
                     player,
                     brainLeech.DynamicVars["RewardCount"].IntValue,
                     3,
                     () => CardCreationOptions.ForNonCombatWithDefaultOdds([ModelDb.CardPool<ColorlessCardPool>()])
-                        .WithFlags(CardCreationFlags.NoRarityModification | CardCreationFlags.NoCardPoolModifications))),
+                        .WithFlags(CardCreationFlags.NoRarityModification | CardCreationFlags.NoCardPoolModifications)).ToPredictionCardBundleHoverTips()],
             _ => []
         };
     }

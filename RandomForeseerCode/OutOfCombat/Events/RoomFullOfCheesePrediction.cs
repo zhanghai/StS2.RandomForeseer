@@ -3,7 +3,7 @@ using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Runs;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -20,6 +20,6 @@ internal static class RoomFullOfCheesePrediction
         var options = CardCreationOptions
             .ForNonCombatWithUniformOdds([player.Character.CardPool], card => card.Rarity == CardRarity.Common)
             .WithFlags(CardCreationFlags.NoRarityModification);
-        return PredictionHoverTips.Cards(CardRewardPrediction.PredictCards(player, 8, options));
+        return [.. CardRewardPrediction.PredictCards(player, 8, options).ToPredictionHoverTips()];
     }
 }

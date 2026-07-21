@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
@@ -6,6 +5,7 @@ using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -19,13 +19,13 @@ internal static class TrialPrediction
             "TRIAL.pages.MERCHANT.options.GUILTY" =>
                 OutOfCombatPredictionUtils.RelicTipsWithPickup(player, OutOfCombatPredictionUtils.PredictRelicRewards(player, 2)),
             "TRIAL.pages.NONDESCRIPT.options.GUILTY" =>
-                PredictionHoverTips.CardBundles(OutOfCombatPredictionUtils.PredictCardRewardBundles(
+                [.. OutOfCombatPredictionUtils.PredictCardRewardBundles(
                     player,
                     2,
                     3,
-                    () => CardCreationOptions.ForNonCombatWithDefaultOdds([player.Character.CardPool]))),
+                    () => CardCreationOptions.ForNonCombatWithDefaultOdds([player.Character.CardPool])).ToPredictionCardBundleHoverTips()],
             "TRIAL.pages.NONDESCRIPT.options.INNOCENT" =>
-                PredictionHoverTips.CardBundles(PredictNondescriptInnocent(trial), isTransform: true),
+                [.. PredictNondescriptInnocent(trial).ToPredictionCardBundleHoverTips(PredictionCardBundleKind.Transform)],
             _ => []
         };
     }

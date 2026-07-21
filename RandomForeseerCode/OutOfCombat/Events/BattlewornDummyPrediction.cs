@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -20,9 +21,9 @@ internal static class BattlewornDummyPrediction
         return option.TextKey switch
         {
             "BATTLEWORN_DUMMY.pages.INITIAL.options.SETTING_1" =>
-                PredictionHoverTips.Potions(OutOfCombatPredictionUtils.PredictUniformPotions(player, 1)),
+                [.. OutOfCombatPredictionUtils.PredictUniformPotions(player, 1).ToPredictionHoverTips()],
             "BATTLEWORN_DUMMY.pages.INITIAL.options.SETTING_2" =>
-                PredictionHoverTips.Cards(PredictSetting2(battlewornDummy)),
+                [.. PredictSetting2(battlewornDummy).ToPredictionHoverTips()],
             "BATTLEWORN_DUMMY.pages.INITIAL.options.SETTING_3" =>
                 OutOfCombatPredictionUtils.RelicTipsWithPickup(player, OutOfCombatPredictionUtils.PredictRelicRewards(player, 1)),
             _ => []

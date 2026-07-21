@@ -1,9 +1,11 @@
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -81,5 +83,18 @@ internal static class CombatCardPrediction
         }
 
         return false;
+    }
+}
+
+[HarmonyPatch(typeof(CardModel), nameof(CardModel.HoverTips), MethodType.Getter)]
+internal static class CombatCardPredictionHoverTipsPatch
+{
+    private static void Postfix(CardModel __instance, ref IEnumerable<IHoverTip> __result)
+    {
+        var predictionTips = CombatCardPrediction.GetHoverTips(__instance);
+        if (predictionTips.Count > 0)
+        {
+            __result = __result.Concat(predictionTips);
+        }
     }
 }

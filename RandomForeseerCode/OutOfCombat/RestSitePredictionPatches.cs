@@ -3,6 +3,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.RestSite;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
 

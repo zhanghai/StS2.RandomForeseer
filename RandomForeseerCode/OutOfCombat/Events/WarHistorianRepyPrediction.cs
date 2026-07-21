@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -19,7 +20,7 @@ internal static class WarHistorianRepyPrediction
         var potions = PredictionUtils.PredictPotionRewards(player, 2, rewardRng);
         var relics = OutOfCombatPredictionUtils.PredictRelicRewards(player, 2, rewardRng);
         return [
-            .. PredictionHoverTips.Potions(potions),
+            .. potions.ToPredictionHoverTips(),
             .. OutOfCombatPredictionUtils.RelicTipsWithPickup(player, relics)
         ];
     }

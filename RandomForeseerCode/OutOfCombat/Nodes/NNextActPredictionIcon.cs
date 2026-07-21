@@ -7,7 +7,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Rooms;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Nodes;
 
@@ -156,7 +156,7 @@ internal sealed partial class NNextActPredictionIcon : NClickableControl
 
     private static HoverTip CreateAncientHoverTip(ActModel nextAct)
     {
-        return PredictionHoverTips.Text(
+        return PredictionHoverTipFactory.Text(
             "next_act_ancient_prediction",
             description => description.Add("Ancient", nextAct.Ancient.Title));
     }
@@ -169,7 +169,7 @@ internal sealed partial class NNextActPredictionIcon : NClickableControl
             bossNames.Add(nextAct.SecondBossEncounter.Title.GetFormattedText());
         }
 
-        return PredictionHoverTips.Text(
+        return PredictionHoverTipFactory.Text(
             "next_act_boss_prediction",
             description => description.Add("BossNames", bossNames));
     }

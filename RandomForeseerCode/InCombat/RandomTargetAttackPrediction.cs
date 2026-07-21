@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -53,7 +54,7 @@ internal sealed record RandomTargetAttackPredictionResult(DamagePredictionResult
         }
 
         List<IHoverTip> hoverTips = [];
-        PredictionHoverTips.AddDriftWarningIfNeeded(hoverTips, "random_target_attack", DamagePrediction.Risk);
+        hoverTips.AddDriftWarning("random_target_attack", DamagePrediction.Risk);
         return hoverTips;
     }
 }

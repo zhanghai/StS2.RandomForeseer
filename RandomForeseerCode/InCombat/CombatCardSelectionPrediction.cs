@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -72,8 +73,8 @@ internal sealed record CombatCardSelectionPredictionResult(
         var bundles = CardBundles
             .Select(bundle => bundle.Select(card => card.Preview).ToList())
             .ToList();
-        var tips = PredictionHoverTips.CardBundles(bundles).ToList();
-        PredictionHoverTips.AddDriftWarningIfNeeded(tips, "card_selection", Risk);
+        var tips = bundles.ToPredictionCardBundleHoverTips().ToList();
+        tips.AddDriftWarning("card_selection", Risk);
         return tips;
     }
 }

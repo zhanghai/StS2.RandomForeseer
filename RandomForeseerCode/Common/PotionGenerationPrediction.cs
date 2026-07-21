@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Potions;
+using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.Common;
@@ -15,7 +16,7 @@ internal static class PotionGenerationPrediction
             return [];
         }
 
-        return PredictionHoverTips.Potions(PredictPotions(context));
+        return [.. PredictPotions(context).ToPredictionHoverTips()];
     }
 
     public static IReadOnlyList<IHoverTip> GetCardHoverTips(CardModel card)
@@ -34,9 +35,9 @@ internal static class PotionGenerationPrediction
             .OfType<CombatPredictionPotionGeneratedEntry>()
             .Where(entry => ReferenceEquals(entry.Trace?.Source, card))
             .ToList();
-        var tips = PredictionHoverTips.Potions(history.Select(entry => entry.Potion)).ToList();
+        var tips = history.Select(entry => entry.Potion).ToPredictionHoverTips().ToList();
         var risk = simulator.History.GetRisk(history);
-        PredictionHoverTips.AddDriftWarningIfNeeded(tips, "potion_generation", risk);
+        tips.AddDriftWarning("potion_generation", risk);
         return tips;
     }
 
