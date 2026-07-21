@@ -1,17 +1,18 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Runs;
+using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
 internal static class EndTurnPrediction
 {
-    public static DamagePredictionResult PredictDamage()
+    public static EndTurnPredictionResult? Predict()
     {
         if (!ShouldPredict() || CombatManager.Instance._state is not { } combatState)
         {
-            return DamagePredictionResult.Empty;
+            return null;
         }
 
         var extraTurnPlayers = CombatManager.Instance.PlayersTakingExtraTurn;
@@ -22,7 +23,7 @@ internal static class EndTurnPrediction
         var simulator = new CombatPredictionSimulator(combatState);
         simulator.SimulateEndTurnEffects(playersEndingTurn);
 
-        return DamagePredictionResult.FromDamageHistory(simulator);
+        return EndTurnPredictionResult.FromDamageHistory(simulator);
     }
 
     public static bool ShouldPredict()
@@ -31,5 +32,26 @@ internal static class EndTurnPrediction
             CombatManager.Instance._state?.CurrentSide is CombatSide.Player &&
             CombatManager.Instance.IsInProgress &&
             RunManager.Instance.ActionQueueSynchronizer.CombatState is ActionSynchronizerCombatState.PlayPhase;
+    }
+}
+
+/// <summary>
+/// Couples an end-turn damage payload with the risk accumulated through its last relevant damage entry.
+/// </summary>
+internal sealed record EndTurnPredictionResult(
+    DamagePrediction DamagePrediction,
+    PredictionRisk Risk)
+{
+    /// <summary>
+    /// Projects all damage entries from a completed end-turn simulation and derives their shared risk boundary.
+    /// </summary>
+    public static EndTurnPredictionResult FromDamageHistory(CombatPredictionSimulator simulator)
+    {
+        var history = simulator.History
+            .OfType<CombatPredictionDamageReceivedEntry>()
+            .ToList();
+        return new EndTurnPredictionResult(
+            DamagePredictionProjector.Project(history),
+            simulator.History.GetRisk(history));
     }
 }

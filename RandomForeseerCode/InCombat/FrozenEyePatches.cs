@@ -58,7 +58,7 @@ internal static class FrozenEyeDrawPileView
 
         if (TryGetShufflePrediction(screen, out var prediction))
         {
-            var cards = prediction.Cards.Select(card => card.Preview).ToList();
+            var cards = prediction.Cards.SelectPreviews().ToList();
             FrozenEyeDrawPileViewState.SetPredictedShuffleCards(grid, cards);
             previewCards = [..previewCards, ..cards];
         }

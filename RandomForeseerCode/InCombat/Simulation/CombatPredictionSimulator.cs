@@ -19,6 +19,8 @@ internal sealed partial class CombatPredictionSimulator
 
     public CombatPredictionHistory History { get; }
 
+    public PredictionTraceFrame? CurrentFrame => _trace.Current;
+
     public CombatPredictionSimulator(ICombatState combatState)
     {
         State = new CombatPredictionState(combatState);
@@ -36,7 +38,7 @@ internal sealed partial class CombatPredictionSimulator
         return _trace.Push(model, PredictionInvocation.ForAction(action));
     }
 
-    internal IDisposable PushMethodSource(AbstractModel model, MirrorMethodSpec method)
+    public IDisposable PushMethodSource(AbstractModel model, MirrorMethodSpec method)
     {
         return _trace.Push(model, PredictionInvocation.ForMethod(method.BaseMethod));
     }

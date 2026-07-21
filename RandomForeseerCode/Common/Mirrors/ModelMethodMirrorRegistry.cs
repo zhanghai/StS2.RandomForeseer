@@ -4,11 +4,21 @@ using MegaCrit.Sts2.Core.Modding;
 
 namespace RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
+/// <summary>
+/// Describes the exact-runtime-type policy selected for one mirrored virtual method.
+/// </summary>
 internal enum MirrorDispatchKind
 {
+    /// <summary>The runtime type inherits the base implementation and needs no mirror handler.</summary>
     NotOverridden,
+
+    /// <summary>The runtime type has a registered prediction handler.</summary>
     Handled,
+
+    /// <summary>The override was reviewed and intentionally has no prediction-relevant behavior.</summary>
     Ignored,
+
+    /// <summary>The override is gameplay-relevant but has no safe prediction handler.</summary>
     Unsupported
 }
 
@@ -16,8 +26,13 @@ internal readonly record struct MirrorDispatchResult(MirrorDispatchKind Kind);
 
 internal readonly record struct MirrorDispatchResult<TResult>(MirrorDispatchKind Kind, TResult Value);
 
-// Dispatches one mirrored virtual method against one receiver. Invocation details such as source
-// scopes, listener enumeration, and hook ordering belong to adapters layered on top of this registry.
+/// <summary>
+/// Dispatches one mirrored virtual action method against the exact runtime type of one receiver.
+/// </summary>
+/// <remarks>
+/// Invocation-wide behavior such as listener enumeration and hook ordering belongs to the adapter layered over this
+/// registry. All registrations must finish before the first query or invocation because lookup results are cached.
+/// </remarks>
 internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpec method)
     where TBase : class
     where TContext : IPredictionMirrorContext<TBase>
@@ -45,6 +60,9 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
         _lookups.Add(type, new(MirrorDispatchKind.Ignored, null));
     }
 
+    /// <summary>
+    /// Queries the cached exact-type dispatch policy without opening a trace scope, invoking a handler, or recording risk.
+    /// </summary>
     public MirrorDispatchKind Query(TBase receiver)
     {
         return Lookup(receiver.GetType()).Kind;
@@ -127,7 +145,13 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
         Action<TBase, TContext>? Handler);
 }
 
-// Result-producing counterpart used by mirrored methods such as OrbModel.Evoke.
+/// <summary>
+/// Dispatches one mirrored virtual result method and falls back to a caller-provided value when no result is available.
+/// </summary>
+/// <remarks>
+/// This result-producing counterpart is used by methods such as <c>OrbModel.Evoke</c>. Registrations must finish
+/// before the first invocation because exact-type lookup results are cached.
+/// </remarks>
 internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(MirrorMethodSpec method)
     where TBase : class
     where TContext : IPredictionMirrorContext<TBase>

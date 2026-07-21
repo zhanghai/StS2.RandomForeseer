@@ -8,17 +8,29 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 internal sealed partial class CombatPredictionSimulator
 {
-    // Mirrors the gameplay-relevant parts of AttackCommand.Execute without mutating real
-    // creature/card state or running command-local arbitrary callbacks. Callers are
-    // responsible for pushing the attack's card/monster source before calling this method;
-    // Execute only pushes hook listeners through HookMirrors.
+    /// <summary>
+    /// Mirrors the prediction-relevant target and damage loop of <c>AttackCommand.Execute</c>.
+    /// </summary>
+    /// <remarks>
+    /// The command must have an attacker, a configured single- or multi-target mode, and a card <c>ModelSource</c>.
+    /// Callers must already be inside that card's prediction trace; this method opens scopes only for hook listeners.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">Thrown when a required attacker, card source, or target mode is absent.</exception>
     public void ExecuteAttack(AttackCommand attackCommand)
     {
         if (attackCommand.Attacker is not { } attacker)
         {
-            Entry.Logger.Warn("AttackCommand prediction skipped: command has no attacker.");
-            History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
-            return;
+            throw new InvalidOperationException("AttackCommand must have an attacker.");
+        }
+
+        if (attackCommand.ModelSource is not CardModel card)
+        {
+            throw new InvalidOperationException("AttackCommand simulation requires a card source.");
+        }
+
+        if (!attackCommand.IsSingleTargeted && !attackCommand.IsMultiTargeted)
+        {
+            throw new InvalidOperationException("AttackCommand must be either single-targeted or multi-targeted.");
         }
 
         var attackerState = State.GetCreature(attacker);
@@ -27,20 +39,11 @@ internal sealed partial class CombatPredictionSimulator
             return;
         }
 
-        if (!attackCommand.IsSingleTargeted && !attackCommand.IsMultiTargeted)
-        {
-            Entry.Logger.Warn("AttackCommand prediction skipped: command has no targets configured.");
-            History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
-            return;
-        }
-
         HookMirrors.BeforeAttack(this, attackCommand);
 
         var hitCount = HookMirrors.ModifyAttackHitCount(this, attackCommand, attackCommand._hitCount);
 
-        var cardSource = attackCommand.ModelSource is CardModel card
-            ? State.FindCard(card) ?? new PredictedCard(card)
-            : null;
+        var cardSource = State.FindCard(card) ?? new PredictedCard(card);
 
         for (var i = 0; i < hitCount; i++)
         {
@@ -136,16 +139,11 @@ internal sealed partial class CombatPredictionSimulator
 
     private decimal GetAttackDamageAmount(
         AttackCommand attackCommand,
-        PredictedCard? cardSource,
+        PredictedCard cardSource,
         Creature? singleTarget)
     {
         if (attackCommand._calculatedDamageVar is {} calculatedDamageVar)
         {
-            if (cardSource is null)
-            {
-                throw new InvalidOperationException("CalculatedDamage simulation requires a card source.");
-            }
-
             return calculatedDamageVar.InvokeCalculate(this, cardSource, singleTarget);
         }
 

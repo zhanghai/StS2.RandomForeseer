@@ -50,7 +50,7 @@ internal sealed record DrawPilePredictionResult(IReadOnlyList<PredictedCard> Car
 
     public IReadOnlyList<IHoverTip> ToHoverTips()
     {
-        var tips = Cards.Select(card => card.Preview).ToPredictionHoverTips().ToList();
+        var tips = Cards.SelectPreviews().ToPredictionHoverTips().ToList();
         tips.AddDriftWarning("draw_pile", Risk);
         return tips;
     }

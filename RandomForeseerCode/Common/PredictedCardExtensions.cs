@@ -1,3 +1,5 @@
+using MegaCrit.Sts2.Core.Models;
+
 namespace RandomForeseer.RandomForeseerCode.Common;
 
 internal static class PredictedCardExtensions
@@ -21,5 +23,21 @@ internal static class PredictedCardExtensions
         bool shouldUpgrade)
     {
         return shouldUpgrade ? cards.Select(card => card.Upgrade()) : cards;
+    }
+
+    /// <summary>
+    /// Returns the original cards from the predicted cards.
+    /// </summary>
+    public static IEnumerable<CardModel> SelectOriginals(this IEnumerable<PredictedCard> cards)
+    {
+        return cards.Select(static card => card.Original);
+    }
+
+    /// <summary>
+    /// Returns the preview cards from the predicted cards.
+    /// </summary>
+    public static IEnumerable<CardModel> SelectPreviews(this IEnumerable<PredictedCard> cards)
+    {
+        return cards.Select(static card => card.Preview);
     }
 }

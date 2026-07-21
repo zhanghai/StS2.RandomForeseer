@@ -12,7 +12,7 @@ Mirror files:
 - `InCombat/Simulation/CombatPredictionSimulator.Attack.cs`
 - `InCombat/Simulation/CombatPredictionHistory.cs`
 
-`CombatPredictionSimulator.ExecuteAttack(AttackCommand)` mirrors the prediction-relevant `AttackCommand.Execute` target loop and dispatches targeted attack hook mirrors through `HookMirrors`. Per-hit damage is still delegated to `CombatPredictionSimulator.Damage`. Callers must push the attack's card/monster source before invoking `ExecuteAttack`; the method itself only pushes hook listener sources through the method registries.
+`CombatPredictionSimulator.ExecuteAttack(AttackCommand)` mirrors the prediction-relevant `AttackCommand.Execute` target loop and dispatches targeted attack hook mirrors through `HookMirrors`. Per-hit damage is still delegated to `CombatPredictionSimulator.Damage`. The current entry point only accepts commands whose `ModelSource` is a `CardModel`; callers must already be inside that card's prediction trace before invoking it. The method itself only pushes hook listener sources through the method registries.
 
 Per-hit `CreatureCmd.Damage` modifier and result hooks are documented in `damage-modifier-hooks.md` and `damage-hooks.md`.
 

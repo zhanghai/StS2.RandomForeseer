@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Hooks;
@@ -99,18 +100,33 @@ internal sealed partial class CombatPredictionSimulator
         HookMirrors.AfterCardExhausted(this, card, causedByEthereal);
     }
 
-    // Mirrors PlayCardAction.ExecuteAction. This is the main entry point for simulating a card play.
-    // Note: Resources, ShouldPlay hooks and IsPlayable checks are not simulated here.
-    public void ManualPlay(PredictedCard card, Creature? target)
+    /// <summary>
+    /// Mirrors the prediction-relevant portion of <c>PlayCardAction.ExecuteAction</c> for a manual card play.
+    /// </summary>
+    /// <param name="card">The prediction-owned card wrapper to play.</param>
+    /// <param name="target">The already-resolved target, if required.</param>
+    /// <param name="frame">The exact root card-play lifecycle frame when the play starts successfully.</param>
+    /// <returns><see langword="true"/> when the simulated play starts; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The returned frame remains a stable identity after its trace scope is disposed and must be paired only with
+    /// this simulator's history. Resource affordability, <c>ShouldPlay</c>, and general playability checks are outside
+    /// this entry point; callers must perform any required UI/target gating before invocation.
+    /// </remarks>
+    public bool ManualPlay(
+        PredictedCard card,
+        Creature? target,
+        [NotNullWhen(true)] out PredictionTraceFrame? frame)
     {
         if (card.GetKeywords(State).Contains(CardKeyword.Unplayable) ||
             !card.Preview.IsValidTarget(target))
         {
-            return;
+            frame = null;
+            return false;
         }
 
         var resources = SpendResources(card, isAutoPlay: false);
-        OnPlayWrapper(card, target, isAutoPlay: false, resources);
+        OnPlayWrapper(card, target, isAutoPlay: false, resources, out frame);
+        return true;
     }
 
     // Mirrors CardModel.SpendResources, but returns ResourceInfo instead of (int, int) for convenience.
@@ -178,9 +194,11 @@ internal sealed partial class CombatPredictionSimulator
         PredictedCard card,
         Creature? target,
         bool isAutoPlay,
-        ResourceInfo resources)
+        ResourceInfo resources,
+        out PredictionTraceFrame frame)
     {
         using var _ = PushActionSource(card.Original, PredictionActionKind.CardPlayLifecycle);
+        frame = CurrentFrame ?? throw new InvalidOperationException("No current frame after pushing action source.");
 
         var previewCard = card.MutablePreview;
         var originalOwner = previewCard.Owner;

@@ -6,31 +6,23 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using RandomForeseer.RandomForeseerCode.Common;
-using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
+/// <summary>
+/// Provides the single simulation facade used by combat-card HoverTips and target-aware UI surfaces.
+/// </summary>
 internal static class CombatCardPrediction
 {
-    private static readonly PredictionHoverTipRegistry<CardModel> CombatPlayPredictionProviders = CreatePlayRegistry();
-
-    private static PredictionHoverTipRegistry<CardModel> CreatePlayRegistry()
-    {
-        var registry = new PredictionHoverTipRegistry<CardModel>();
-
-        registry.Register("combat card generation", CombatCardGenerationPrediction.GetCardHoverTips);
-        registry.Register("combat potion generation", PotionGenerationPrediction.GetCardHoverTips);
-        registry.Register("combat card selection", CombatCardSelectionPrediction.GetHoverTips);
-        registry.Register("auto-play from draw pile", AutoPlayFromDrawPilePrediction.GetCardHoverTips);
-        registry.Register("card draw", CardDrawPrediction.GetCardHoverTips);
-        registry.Register("orb", OrbPrediction.GetHoverTips);
-        registry.Register("random target attack", RandomTargetAttackPrediction.GetHoverTips);
-
-        return registry;
-    }
-
+    /// <summary>
+    /// Builds prediction HoverTips for an in-combat card without requiring a selected target.
+    /// </summary>
+    /// <remarks>
+    /// Card-play projection is shown only where an untargeted prediction can be resolved. Combat transform
+    /// prediction remains a separate presentation path and is appended after the unified card-play result.
+    /// </remarks>
     public static IReadOnlyList<IHoverTip> GetHoverTips(CardModel card)
     {
         if (!card.IsMutable)
@@ -38,11 +30,18 @@ internal static class CombatCardPrediction
             return [];
         }
 
-        var predictionTips = new List<IHoverTip>();
+        List<IHoverTip> predictionTips = [];
 
         if (ShouldShowCombatPlayPrediction(card))
         {
-            predictionTips.AddRange(CombatPlayPredictionProviders.GetHoverTips(card));
+            try
+            {
+                predictionTips.AddRange(Predict(card, target: null)?.HoverTips ?? []);
+            }
+            catch (Exception ex)
+            {
+                Entry.Logger.Warn($"Combat card play prediction failed for {card.Id}: {ex}");
+            }
         }
 
         try
@@ -57,30 +56,36 @@ internal static class CombatCardPrediction
         return predictionTips;
     }
 
+    /// <summary>
+    /// Simulates one card play and projects every enabled card-play prediction feature from the same history.
+    /// </summary>
+    /// <param name="card">The live mutable card whose original identity anchors the prediction trace.</param>
+    /// <param name="target">The selected target, or <see langword="null"/> when the card can resolve one automatically.</param>
+    /// <returns>
+    /// The completed presentation projection, or <see langword="null"/> when no feature is enabled, the card cannot
+    /// be mirrored, its target cannot be resolved, or the simulated play is invalid.
+    /// </returns>
+    /// <remarks>Simulation and projection exceptions are intentionally handled by the calling UI injection boundary.</remarks>
     public static CombatCardPredictionProjection? Predict(CardModel card, Creature? target)
     {
         if (!CombatCardPredictionProjector.HasEnabledFeature() ||
             !card.IsMutable ||
-            card.Owner?.Creature.CombatState is null ||
+            card.Owner?.Creature.CombatState is not { } combatState ||
             !CardOnPlayMirrors.CanMirror(card) ||
-            !card.TryResolveTarget(ref target) ||
-            !CombatPredictionSimulator.TryCreate(card.Owner, out var simulator))
+            !card.TryResolveTarget(ref target))
         {
             return null;
         }
 
-        try
+        var simulator = new CombatPredictionSimulator(combatState);
+        var predictedCard = simulator.State.FindCard(card) ?? new PredictedCard(card);
+
+        if (simulator.ManualPlay(predictedCard, target, out var frame))
         {
-            var predictedCard = simulator.State.FindCard(card) ?? new PredictedCard(card);
-            simulator.ManualPlay(predictedCard, target);
-            return new CombatCardPredictionProjector(card, simulator).Project();
+            return CombatCardPredictionProjector.Project(simulator.History, card, frame);
         }
-        catch (Exception ex)
-        {
-            Entry.Logger.Warn(
-                $"Combat card prediction failed for {card.Id} targeting {target?.CombatId}: {ex}");
-            return null;
-        }
+
+        return null;
     }
 
     private static bool ShouldShowCombatPlayPrediction(CardModel card)

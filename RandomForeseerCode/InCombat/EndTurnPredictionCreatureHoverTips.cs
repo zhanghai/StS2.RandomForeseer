@@ -14,12 +14,12 @@ internal static class EndTurnPredictionCreatureHoverTips
 
     private static readonly Dictionary<Creature, IReadOnlyList<IHoverTip>> TipsByTarget = [];
 
-    public static void Set(DamagePredictionResult prediction)
+    public static void Set(DamagePrediction prediction, PredictionRisk risk)
     {
         TipsByTarget.Clear();
 
         var warningTips = new List<IHoverTip>();
-        warningTips.AddDriftWarning("end_turn", prediction.Risk);
+        warningTips.AddDriftWarning("end_turn", risk);
 
         foreach (var target in prediction.Targets)
         {

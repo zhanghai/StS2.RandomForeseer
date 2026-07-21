@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
+using RandomForeseer.RandomForeseerCode.Common;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -16,7 +17,7 @@ internal static class CombatCardPredictionController
 
     private static bool _hasDamagePrediction;
 
-    private static readonly List<IHoverTip> _cachedHoverTips = [];
+    private static IReadOnlyList<IHoverTip> _hoverTips = [];
 
     public static void OnCardHover(NHandCardHolder holder, bool isHovered)
     {
@@ -71,11 +72,31 @@ internal static class CombatCardPredictionController
         }
 
         _activePrediction = new ActiveCardPrediction(source, holder, card, target);
-        _cachedHoverTips.Clear();
 
-        ShowDamagePrediction(card, target);
-        ShowSelectionHighlight(card, target);
-        AddCardGenerationHoverTips(card, target);
+        CombatCardPredictionProjection? prediction;
+        try
+        {
+            prediction = CombatCardPrediction.Predict(card, target);
+        }
+        catch (Exception ex)
+        {
+            Entry.Logger.Warn(
+                $"Combat card prediction failed for {card.Id} targeting {target?.Name}: {ex}");
+            prediction = null;
+        }
+
+        if (prediction is not null)
+        {
+            _hoverTips = prediction.HoverTips;
+            ShowDamagePrediction(prediction.DamagePrediction, prediction.Risk);
+            CombatCardPredictionHighlight.Show(prediction.HighlightedCards);
+        }
+        else
+        {
+            _hoverTips = [];
+            ClearDamagePrediction();
+            CombatCardPredictionHighlight.Clear();
+        }
 
         // Card damage predictions share the same display surfaces as end-turn prediction.
         EndTurnPredictionController.SetCardDamageOverride(_hasDamagePrediction);
@@ -102,7 +123,7 @@ internal static class CombatCardPredictionController
         }
 
         _activePrediction = null;
-        _cachedHoverTips.Clear();
+        _hoverTips = [];
 
         ClearDamagePrediction();
         CombatCardPredictionHighlight.Clear();
@@ -121,93 +142,10 @@ internal static class CombatCardPredictionController
             ReferenceEquals(activePrediction.Holder, holder);
     }
 
-    private static void ShowDamagePrediction(CardModel card, Creature? target)
-    {
-        if (GetDamagePredictionResult(card, target) is { } prediction)
-        {
-            CombatPredictionOverlay.Show(prediction);
-            DamagePredictionHealthBarForecast.Set(prediction);
-            _hasDamagePrediction = true;
-        }
-        else
-        {
-            ClearDamagePrediction();
-        }
-    }
-
-    private static DamagePredictionResult? GetDamagePredictionResult(CardModel card, Creature? target)
-    {
-        try
-        {
-            if (OrbPrediction.Predict(card, target) is { } prediction)
-            {
-                _cachedHoverTips.AddRange(prediction.ToHoverTips());
-                return prediction.DamagePrediction;
-            }
-        }
-        catch (Exception ex)
-        {
-            Entry.Logger.Warn($"Combat orb prediction failed for {card.Id}: {ex}");
-        }
-
-        try
-        {
-            if (RandomTargetAttackPrediction.Predict(card) is { } prediction)
-            {
-                _cachedHoverTips.AddRange(prediction.ToHoverTips());
-                return prediction.DamagePrediction;
-            }
-        }
-        catch (Exception ex)
-        {
-            Entry.Logger.Warn($"Combat random target attack prediction failed for {card.Id}: {ex}");
-        }
-
-        return null;
-    }
-
-    private static void ShowSelectionHighlight(CardModel card, Creature? target)
-    {
-        CombatCardSelectionPredictionResult prediction;
-
-        try
-        {
-            prediction = CombatCardSelectionPrediction.Predict(card, target);
-        }
-        catch (Exception ex)
-        {
-            Entry.Logger.Warn($"Combat card selection hand highlight prediction failed for {card.Id}: {ex}");
-            CombatCardPredictionHighlight.Clear();
-            return;
-        }
-
-        CombatCardPredictionHighlight.Show(prediction.CardBundles
-            .SelectMany(static bundle => bundle)
-            .Select(static card => card.Original)
-            .ToList());
-
-        _cachedHoverTips.AddRange(prediction.ToHoverTips());
-    }
-
-    private static void AddCardGenerationHoverTips(CardModel card, Creature? target)
-    {
-        try
-        {
-            if (CombatCardGenerationPrediction.Predict(card, target) is { } prediction)
-            {
-                _cachedHoverTips.AddRange(prediction.ToHoverTips());
-            }
-        }
-        catch (Exception ex)
-        {
-            Entry.Logger.Warn($"Combat card generation target prediction failed for {card.Id}: {ex}");
-        }
-    }
-
     private static void ShowCardPlayHoverTips(NHandCardHolder holder)
     {
         ClearCardPlayHoverTips(holder);
-        if (_cachedHoverTips.Count == 0)
+        if (_hoverTips.Count == 0)
         {
             return;
         }
@@ -218,12 +156,30 @@ internal static class CombatCardPredictionController
         NHoverTipSet.shouldBlockHoverTips = false;
         try
         {
-            NHoverTipSet.CreateAndShow(holder, _cachedHoverTips)?.SetAlignmentForCardHolder(holder);
+            NHoverTipSet.CreateAndShow(holder, _hoverTips)?.SetAlignmentForCardHolder(holder);
         }
         finally
         {
             NHoverTipSet.shouldBlockHoverTips = shouldBlockHoverTips;
         }
+    }
+
+    private static void ClearCardPlayHoverTips(NHandCardHolder holder)
+    {
+        NHoverTipSet.Remove(holder);
+    }
+
+    private static void ShowDamagePrediction(DamagePrediction damagePrediction, PredictionRisk risk)
+    {
+        if (!damagePrediction.HasTargets)
+        {
+            ClearDamagePrediction();
+            return;
+        }
+
+        CombatPredictionOverlay.Show(damagePrediction, risk);
+        DamagePredictionHealthBarForecast.Set(damagePrediction);
+        _hasDamagePrediction = true;
     }
 
     private static void ClearDamagePrediction()
@@ -234,11 +190,6 @@ internal static class CombatCardPredictionController
             DamagePredictionHealthBarForecast.Clear();
             _hasDamagePrediction = false;
         }
-    }
-
-    private static void ClearCardPlayHoverTips(NHandCardHolder holder)
-    {
-        NHoverTipSet.Remove(holder);
     }
 
     private sealed record ActiveCardPrediction(

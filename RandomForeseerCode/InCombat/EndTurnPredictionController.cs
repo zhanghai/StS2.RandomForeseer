@@ -81,11 +81,11 @@ internal static class EndTurnPredictionController
             return;
         }
 
-        DamagePredictionResult prediction;
+        EndTurnPredictionResult? prediction;
 
         try
         {
-            prediction = EndTurnPrediction.PredictDamage();
+            prediction = EndTurnPrediction.Predict();
         }
         catch (Exception ex)
         {
@@ -94,17 +94,20 @@ internal static class EndTurnPredictionController
             return;
         }
 
-        if (!prediction.HasTargets)
+        if (prediction is not { DamagePrediction.HasTargets: true })
         {
             Clear();
             return;
         }
 
-        EndTurnPredictionCreatureHoverTips.Set(prediction);
+        EndTurnPredictionCreatureHoverTips.Set(prediction.DamagePrediction, prediction.Risk);
 
         if (ShouldShow(RandomForeseerSettings.EndTurnPredictionDisplayMode))
         {
-            CombatPredictionOverlay.Show(prediction, EndTurnPredictionCreatureHoverTips.GetHoverTips);
+            CombatPredictionOverlay.Show(
+                prediction.DamagePrediction,
+                prediction.Risk,
+                EndTurnPredictionCreatureHoverTips.GetHoverTips);
         }
         else
         {
@@ -113,7 +116,7 @@ internal static class EndTurnPredictionController
 
         if (ShouldShow(RandomForeseerSettings.EndTurnHealthBarForecastDisplayMode))
         {
-            DamagePredictionHealthBarForecast.Set(prediction);
+            DamagePredictionHealthBarForecast.Set(prediction.DamagePrediction);
         }
         else
         {

@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Nodes;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -17,8 +18,12 @@ internal static class CombatPredictionOverlay
     public static IReadOnlyList<Control> ActiveIndicators =>
         Indicators.Values.Where(static indicator => indicator.IsVisibleInTree()).ToList();
 
+    /// <summary>
+    /// Shows a damage projection, including its corresponding risk flag.
+    /// </summary>
     public static void Show(
-        DamagePredictionResult prediction,
+        DamagePrediction prediction,
+        PredictionRisk risk,
         Func<Creature, IEnumerable<IHoverTip>>? getHoverTips = null)
     {
         var activeTargets = prediction.Targets.Select(static target => target.Target).ToHashSet();
@@ -34,7 +39,7 @@ internal static class CombatPredictionOverlay
         foreach (var target in prediction.Targets)
         {
             var indicator = GetOrCreateIndicator(target.Target);
-            indicator?.SetPrediction(target, prediction.HasRisk);
+            indicator?.SetPrediction(target, risk.HasRisk);
             indicator?.SetHoverTips(getHoverTips?.Invoke(target.Target) ?? []);
         }
 

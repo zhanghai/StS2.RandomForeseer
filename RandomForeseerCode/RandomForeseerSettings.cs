@@ -43,6 +43,8 @@ internal sealed class RandomForeseerSettingsData
 
     public bool EnableCombatCardPrediction { get; set; } = true;
 
+    public bool EnableChainedCardEffectPrediction { get; set; } = true;
+
     public bool EnableCombatCardSelectionPrediction { get; set; } = true;
 
     public bool EnableOrbPrediction { get; set; } = true;
@@ -219,6 +221,14 @@ internal static class RandomForeseerSettings
             (settings, value) => settings.EnableCombatCardPrediction = value)
         .WithDefault(() => Default.EnableCombatCardPrediction);
 
+    private static readonly IModSettingsValueBinding<bool> EnableChainedCardEffectPredictionBinding =
+        ModSettingsBindings.Global<RandomForeseerSettingsData, bool>(
+            Entry.ModId,
+            DataKey,
+            settings => settings.EnableChainedCardEffectPrediction,
+            (settings, value) => settings.EnableChainedCardEffectPrediction = value)
+        .WithDefault(() => Default.EnableChainedCardEffectPrediction);
+
     private static readonly IModSettingsValueBinding<bool> EnableCombatCardSelectionPredictionBinding =
         ModSettingsBindings.Global<RandomForeseerSettingsData, bool>(
             Entry.ModId,
@@ -371,6 +381,8 @@ internal static class RandomForeseerSettings
     public static bool EnablePotionGenerationPrediction => EnablePotionGenerationPredictionBinding.Read();
 
     public static bool EnableCombatCardPrediction => EnableCombatCardPredictionBinding.Read();
+
+    public static bool EnableChainedCardEffectPrediction => EnableChainedCardEffectPredictionBinding.Read();
 
     public static bool EnableCombatCardSelectionPrediction => EnableCombatCardSelectionPredictionBinding.Read();
 
@@ -579,6 +591,12 @@ internal static class RandomForeseerSettings
                     Text("toggle.enable_combat_card_prediction.label"),
                     EnableCombatCardPredictionBinding,
                     Text("toggle.enable_combat_card_prediction.description"));
+
+                section.AddToggle(
+                    "enable_chained_card_effect_prediction",
+                    Text("toggle.enable_chained_card_effect_prediction.label"),
+                    EnableChainedCardEffectPredictionBinding,
+                    Text("toggle.enable_chained_card_effect_prediction.description"));
 
                 section.AddToggle(
                     "enable_combat_card_selection_prediction",

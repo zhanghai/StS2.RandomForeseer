@@ -16,13 +16,14 @@ The Workshop package automatically loads the newest compatible Mod version for t
 - **Random-card-generation potion prediction**: adds the predicted generated cards to random-card-generation potion hover tips.
 - **Potion generation prediction**: shows the potions that Entropic Brew and Alchemize will generate.
 - **Combat card generation prediction**: shows predicted generated cards when hovering supported random-card generators in hand during combat.
+- **Chained card-effect prediction**: when enabled, combat card prediction also shows supported card and combat effects caused indirectly by the played card, with causal explanations.
 - **Combat card selection prediction**: shows or highlights existing cards that supported combat card-selection effects will select when hovering cards in hand or card-play targets; predictions that may be shifted by side effects show a warning that can be disabled.
 - **Random-target attack prediction**: shows targets that supported random-enemy attack cards will hit during combat, with health bar forecasts.
 - **Orb effect prediction**: shows targets that supported orb-triggering cards will hit when hovering cards or card-play targets during combat, with health bar forecasts.
 - **End-turn effect prediction**: shows aggregated supported end-turn damage for all players ending their turn; overlay indicators and health bar forecasts can be configured separately for End Turn button hover or always during the player turn; hovering a target creature or prediction indicator shows per-hit damage source details.
 - **Draw-pile autoplay prediction**: shows the cards that Havoc, Cascade, and Distilled Chaos will play from the draw pile.
 - **Potion draw prediction**: shows the cards that supported draw potions will draw, including cards after shuffle.
-- **Card draw prediction**: shows the cards that Reboot and Calculated Gamble will draw, including cards after shuffle.
+- **Card draw prediction**: shows the cards that supported card-play draw effects such as Reboot and Calculated Gamble will draw, including cards after shuffle.
 - **Combat transform prediction**: shows the cards that Entropy will transform selected hand cards into during combat.
 - **Driftwood reroll prediction**: shows the cards that a card reward reroll will offer when hovering the Reroll button.
 - **Pael's Wing sacrifice prediction**: shows the relic awarded by an activating Sacrifice button.
@@ -151,6 +152,7 @@ Each feature can be toggled independently from the mod settings page, and predic
 
 - Reboot
 - Calculated Gamble
+- Coolheaded
 
 ### Combat Transform
 
@@ -212,6 +214,7 @@ Open the RitsuLib mod settings page and select **Random Foreseer**:
 | Predict potion card results | Controls whether random-card-generation potions show predicted cards |
 | Predict potion generation | Controls whether Entropic Brew and Alchemize show predicted potions |
 | Predict combat card generation | Controls whether supported in-hand combat cards show predicted generated cards |
+| Predict chained card effects | Controls whether combat card prediction includes supported effects caused indirectly by the played card, default on |
 | Predict combat card selection | Controls whether supported in-hand combat cards show selected existing cards and hand highlights |
 | Predict orb effects | Controls whether supported orb-triggering cards show the targets that orb effects will hit |
 | Predict random-target attacks | Controls whether supported random-enemy attack cards show the targets they will hit |
@@ -221,7 +224,7 @@ Open the RitsuLib mod settings page and select **Random Foreseer**:
 | Damage prediction health bar color | Controls the color used for damage prediction segments on target health bars, default yellow |
 | Predict draw-pile autoplay | Controls whether Havoc, Cascade, and Distilled Chaos show the cards that will be played from the draw pile |
 | Predict potion draw | Controls whether supported potion draw effects show predicted cards |
-| Predict card draw | Controls whether Reboot and Calculated Gamble show predicted cards |
+| Predict card draw | Controls whether supported card-play draw effects show predicted cards |
 | Predict Driftwood rerolls | Controls whether Driftwood card reward rerolls show predicted cards |
 | Predict Pael's Wing sacrifices | Controls whether activating Pael's Wing Sacrifice buttons show the relic that will be awarded |
 | Predict relic pickup effects | Controls whether relic tooltips (including Ancient options) show random cards, relics, potions, curses, and transform results that happen immediately on pickup |

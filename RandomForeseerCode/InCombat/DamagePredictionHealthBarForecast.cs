@@ -29,7 +29,10 @@ internal static class DamagePredictionHealthBarForecast
             : [];
     }
 
-    public static void Set(DamagePredictionResult prediction)
+    /// <summary>
+    /// Applies a damage projection to the shared card/end-turn forecast surface.
+    /// </summary>
+    public static void Set(DamagePrediction prediction)
     {
         var staleTargets = DamageByTarget.Keys.ToArray();
         DamageByTarget.Clear();

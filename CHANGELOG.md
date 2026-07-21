@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### feat
+
+- 统一战斗卡牌预测入口，现在一次模拟即可同时展示支持的连锁卡牌效果、伤害、手牌高亮和因果说明。<br>
+  Unified combat card prediction entry points so one simulation can show supported chained card effects, damage, hand highlights, and causal explanations together.
+
 ### fix
 
 - 修复“战史学家 付袭”事件打开宝箱时，遗物预测未计入先生成的两瓶药水所推进的奖励随机数的问题。<br>

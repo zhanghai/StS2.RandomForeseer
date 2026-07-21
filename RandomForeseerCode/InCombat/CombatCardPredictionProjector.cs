@@ -1,23 +1,45 @@
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Powers;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
-using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
-internal sealed class CombatCardPredictionProjector(
-    CardModel rootCard,
-    CombatPredictionSimulator simulator)
-{
-    private readonly Dictionary<Type, List<EntryHandler>> _handlers = [];
-    private readonly List<IHoverTip> _hoverTips = [];
-    private readonly List<CardModel> _highlightedCards = [];
-    private readonly List<CombatPredictionHistoryEntry> _relevantEntries = [];
-    private readonly List<CombatPredictionDamageReceivedEntry> _damageEntries = [];
+/// <summary>
+/// Contains the presentation payload produced from one unified combat-card simulation.
+/// </summary>
+internal sealed record CombatCardPredictionProjection(
+    IReadOnlyList<IHoverTip> HoverTips,
+    DamagePrediction DamagePrediction,
+    IReadOnlySet<CardModel> HighlightedCards,
+    PredictionRisk Risk);
 
+/// <summary>
+/// Streams a completed combat prediction history into the enabled HoverTip, damage, highlight, causal, and risk views.
+/// </summary>
+internal sealed class CombatCardPredictionProjector
+{
+    private const int MaxHoverTips = 10;
+
+    private readonly CombatPredictionHistory _history;
+    private readonly CardModel _rootCard;
+    private readonly PredictionTraceFrame _rootFrame;
+
+    private readonly Dictionary<Type, List<EntryHandler>> _handlers = [];
+
+    private readonly List<IHoverTip> _hoverTips = [];
+    private readonly HashSet<CardModel> _highlightedCards = [];
+    private readonly List<CombatPredictionDamageReceivedEntry> _damageEntries = [];
+    private readonly List<CombatPredictionHistoryEntry> _relevantEntries = [];
+
+    private readonly CombatCardPredictionCausalTipBuilder _causalTips;
+
+    /// <summary>
+    /// Returns whether at least one category consumed by the unified card-play projector is currently enabled.
+    /// </summary>
     public static bool HasEnabledFeature()
     {
         return IsFeatureEnabled(RandomForeseerSettings.EnableCombatCardPrediction) ||
@@ -29,11 +51,42 @@ internal sealed class CombatCardPredictionProjector(
             IsFeatureEnabled(RandomForeseerSettings.EnableRandomTargetAttackPrediction);
     }
 
-    public CombatCardPredictionProjection Project()
+    /// <summary>
+    /// Projects one completed card-play history relative to its exact root lifecycle frame.
+    /// </summary>
+    /// <param name="history">The completed history produced by the same simulation as <paramref name="rootFrame"/>.</param>
+    /// <param name="rootCard">The live original card used as the root source identity.</param>
+    /// <param name="rootFrame">The root <see cref="PredictionActionKind.CardPlayLifecycle"/> frame returned by manual play.</param>
+    /// <returns>A presentation projection containing only results accepted by enabled feature policies.</returns>
+    /// <remarks>
+    /// Callers must not combine a frame and history from different simulations. Entries are dispatched in timeline
+    /// order; deferred entries use their resolved snapshot and completion boundary.
+    /// </remarks>
+    public static CombatCardPredictionProjection Project(
+        CombatPredictionHistory history,
+        CardModel rootCard,
+        PredictionTraceFrame rootFrame)
     {
-        RegisterHandlers();
+        return new CombatCardPredictionProjector(history, rootCard, rootFrame).Project();
+    }
 
-        foreach (var entry in simulator.History.Entries)
+    private CombatCardPredictionProjector(
+        CombatPredictionHistory history,
+        CardModel rootCard,
+        PredictionTraceFrame rootFrame)
+    {
+        _history = history;
+        _rootCard = rootCard;
+        _rootFrame = rootFrame;
+
+        _causalTips = new(rootFrame);
+
+        RegisterHandlers();
+    }
+
+    private CombatCardPredictionProjection Project()
+    {
+        foreach (var entry in _history.Entries)
         {
             Dispatch(entry);
         }
@@ -71,7 +124,7 @@ internal sealed class CombatCardPredictionProjector(
 
         if (IsFeatureEnabled(RandomForeseerSettings.EnableOrbPrediction))
         {
-            Register<CombatPredictionOrbChanneledEntry>(HandleRandomOrb);
+            Register<CombatPredictionOrbChanneledEntry>(HandleOrbChanneled);
         }
 
         if (IsFeatureEnabled(RandomForeseerSettings.EnableOrbPrediction) ||
@@ -95,7 +148,7 @@ internal sealed class CombatCardPredictionProjector(
 
     private void Dispatch(CombatPredictionHistoryEntry entry)
     {
-        if (!_handlers.TryGetValue(entry.GetType(), out var handlers))
+        if (!_handlers.TryGetValue(entry.GetType(), out var handlers) || !ShouldDispatch(entry))
         {
             return;
         }
@@ -109,96 +162,93 @@ internal sealed class CombatCardPredictionProjector(
         }
     }
 
+    private bool ShouldDispatch(CombatPredictionHistoryEntry entry)
+    {
+        return GetProjectionScope(entry) switch
+        {
+            ProjectionScope.Direct or ProjectionScope.Indirect => true,
+            ProjectionScope.Chained => IsChainedPredictionEnabled(),
+            _ => false
+        };
+    }
+
     private CombatPredictionHistoryEntry? HandleCardGenerated(CombatPredictionCardGeneratedEntry entry)
     {
-        if (!IsImmediateRootResult(entry))
-        {
-            return null;
-        }
-
-        var resolved = simulator.History.GetResolvedEntry<CombatPredictionCardGenerationResolvedEntry>(entry);
-        _hoverTips.Add(PredictionHoverTipFactory.Card(resolved.Card.Preview));
+        var resolved = _history.GetResolvedEntry<CombatPredictionCardGenerationResolvedEntry>(entry);
+        AddHoverTip(PredictionHoverTipFactory.Card(resolved.Card.Preview));
+        AddCausalEffect(entry, CausalEffectKind.GenerateCards, [resolved.Card.Preview]);
         return resolved;
     }
 
     private CombatPredictionHistoryEntry? HandleCardGenerationOptions(CombatPredictionCardGenerationOptionsEntry entry)
     {
-        if (!IsImmediateRootResult(entry) || entry.Cards.Count == 0)
+        if (entry.Cards.Count == 0)
         {
             return null;
         }
 
-        _hoverTips.Add(PredictionHoverTipFactory.CardBundle(
-            [.. entry.Cards.Select(static card => card.Preview)],
-            PredictionCardBundleKind.Regular));
+        AddHoverTip(PredictionHoverTipFactory.CardBundle([.. entry.Cards.SelectPreviews()]));
+        AddCausalEffect(entry, CausalEffectKind.GenerateCards, entry.Cards.SelectPreviews());
         return entry;
     }
 
     private CombatPredictionHistoryEntry? HandlePotionGenerated(CombatPredictionPotionGeneratedEntry entry)
     {
-        if (!IsImmediateRootResult(entry))
-        {
-            return null;
-        }
-
-        _hoverTips.Add(PredictionHoverTipFactory.Potion(entry.Potion));
+        AddHoverTip(PredictionHoverTipFactory.Potion(entry.Potion));
+        AddCausalEffect(entry, CausalEffectKind.GeneratePotion, [entry.Potion]);
         return entry;
     }
 
     private CombatPredictionHistoryEntry? HandleCardsSelected(CombatPredictionCardsSelectedEntry entry)
     {
-        if (!IsImmediateRootResult(entry) || entry.Cards.Count == 0)
+        if (entry.Cards.Count == 0)
         {
             return null;
         }
 
-        _hoverTips.Add(PredictionHoverTipFactory.CardBundle(
-            [.. entry.Cards.Select(static card => card.Preview)],
-            PredictionCardBundleKind.Regular));
-        _highlightedCards.AddRange(entry.Cards.Select(static card => card.Original));
+        AddHoverTip(PredictionHoverTipFactory.CardBundle([.. entry.Cards.SelectPreviews()]));
+        _highlightedCards.UnionWith(entry.Cards.SelectOriginals());
+        AddCausalEffect(entry, CausalEffectKind.SelectCards, entry.Cards.SelectPreviews());
         return entry;
     }
 
     private CombatPredictionHistoryEntry? HandleDrawPileAutoPlay(CombatPredictionAutoPlayFromDrawPileEntry entry)
     {
-        if (!IsImmediateRootResult(entry))
-        {
-            return null;
-        }
-
-        _hoverTips.Add(PredictionHoverTipFactory.Card(entry.Card.Preview));
+        AddHoverTip(PredictionHoverTipFactory.Card(entry.Card.Preview));
+        AddCausalEffect(entry, CausalEffectKind.PlayCard, [entry.Card.Preview]);
         return entry;
     }
 
     private CombatPredictionHistoryEntry? HandleCardDrawn(CombatPredictionCardDrawnEntry entry)
     {
-        if (!IsImmediateRootResult(entry))
-        {
-            return null;
-        }
-
-        var resolved = simulator.History.GetResolvedEntry<CombatPredictionCardDrawResolvedEntry>(entry);
-        _hoverTips.Add(PredictionHoverTipFactory.Card(resolved.Card.Preview));
+        var resolved = _history.GetResolvedEntry<CombatPredictionCardDrawResolvedEntry>(entry);
+        AddHoverTip(PredictionHoverTipFactory.Card(resolved.Card.Preview));
+        AddCausalEffect(entry, CausalEffectKind.DrawCards, [resolved.Card.Preview]);
         return resolved;
     }
 
-    private CombatPredictionHistoryEntry? HandleRandomOrb(CombatPredictionOrbChanneledEntry entry)
+    private CombatPredictionHistoryEntry? HandleOrbChanneled(CombatPredictionOrbChanneledEntry entry)
     {
-        if (!IsImmediateRootResult(entry) || rootCard is not Chaos)
+        if (entry.Trace!.Source is not (Chaos or TrashToTreasurePower))
         {
             return null;
         }
 
-        _hoverTips.Add(PredictionHoverTipFactory.Orb(entry.Orb));
+        AddHoverTip(PredictionHoverTipFactory.Orb(entry.Orb));
+        AddCausalEffect(entry, CausalEffectKind.ChannelOrbs, [entry.Orb]);
         return entry;
     }
 
     private CombatPredictionHistoryEntry? HandleDamage(CombatPredictionDamageReceivedEntry entry)
     {
-        if (FindOriginatingCardPlay(entry)?.Source is not CardModel originatingCard ||
-            !ReferenceEquals(originatingCard, rootCard) ||
-            !(IsFeatureEnabled(RandomForeseerSettings.EnableOrbPrediction) && IsOrbCard(originatingCard)) &&
-            !(IsFeatureEnabled(RandomForeseerSettings.EnableRandomTargetAttackPrediction) && IsRandomTargetAttackCard(originatingCard)))
+        if (!IsFeatureEnabled(RandomForeseerSettings.EnableOrbPrediction) &&
+            entry.Trace!.Ancestors().Any(static frame => frame.Source is OrbModel))
+        {
+            return null;
+        }
+
+        if (!IsFeatureEnabled(RandomForeseerSettings.EnableRandomTargetAttackPrediction) &&
+            entry.Trace!.Ancestors().Any(static frame => IsRandomTargetAttackCard(frame.Source)))
         {
             return null;
         }
@@ -209,8 +259,12 @@ internal sealed class CombatCardPredictionProjector(
 
     private CombatCardPredictionProjection FinalizeProjection()
     {
-        var damagePrediction = DamagePredictionProjector.FromHistory(_damageEntries);
-        var risk = simulator.History.GetRiskThrough(_relevantEntries.Max());
+        var damagePrediction = DamagePredictionProjector.Project(_damageEntries);
+        var risk = _history.GetRisk(_relevantEntries);
+        if (_causalTips.Build() is { } causalTip)
+        {
+            _hoverTips.Insert(0, causalTip);
+        }
         _hoverTips.AddDriftWarning("combat_card", risk);
 
         return new CombatCardPredictionProjection(
@@ -220,15 +274,39 @@ internal sealed class CombatCardPredictionProjector(
             risk);
     }
 
-    private bool IsImmediateRootResult(CombatPredictionHistoryEntry entry)
+    private void AddHoverTip(IHoverTip hoverTip)
     {
-        return ReferenceEquals(entry.Trace?.Source, rootCard);
+        if (_hoverTips.Count < MaxHoverTips)
+        {
+            _hoverTips.Add(hoverTip);
+        }
     }
 
-    private static PredictionTraceFrame? FindOriginatingCardPlay(CombatPredictionHistoryEntry entry)
+    private void AddCausalEffect(
+        CombatPredictionHistoryEntry entry,
+        CausalEffectKind effect,
+        IEnumerable<AbstractModel> results)
     {
-        return entry.Trace?.Ancestors()
-            .FirstOrDefault(static frame => CardOnPlayMirrors.IsOnPlayInvocation(frame.Invocation));
+        _causalTips.AddEffect(entry, effect, results);
+    }
+
+    private ProjectionScope GetProjectionScope(CombatPredictionHistoryEntry entry)
+    {
+        if (entry.Trace is not { } trace ||
+            trace.FindOriginatingCardPlay() is not { } cardPlayFrame ||
+            !cardPlayFrame.Ancestors().Contains(_rootFrame))
+        {
+            return ProjectionScope.None;
+        }
+
+        if (cardPlayFrame.Parent == _rootFrame && cardPlayFrame.Source == _rootCard)
+        {
+            return trace.Source == _rootCard
+                ? ProjectionScope.Direct
+                : ProjectionScope.Indirect;
+        }
+
+        return ProjectionScope.Chained;
     }
 
     private static bool IsFeatureEnabled(bool setting)
@@ -236,9 +314,14 @@ internal sealed class CombatCardPredictionProjector(
         return RandomForeseerSettings.IsPredictionFeatureEnabled(setting);
     }
 
-    private static bool IsRandomTargetAttackCard(CardModel card)
+    private static bool IsChainedPredictionEnabled()
     {
-        return card is
+        return IsFeatureEnabled(RandomForeseerSettings.EnableChainedCardEffectPrediction);
+    }
+
+    private static bool IsRandomTargetAttackCard(AbstractModel model)
+    {
+        return model is
             FlakCannon or
             Ricochet or
             RipAndTear or
@@ -248,36 +331,13 @@ internal sealed class CombatCardPredictionProjector(
             Volley;
     }
 
-    private static bool IsOrbCard(CardModel card)
-    {
-        return card is
-            BallLightning or
-            Chaos or
-            Chill or
-            ColdSnap or
-            ConsumingShadow or
-            Coolheaded or
-            Darkness or
-            Dualcast or
-            Fusion or
-            Glacier or
-            Glasswork or
-            IceLance or
-            Ignition or
-            MeteorStrike or
-            MultiCast or
-            Null or
-            Quadcast or
-            Rainbow or
-            Refract or
-            ShadowShield or
-            Shatter or
-            Spinner { IsUpgraded: true } or
-            Tempest or
-            TeslaCoil or
-            Voltaic or
-            Zap;
-    }
-
     private delegate CombatPredictionHistoryEntry? EntryHandler(CombatPredictionHistoryEntry entry);
+
+    private enum ProjectionScope
+    {
+        None,
+        Direct,
+        Indirect,
+        Chained
+    }
 }

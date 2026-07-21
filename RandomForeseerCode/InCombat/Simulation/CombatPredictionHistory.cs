@@ -31,22 +31,30 @@ internal sealed class CombatPredictionHistory(PredictionTrace trace)
         return _entryCounts.TryGetValue(typeof(TEntry), out var count) ? count : 0;
     }
 
+    /// <summary>
+    /// Aggregates risk through the latest supplied relevant entry.
+    /// </summary>
+    /// <remarks>Every supplied entry is expected to belong to this history; an empty sequence yields no risk.</remarks>
     public PredictionRisk GetRisk(IEnumerable<CombatPredictionHistoryEntry> entries)
     {
-        return GetRiskThrough(entries.Max());
-    }
-
-    public PredictionRisk GetRiskThrough(CombatPredictionHistoryEntry? lastEntry)
-    {
-        if (lastEntry is null)
+        CombatPredictionHistoryEntry? lastEntry = null;
+        foreach (var entry in entries)
         {
-            return PredictionRisk.None;
+            ValidateOwnership(entry);
+            if (lastEntry is null || entry.Index > lastEntry.Index)
+            {
+                lastEntry = entry;
+            }
         }
 
-        ValidateOwnership(lastEntry);
-        return GetRiskThrough(lastEntry.Index);
+        return lastEntry is null
+            ? PredictionRisk.None
+            : GetRiskThrough(lastEntry.Index);
     }
 
+    /// <summary>
+    /// Aggregates risk through the current end of the timeline.
+    /// </summary>
     public PredictionRisk GetCurrentRisk()
     {
         return _entries.Count == 0 ? PredictionRisk.None : GetRiskThrough(_entries.Count - 1);
@@ -145,6 +153,12 @@ internal sealed class CombatPredictionHistory(PredictionTrace trace)
         Record(new CombatPredictionOrbChanneledEntry { Orb = orb });
     }
 
+    /// <summary>
+    /// Returns the resolution paired with one exact deferred started-entry instance.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the entry is unresolved, belongs to another history, or has a different resolution type.
+    /// </exception>
     public TResolved GetResolvedEntry<TResolved>(CombatPredictionHistoryEntry originalEntry)
         where TResolved : CombatPredictionHistoryEntry
     {
