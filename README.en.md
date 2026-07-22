@@ -216,6 +216,7 @@ Open the RitsuLib mod settings page and select **Random Foreseer**:
 | Predict combat card generation | Controls whether supported in-hand combat cards show predicted generated cards |
 | Predict chained card effects | Controls whether combat card prediction includes supported effects caused indirectly by the played card, default on |
 | Predict combat card selection | Controls whether supported in-hand combat cards show selected existing cards and hand highlights |
+| Predict combat damage | Controls all supported combat damage predictions and is the master switch for orb, random-target attack, and end-turn damage displays |
 | Predict orb effects | Controls whether supported orb-triggering cards show the targets that orb effects will hit |
 | Predict random-target attacks | Controls whether supported random-enemy attack cards show the targets they will hit |
 | Predict end-turn effects | Controls whether supported end-turn damage predictions are shown |

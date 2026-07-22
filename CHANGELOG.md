@@ -4,8 +4,8 @@
 
 ### feat
 
-- 统一战斗卡牌预测入口，现在一次模拟即可同时展示支持的连锁卡牌效果、伤害、手牌高亮和因果说明。<br>
-  Unified combat card prediction entry points so one simulation can show supported chained card effects, damage, hand highlights, and causal explanations together.
+- 统一战斗卡牌预测入口，现在一次模拟即可同时展示支持的卡牌效果、伤害、手牌高亮和因果说明；可单独关闭嵌套出牌的连锁效果预测，并新增控制充能球、随机目标攻击和回合结束伤害显示的战斗伤害总开关。<br>
+  Unified combat card prediction entry points so one simulation can show supported card effects, damage, hand highlights, and causal explanations together; chained effects from nested card plays can be disabled separately, and a new combat-damage master switch governs orb, random-target attack, and end-turn damage displays.
 
 ### fix
 

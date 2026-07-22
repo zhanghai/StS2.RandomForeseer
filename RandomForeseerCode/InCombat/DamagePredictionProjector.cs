@@ -48,6 +48,11 @@ internal static class DamagePredictionProjector
     /// <exception cref="InvalidOperationException">Thrown when an accepted damage entry has no source trace.</exception>
     public static DamagePrediction Project(IEnumerable<CombatPredictionDamageReceivedEntry> history)
     {
+        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableCombatDamagePrediction))
+        {
+            return DamagePrediction.Empty;
+        }
+
         var targets = history
             .GroupBy(static entry => entry.Receiver)
             .Select(group => new DamagePredictionTarget(

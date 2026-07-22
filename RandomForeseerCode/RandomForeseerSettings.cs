@@ -47,6 +47,8 @@ internal sealed class RandomForeseerSettingsData
 
     public bool EnableCombatCardSelectionPrediction { get; set; } = true;
 
+    public bool EnableCombatDamagePrediction { get; set; } = true;
+
     public bool EnableOrbPrediction { get; set; } = true;
 
     public bool EnableRandomTargetAttackPrediction { get; set; } = true;
@@ -237,6 +239,14 @@ internal static class RandomForeseerSettings
             (settings, value) => settings.EnableCombatCardSelectionPrediction = value)
         .WithDefault(() => Default.EnableCombatCardSelectionPrediction);
 
+    private static readonly IModSettingsValueBinding<bool> EnableCombatDamagePredictionBinding =
+        ModSettingsBindings.Global<RandomForeseerSettingsData, bool>(
+            Entry.ModId,
+            DataKey,
+            settings => settings.EnableCombatDamagePrediction,
+            (settings, value) => settings.EnableCombatDamagePrediction = value)
+        .WithDefault(() => Default.EnableCombatDamagePrediction);
+
     private static readonly IModSettingsValueBinding<bool> EnableOrbPredictionBinding =
         ModSettingsBindings.Global<RandomForeseerSettingsData, bool>(
             Entry.ModId,
@@ -386,6 +396,8 @@ internal static class RandomForeseerSettings
 
     public static bool EnableCombatCardSelectionPrediction => EnableCombatCardSelectionPredictionBinding.Read();
 
+    public static bool EnableCombatDamagePrediction => EnableCombatDamagePredictionBinding.Read();
+
     public static bool EnableOrbPrediction => EnableOrbPredictionBinding.Read();
 
     public static bool EnableRandomTargetAttackPrediction => EnableRandomTargetAttackPredictionBinding.Read();
@@ -423,7 +435,8 @@ internal static class RandomForeseerSettings
 
     public static bool IsEndTurnPredictionRefreshBinding(IModSettingsBinding binding)
     {
-        return ReferenceEquals(binding, EnableEndTurnPredictionBinding) ||
+        return ReferenceEquals(binding, EnableCombatDamagePredictionBinding) ||
+            ReferenceEquals(binding, EnableEndTurnPredictionBinding) ||
             ReferenceEquals(binding, EndTurnPredictionDisplayModeBinding) ||
             ReferenceEquals(binding, EndTurnHealthBarForecastDisplayModeBinding);
     }
@@ -603,6 +616,12 @@ internal static class RandomForeseerSettings
                     Text("toggle.enable_combat_card_selection_prediction.label"),
                     EnableCombatCardSelectionPredictionBinding,
                     Text("toggle.enable_combat_card_selection_prediction.description"));
+
+                section.AddToggle(
+                    "enable_combat_damage_prediction",
+                    Text("toggle.enable_combat_damage_prediction.label"),
+                    EnableCombatDamagePredictionBinding,
+                    Text("toggle.enable_combat_damage_prediction.description"));
 
                 section.AddToggle(
                     "enable_orb_prediction",

@@ -48,7 +48,7 @@ internal sealed class CombatCardPredictionProjector
             IsFeatureEnabled(RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction) ||
             IsFeatureEnabled(RandomForeseerSettings.EnableCardDrawPrediction) ||
             IsFeatureEnabled(RandomForeseerSettings.EnableOrbPrediction) ||
-            IsFeatureEnabled(RandomForeseerSettings.EnableRandomTargetAttackPrediction);
+            IsFeatureEnabled(RandomForeseerSettings.EnableCombatDamagePrediction);
     }
 
     /// <summary>
@@ -127,8 +127,7 @@ internal sealed class CombatCardPredictionProjector
             Register<CombatPredictionOrbChanneledEntry>(HandleOrbChanneled);
         }
 
-        if (IsFeatureEnabled(RandomForeseerSettings.EnableOrbPrediction) ||
-            IsFeatureEnabled(RandomForeseerSettings.EnableRandomTargetAttackPrediction))
+        if (IsFeatureEnabled(RandomForeseerSettings.EnableCombatDamagePrediction))
         {
             Register<CombatPredictionDamageReceivedEntry>(HandleDamage);
         }
