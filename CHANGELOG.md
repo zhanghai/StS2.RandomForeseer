@@ -9,6 +9,9 @@
 
 ### fix
 
+- 修复选择队友作为卡牌或药水目标时，悬停左上角队友名字牌不会显示对应预测的问题。<br>
+  Fixed card and potion predictions not updating when hovering a teammate's nameplate while selecting them as the target.
+
 - 修复“战史学家 付袭”事件打开宝箱时，遗物预测未计入先生成的两瓶药水所推进的奖励随机数的问题。<br>
   Fixed relic predictions for the chest in War Historian, Repy not accounting for reward RNG consumed by the two preceding potion rewards.
 

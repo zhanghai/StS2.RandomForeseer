@@ -37,7 +37,10 @@ internal static class CombatCardPrediction
         {
             try
             {
-                predictionTips.AddRange(Predict(card, target: null)?.HoverTips ?? []);
+                var hoverTips = CombatCardPredictionController.TryGetActiveHoverTips(card, out var activeHoverTips)
+                    ? activeHoverTips
+                    : Predict(card, target: null)?.HoverTips ?? [];
+                predictionTips.AddRange(hoverTips);
             }
             catch (Exception ex)
             {

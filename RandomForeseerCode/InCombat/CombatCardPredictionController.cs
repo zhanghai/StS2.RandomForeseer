@@ -13,139 +13,165 @@ namespace RandomForeseer.RandomForeseerCode.InCombat;
 
 internal static class CombatCardPredictionController
 {
-    private static ActiveCardPrediction? _activePrediction;
+    private static CardPredictionSession? _session;
 
     private static bool _hasDamagePrediction;
-
-    private static IReadOnlyList<IHoverTip> _hoverTips = [];
 
     public static void OnCardHover(NHandCardHolder holder, bool isHovered)
     {
         if (isHovered)
         {
-            UpdatePredictions(ActiveCardPredictionSource.Hover, holder);
+            StartPrediction(CardPredictionSource.Hover, holder);
         }
         else
         {
-            ClearPredictions(ActiveCardPredictionSource.Hover, holder);
+            ClearPredictions(CardPredictionSource.Hover, holder);
         }
     }
 
     public static void OnCardPlayStarted(NHandCardHolder holder)
     {
-        UpdatePredictions(ActiveCardPredictionSource.CardPlay, holder);
+        StartPrediction(CardPredictionSource.CardPlay, holder);
     }
 
-    public static void OnCardPlayTargetChanged(NHandCardHolder holder, Creature? target)
+    public static void OnCardPlayTargetingStarting(Control control)
     {
-        if (UpdatePredictions(ActiveCardPredictionSource.CardPlay, holder, target))
-        {
-            ShowCardPlayHoverTips(holder);
-        }
-    }
-
-    public static void OnCardPlayTargetingStarted(Control control)
-    {
-        if (_activePrediction is not { Source: ActiveCardPredictionSource.CardPlay } activePrediction ||
-            !ReferenceEquals(control, activePrediction.Holder.CardNode))
+        if (_session is not { Source: CardPredictionSource.CardPlay } session ||
+            !ReferenceEquals(control, session.Holder.CardNode))
         {
             return;
         }
 
-        ShowCardPlayHoverTips(activePrediction.Holder);
+        session.TargetObserver?.Dispose();
+        session.Target = null;
+        session.Projection = null;
+        ApplyProjection(null);
+        ClearCardPlayHoverTips(session.Holder);
+
+        var targetObserver = new CombatPredictionTargetObserver(NTargetManager.Instance);
+        session.TargetObserver = targetObserver;
+        targetObserver.TargetChanged += target => OnCardPlayTargetChanged(session, target);
     }
 
     public static void OnCardPlayCleanedUp(NHandCardHolder holder)
     {
         ClearCardPlayHoverTips(holder);
-        ClearPredictions(ActiveCardPredictionSource.CardPlay, holder);
+        ClearPredictions(CardPredictionSource.CardPlay, holder);
     }
 
-    private static bool UpdatePredictions(
-        ActiveCardPredictionSource source,
-        NHandCardHolder holder,
-        Creature? target = null)
+    /// <summary>
+    /// Reuses the projection already produced for the active local hand hover.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> when the active hover session owns this card, including when that session produced no
+    /// projection. Callers must not run a fallback simulation in that case.
+    /// </returns>
+    public static bool TryGetActiveHoverTips(CardModel card, out IReadOnlyList<IHoverTip> hoverTips)
     {
-        if (holder.CardModel is not { } card || !ShouldUpdatePredictions(source, card))
+        if (_session is { Source: CardPredictionSource.Hover } session &&
+            ReferenceEquals(session.Card, card))
         {
-            return false;
+            hoverTips = session.Projection?.HoverTips ?? [];
+            return true;
         }
 
-        _activePrediction = new ActiveCardPrediction(source, holder, card, target);
+        hoverTips = [];
+        return false;
+    }
 
-        CombatCardPredictionProjection? prediction;
+    private static void OnCardPlayTargetChanged(CardPredictionSession session, Creature? target)
+    {
+        if (!ReferenceEquals(session, _session))
+        {
+            return;
+        }
+
+        session.Target = target;
+        if (target is null)
+        {
+            session.Projection = null;
+            ApplyProjection(null);
+            ClearCardPlayHoverTips(session.Holder);
+        }
+        else
+        {
+            RefreshPrediction(session);
+            ShowCardPlayHoverTips(session);
+        }
+    }
+
+    private static void StartPrediction(CardPredictionSource source, NHandCardHolder holder)
+    {
+        if (holder.CardModel is not { } card ||
+            (source is CardPredictionSource.Hover && _session?.Source is CardPredictionSource.CardPlay))
+        {
+            return;
+        }
+
+        _session?.Dispose();
+        _session = new CardPredictionSession
+        {
+            Source = source,
+            Holder = holder,
+            Card = card
+        };
+        RefreshPrediction(_session);
+    }
+
+    private static void RefreshPrediction(CardPredictionSession session)
+    {
         try
         {
-            prediction = CombatCardPrediction.Predict(card, target);
+            session.Projection = CombatCardPrediction.Predict(session.Card, session.Target);
         }
         catch (Exception ex)
         {
             Entry.Logger.Warn(
-                $"Combat card prediction failed for {card.Id} targeting {target?.Name}: {ex}");
-            prediction = null;
+                $"Combat card prediction failed for {session.Card.Id} " +
+                $"targeting {session.Target?.Name}: {ex}");
+            session.Projection = null;
         }
 
+        ApplyProjection(session.Projection);
+    }
+
+    private static void ApplyProjection(CombatCardPredictionProjection? prediction)
+    {
         if (prediction is not null)
         {
-            _hoverTips = prediction.HoverTips;
             ShowDamagePrediction(prediction.DamagePrediction, prediction.Risk);
             CombatCardPredictionHighlight.Show(prediction.HighlightedCards);
         }
         else
         {
-            _hoverTips = [];
             ClearDamagePrediction();
             CombatCardPredictionHighlight.Clear();
         }
 
         // Card damage predictions share the same display surfaces as end-turn prediction.
         EndTurnPredictionController.SetCardDamageOverride(_hasDamagePrediction);
-        return true;
     }
 
-    private static bool ShouldUpdatePredictions(ActiveCardPredictionSource source, CardModel card)
-    {
-        if (_activePrediction is null)
-        {
-            return true;
-        }
-
-        return !ReferenceEquals(_activePrediction.Card, card) ||
-            source == _activePrediction.Source ||
-            source == ActiveCardPredictionSource.CardPlay;
-    }
-
-    private static void ClearPredictions(ActiveCardPredictionSource source, NHandCardHolder holder)
-    {
-        if (!ShouldClearPredictions(source, holder))
-        {
-            return;
-        }
-
-        _activePrediction = null;
-        _hoverTips = [];
-
-        ClearDamagePrediction();
-        CombatCardPredictionHighlight.Clear();
-
-        // Refresh end-turn prediction in case the card hover was taking precedence over it.
-        EndTurnPredictionController.SetCardDamageOverride(false);
-    }
-
-    private static bool ShouldClearPredictions(ActiveCardPredictionSource source, NHandCardHolder holder)
+    private static void ClearPredictions(CardPredictionSource source, NHandCardHolder holder)
     {
         // On a successful play, vanilla reparents the NCard away from the holder before
         // NCardPlay.Cleanup postfix runs, so holder.CardModel may already be null here.
         // The NHandCardHolder reference itself is stable for the play lifecycle.
-        return _activePrediction is { } activePrediction &&
-            activePrediction.Source == source &&
-            ReferenceEquals(activePrediction.Holder, holder);
+        if (_session is not { } session || session.Source != source || !ReferenceEquals(session.Holder, holder))
+        {
+            return;
+        }
+
+        _session = null;
+        session.Dispose();
+        ApplyProjection(null);
     }
 
-    private static void ShowCardPlayHoverTips(NHandCardHolder holder)
+    private static void ShowCardPlayHoverTips(CardPredictionSession session)
     {
+        var holder = session.Holder;
         ClearCardPlayHoverTips(holder);
-        if (_hoverTips.Count == 0)
+        if (session.Projection?.HoverTips is not { Count: > 0 } hoverTips)
         {
             return;
         }
@@ -156,7 +182,7 @@ internal static class CombatCardPredictionController
         NHoverTipSet.shouldBlockHoverTips = false;
         try
         {
-            NHoverTipSet.CreateAndShow(holder, _hoverTips)?.SetAlignmentForCardHolder(holder);
+            NHoverTipSet.CreateAndShow(holder, hoverTips)?.SetAlignmentForCardHolder(holder);
         }
         finally
         {
@@ -192,13 +218,28 @@ internal static class CombatCardPredictionController
         }
     }
 
-    private sealed record ActiveCardPrediction(
-        ActiveCardPredictionSource Source,
-        NHandCardHolder Holder,
-        CardModel Card,
-        Creature? Target);
+    private sealed class CardPredictionSession : IDisposable
+    {
+        public required CardPredictionSource Source { get; init; }
 
-    private enum ActiveCardPredictionSource
+        public required NHandCardHolder Holder { get; init; }
+
+        public required CardModel Card { get; init; }
+
+        public Creature? Target { get; set; }
+
+        public CombatCardPredictionProjection? Projection { get; set; }
+
+        public CombatPredictionTargetObserver? TargetObserver { get; set; }
+
+        public void Dispose()
+        {
+            TargetObserver?.Dispose();
+            TargetObserver = null;
+        }
+    }
+
+    private enum CardPredictionSource
     {
         Hover,
         CardPlay
@@ -209,7 +250,7 @@ internal static class CombatCardPredictionController
 internal static class CombatCardPredictionHandPatches
 {
     [HarmonyPatch("DoCardHoverEffects")]
-    [HarmonyPostfix]
+    [HarmonyPrefix]
     private static void UpdatePredictionOnCardHover(NHandCardHolder __instance, bool isHovered)
     {
         CombatCardPredictionController.OnCardHover(__instance, isHovered);
@@ -230,20 +271,6 @@ internal static class CombatCardPredictionPlayerHandPatches
 [HarmonyPatch(typeof(NCardPlay))]
 internal static class CombatCardPredictionCardPlayPatches
 {
-    [HarmonyPatch(nameof(NCardPlay.OnCreatureHover))]
-    [HarmonyPostfix]
-    private static void UpdatePredictionsOnCreatureHover(NCardPlay __instance, NCreature creature)
-    {
-        CombatCardPredictionController.OnCardPlayTargetChanged(__instance.Holder, creature.Entity);
-    }
-
-    [HarmonyPatch(nameof(NCardPlay.OnCreatureUnhover))]
-    [HarmonyPostfix]
-    private static void UpdatePredictionsOnCreatureUnhover(NCardPlay __instance)
-    {
-        CombatCardPredictionController.OnCardPlayTargetChanged(__instance.Holder, null);
-    }
-
     [HarmonyPatch("Cleanup")]
     [HarmonyPostfix]
     private static void CleanupPredictions(NCardPlay __instance)
@@ -258,6 +285,9 @@ internal static class CombatCardPredictionTargetManagerPatches
     // NTargetManager also has a Vector2 overload for target pickers that only know a
     // screen position. Card play uses the Control overload with the card node, which
     // lets us verify that this targeting session belongs to the active dragged card.
+    // This must run as a prefix: StartTargeting synchronously calls OnTargetingStarted
+    // on every NCreature, and an already focused creature emits CreatureHovered there.
+    // Subscribing in a postfix would miss that initial target event.
     [HarmonyPatch(
         nameof(NTargetManager.StartTargeting),
         [
@@ -267,9 +297,9 @@ internal static class CombatCardPredictionTargetManagerPatches
             typeof(Func<bool>),
             typeof(Func<Node, bool>)
         ])]
-    [HarmonyPostfix]
-    private static void ShowPredictionHoverTipsOnTargetingStarted(Control control)
+    [HarmonyPrefix]
+    private static void ObservePredictionTargetsBeforeTargetingStarts(Control control)
     {
-        CombatCardPredictionController.OnCardPlayTargetingStarted(control);
+        CombatCardPredictionController.OnCardPlayTargetingStarting(control);
     }
 }

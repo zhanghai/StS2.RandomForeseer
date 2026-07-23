@@ -1,6 +1,7 @@
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
@@ -28,14 +29,13 @@ internal static class PotionTargetPredictionController
             return 0;
         }
 
-        var targetManager = NTargetManager.Instance;
-        var activeTargeting = new ActivePotionTargeting(++_nextSessionId, holder, source, targetManager);
+        var targetObserver = new CombatPredictionTargetObserver(NTargetManager.Instance);
+        var activeTargeting = new ActivePotionTargeting(++_nextSessionId, holder, source, targetObserver);
         _activeTargeting = activeTargeting;
         NHoverTipSet.Remove(holder);
 
-        targetManager.CreatureHovered += OnCreatureHovered;
-        targetManager.CreatureUnhovered += OnCreatureUnhovered;
-        targetManager.TargetingEnded += OnTargetingEnded;
+        targetObserver.TargetChanged += OnTargetChanged;
+        targetObserver.TargetingEnded += OnTargetingEnded;
         return activeTargeting.SessionId;
     }
 
@@ -56,29 +56,20 @@ internal static class PotionTargetPredictionController
         }
     }
 
-    private static void OnCreatureHovered(NCreature creature)
+    private static void OnTargetChanged(Creature? target)
     {
-        if (_activeTargeting is not { } activeTargeting ||
-            creature.Entity.Player is not { } target ||
-            target.Creature.IsDead)
+        if (_activeTargeting is not { } activeTargeting)
         {
             return;
         }
 
-        activeTargeting.Target = creature;
-        ShowHoverTips(activeTargeting, target);
-    }
-
-    private static void OnCreatureUnhovered(NCreature creature)
-    {
-        if (_activeTargeting is not { Target: { } target } activeTargeting ||
-            !ReferenceEquals(target, creature))
+        if (target?.Player is not { } player || player.Creature.IsDead)
         {
+            NHoverTipSet.Remove(activeTargeting.Holder);
             return;
         }
 
-        activeTargeting.Target = null;
-        NHoverTipSet.Remove(activeTargeting.Holder);
+        ShowHoverTips(activeTargeting, player);
     }
 
     private static void OnTargetingEnded()
@@ -131,9 +122,9 @@ internal static class PotionTargetPredictionController
         }
 
         _activeTargeting = null;
-        activeTargeting.TargetManager.CreatureHovered -= OnCreatureHovered;
-        activeTargeting.TargetManager.CreatureUnhovered -= OnCreatureUnhovered;
-        activeTargeting.TargetManager.TargetingEnded -= OnTargetingEnded;
+        activeTargeting.TargetObserver.TargetChanged -= OnTargetChanged;
+        activeTargeting.TargetObserver.TargetingEnded -= OnTargetingEnded;
+        activeTargeting.TargetObserver.Dispose();
         NHoverTipSet.Remove(activeTargeting.Holder);
     }
 
@@ -141,7 +132,7 @@ internal static class PotionTargetPredictionController
         long sessionId,
         NPotionHolder holder,
         PotionModel source,
-        NTargetManager targetManager)
+        CombatPredictionTargetObserver targetObserver)
     {
         public long SessionId { get; } = sessionId;
 
@@ -149,13 +140,11 @@ internal static class PotionTargetPredictionController
 
         public PotionModel Source { get; } = source;
 
-        public NTargetManager TargetManager { get; } = targetManager;
-
-        public NCreature? Target { get; set; }
+        public CombatPredictionTargetObserver TargetObserver { get; } = targetObserver;
     }
 }
 
-[HarmonyPatch(typeof(NPotionHolder), "TargetNode", [typeof(TargetType)])]
+[HarmonyPatch(typeof(NPotionHolder), nameof(NPotionHolder.TargetNode), [typeof(TargetType)])]
 internal static class PotionTargetPredictionPatch
 {
     private static void Prefix(NPotionHolder __instance, TargetType targetType, out long __state)
