@@ -1,16 +1,18 @@
-using HarmonyLib;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
-internal static class CombatCardPredictionHighlight
+/// <summary>Applies the card highlights requested by the active combat-action projection.</summary>
+internal static class CombatPredictionCardHighlight
 {
     private static readonly Color PredictionHighlightColor = new(1f, 0.36f, 0f, 0.98f);
     private static HashSet<CardModel> _highlightedCards = [];
 
+    /// <summary>Replaces the projected card set and refreshes holders affected by either the old or new set.</summary>
     public static void Show(IEnumerable<CardModel> cards)
     {
         var cardsToRefresh = _highlightedCards;
@@ -19,11 +21,13 @@ internal static class CombatCardPredictionHighlight
         RefreshHandCards(cardsToRefresh);
     }
 
+    /// <summary>Removes every projected card highlight while preserving vanilla highlight state.</summary>
     public static void Clear()
     {
         Show([]);
     }
 
+    /// <summary>Reapplies the prediction color after vanilla refreshes a highlighted hand-card holder.</summary>
     public static void ApplyHighlightToHolder(NHandCardHolder holder)
     {
         if (holder.IsNodeReady() &&
@@ -54,12 +58,12 @@ internal static class CombatCardPredictionHighlight
 }
 
 [HarmonyPatch(typeof(NHandCardHolder))]
-internal static class CombatCardPredictionHandHighlightPatches
+internal static class CombatPredictionCardHighlightPatches
 {
     [HarmonyPatch(nameof(NHandCardHolder.UpdateCard))]
     [HarmonyPostfix]
     private static void ShowHighlightAfterCardUpdate(NHandCardHolder __instance)
     {
-        CombatCardPredictionHighlight.ApplyHighlightToHolder(__instance);
+        CombatPredictionCardHighlight.ApplyHighlightToHolder(__instance);
     }
 }

@@ -30,7 +30,7 @@ internal static class DamagePredictionHealthBarForecast
     }
 
     /// <summary>
-    /// Applies a damage projection to the shared card/end-turn forecast surface.
+    /// Applies a damage projection to the shared combat-action/end-turn forecast surface.
     /// </summary>
     public static void Set(DamagePrediction prediction)
     {

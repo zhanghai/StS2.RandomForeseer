@@ -7,7 +7,6 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
-using RandomForeseer.RandomForeseerCode.Common;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -15,48 +14,38 @@ internal static class CombatCardPredictionController
 {
     private static CardPredictionSession? _session;
 
-    private static bool _hasDamagePrediction;
-
     public static void OnCardHover(NHandCardHolder holder, bool isHovered)
     {
         if (isHovered)
         {
-            StartPrediction(CardPredictionSource.Hover, holder);
+            BeginSession(CombatPredictionSessionMode.Hover, holder);
         }
         else
         {
-            ClearPredictions(CardPredictionSource.Hover, holder);
+            EndSession(CombatPredictionSessionMode.Hover, holder);
         }
     }
 
     public static void OnCardPlayStarted(NHandCardHolder holder)
     {
-        StartPrediction(CardPredictionSource.CardPlay, holder);
+        BeginSession(CombatPredictionSessionMode.Action, holder);
     }
 
     public static void OnCardPlayTargetingStarting(Control control)
     {
-        if (_session is not { Source: CardPredictionSource.CardPlay } session ||
+        if (_session is not { Mode: CombatPredictionSessionMode.Action, IsTargeting: false } session ||
             !ReferenceEquals(control, session.Holder.CardNode))
         {
             return;
         }
 
-        session.TargetObserver?.Dispose();
-        session.Target = null;
-        session.Projection = null;
-        ApplyProjection(null);
-        ClearCardPlayHoverTips(session.Holder);
-
-        var targetObserver = new CombatPredictionTargetObserver(NTargetManager.Instance);
-        session.TargetObserver = targetObserver;
-        targetObserver.TargetChanged += target => OnCardPlayTargetChanged(session, target);
+        session.BeginTargeting(NTargetManager.Instance);
     }
 
     public static void OnCardPlayCleanedUp(NHandCardHolder holder)
     {
         ClearCardPlayHoverTips(holder);
-        ClearPredictions(CardPredictionSource.CardPlay, holder);
+        EndSession(CombatPredictionSessionMode.Action, holder);
     }
 
     /// <summary>
@@ -68,8 +57,7 @@ internal static class CombatCardPredictionController
     /// </returns>
     public static bool TryGetActiveHoverTips(CardModel card, out IReadOnlyList<IHoverTip> hoverTips)
     {
-        if (_session is { Source: CardPredictionSource.Hover } session &&
-            ReferenceEquals(session.Card, card))
+        if (_session is { Mode: CombatPredictionSessionMode.Hover } session && session.Source == card)
         {
             hoverTips = session.Projection?.HoverTips ?? [];
             return true;
@@ -79,92 +67,52 @@ internal static class CombatCardPredictionController
         return false;
     }
 
-    private static void OnCardPlayTargetChanged(CardPredictionSession session, Creature? target)
+    private static void OnProjectionChanged(CardPredictionSession session)
     {
-        if (!ReferenceEquals(session, _session))
+        if (session != _session || !session.IsTargeting)
         {
             return;
         }
 
-        session.Target = target;
-        if (target is null)
-        {
-            session.Projection = null;
-            ApplyProjection(null);
-            ClearCardPlayHoverTips(session.Holder);
-        }
-        else
-        {
-            RefreshPrediction(session);
-            ShowCardPlayHoverTips(session);
-        }
+        ShowCardPlayHoverTips(session);
     }
 
-    private static void StartPrediction(CardPredictionSource source, NHandCardHolder holder)
+    private static void BeginSession(CombatPredictionSessionMode mode, NHandCardHolder holder)
     {
-        if (holder.CardModel is not { } card ||
-            (source is CardPredictionSource.Hover && _session?.Source is CardPredictionSource.CardPlay))
+        if (holder.CardModel is not { } card || _session?.Mode > mode)
         {
             return;
         }
 
-        _session?.Dispose();
-        _session = new CardPredictionSession
-        {
-            Source = source,
-            Holder = holder,
-            Card = card
-        };
-        RefreshPrediction(_session);
-    }
+        var session = new CardPredictionSession(card, holder, mode);
+        session.ProjectionChanged += () => OnProjectionChanged(session);
 
-    private static void RefreshPrediction(CardPredictionSession session)
-    {
+        var previousSession = _session;
+        _session = session;
         try
         {
-            session.Projection = CombatCardPrediction.Predict(session.Card, session.Target);
+            session.RefreshUntargeted();
         }
-        catch (Exception ex)
+        finally
         {
-            Entry.Logger.Warn(
-                $"Combat card prediction failed for {session.Card.Id} " +
-                $"targeting {session.Target?.Name}: {ex}");
-            session.Projection = null;
+            // Let the new session take projection ownership before releasing the old one. Disposing first would
+            // briefly clear the shared UI and refresh end-turn prediction before the new projection replaces it.
+            previousSession?.Dispose();
         }
-
-        ApplyProjection(session.Projection);
     }
 
-    private static void ApplyProjection(CombatPredictionProjection? prediction)
-    {
-        if (prediction is not null)
-        {
-            ShowDamagePrediction(prediction.DamagePrediction, prediction.Risk);
-            CombatCardPredictionHighlight.Show(prediction.HighlightedCards);
-        }
-        else
-        {
-            ClearDamagePrediction();
-            CombatCardPredictionHighlight.Clear();
-        }
-
-        // Card damage predictions share the same display surfaces as end-turn prediction.
-        EndTurnPredictionController.SetCardDamageOverride(_hasDamagePrediction);
-    }
-
-    private static void ClearPredictions(CardPredictionSource source, NHandCardHolder holder)
+    private static void EndSession(CombatPredictionSessionMode mode, NHandCardHolder holder)
     {
         // On a successful play, vanilla reparents the NCard away from the holder before
         // NCardPlay.Cleanup postfix runs, so holder.CardModel may already be null here.
         // The NHandCardHolder reference itself is stable for the play lifecycle.
-        if (_session is not { } session || session.Source != source || !ReferenceEquals(session.Holder, holder))
+        if (_session is not { } session || session.Mode != mode || !ReferenceEquals(session.Holder, holder))
         {
             return;
         }
 
         _session = null;
         session.Dispose();
-        ApplyProjection(null);
     }
 
     private static void ShowCardPlayHoverTips(CardPredictionSession session)
@@ -195,54 +143,20 @@ internal static class CombatCardPredictionController
         NHoverTipSet.Remove(holder);
     }
 
-    private static void ShowDamagePrediction(DamagePrediction damagePrediction, PredictionRisk risk)
+    private sealed class CardPredictionSession(
+        CardModel card,
+        NHandCardHolder holder,
+        CombatPredictionSessionMode mode)
+        : CombatPredictionSession(mode)
     {
-        if (!damagePrediction.HasTargets)
+        public override AbstractModel Source => card;
+
+        public NHandCardHolder Holder { get; } = holder;
+
+        protected override CombatPredictionProjection? Predict(Creature? target)
         {
-            ClearDamagePrediction();
-            return;
+            return CombatCardPrediction.Predict(card, target);
         }
-
-        CombatPredictionOverlay.Show(damagePrediction, risk);
-        DamagePredictionHealthBarForecast.Set(damagePrediction);
-        _hasDamagePrediction = true;
-    }
-
-    private static void ClearDamagePrediction()
-    {
-        if (_hasDamagePrediction)
-        {
-            CombatPredictionOverlay.Clear();
-            DamagePredictionHealthBarForecast.Clear();
-            _hasDamagePrediction = false;
-        }
-    }
-
-    private sealed class CardPredictionSession : IDisposable
-    {
-        public required CardPredictionSource Source { get; init; }
-
-        public required NHandCardHolder Holder { get; init; }
-
-        public required CardModel Card { get; init; }
-
-        public Creature? Target { get; set; }
-
-        public CombatPredictionProjection? Projection { get; set; }
-
-        public CombatPredictionTargetObserver? TargetObserver { get; set; }
-
-        public void Dispose()
-        {
-            TargetObserver?.Dispose();
-            TargetObserver = null;
-        }
-    }
-
-    private enum CardPredictionSource
-    {
-        Hover,
-        CardPlay
     }
 }
 

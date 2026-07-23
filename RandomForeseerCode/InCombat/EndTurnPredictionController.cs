@@ -15,7 +15,7 @@ namespace RandomForeseer.RandomForeseerCode.InCombat;
 internal static class EndTurnPredictionController
 {
     private static bool _isSubscribed;
-    private static bool _isCardDamageOverrideActive;
+    private static bool _isActionDamageOverrideActive;
     private static NEndTurnButton? _focusedEndTurnButton;
 
     public static void Subscribe()
@@ -68,7 +68,7 @@ internal static class EndTurnPredictionController
 
     public static void Refresh()
     {
-        if (_isCardDamageOverrideActive)
+        if (_isActionDamageOverrideActive)
         {
             EndTurnPredictionCreatureHoverTips.Clear();
             EndTurnButtonHoverTipHelper.HideHoverTips();
@@ -151,10 +151,11 @@ internal static class EndTurnPredictionController
         Clear();
     }
 
-    public static void SetCardDamageOverride(bool active)
+    /// <summary>Controls whether an active card or potion action owns the shared damage presentation surfaces.</summary>
+    public static void SetActionDamageOverride(bool active)
     {
-        var wasActive = _isCardDamageOverrideActive;
-        _isCardDamageOverrideActive = active;
+        var wasActive = _isActionDamageOverrideActive;
+        _isActionDamageOverrideActive = active;
 
         if (wasActive && !active)
         {
