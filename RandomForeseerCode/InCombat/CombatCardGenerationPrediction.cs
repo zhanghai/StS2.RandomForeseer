@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Random;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 

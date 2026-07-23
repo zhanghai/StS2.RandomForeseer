@@ -3,7 +3,7 @@
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 
 /// <summary>
 /// Provides combat-card-specific queries over the shared immutable prediction trace.
