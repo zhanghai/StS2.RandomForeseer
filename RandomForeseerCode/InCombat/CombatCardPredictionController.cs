@@ -135,7 +135,7 @@ internal static class CombatCardPredictionController
         ApplyProjection(session.Projection);
     }
 
-    private static void ApplyProjection(CombatCardPredictionProjection? prediction)
+    private static void ApplyProjection(CombatPredictionProjection? prediction)
     {
         if (prediction is not null)
         {
@@ -228,7 +228,7 @@ internal static class CombatCardPredictionController
 
         public Creature? Target { get; set; }
 
-        public CombatCardPredictionProjection? Projection { get; set; }
+        public CombatPredictionProjection? Projection { get; set; }
 
         public CombatPredictionTargetObserver? TargetObserver { get; set; }
 

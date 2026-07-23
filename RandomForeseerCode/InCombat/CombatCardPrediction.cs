@@ -70,9 +70,9 @@ internal static class CombatCardPrediction
     /// be mirrored, its target cannot be resolved, or the simulated play is invalid.
     /// </returns>
     /// <remarks>Simulation and projection exceptions are intentionally handled by the calling UI injection boundary.</remarks>
-    public static CombatCardPredictionProjection? Predict(CardModel card, Creature? target)
+    public static CombatPredictionProjection? Predict(CardModel card, Creature? target)
     {
-        if (!CombatCardPredictionProjector.HasEnabledFeature() ||
+        if (!CombatPredictionProjector.HasEnabledCardFeature() ||
             !card.IsMutable ||
             card.Owner?.Creature.CombatState is not { } combatState ||
             !CardOnPlayMirrors.CanMirror(card) ||
@@ -86,7 +86,7 @@ internal static class CombatCardPrediction
 
         if (simulator.ManualPlay(predictedCard, target, out var frame))
         {
-            return CombatCardPredictionProjector.Project(simulator.History, card, frame);
+            return CombatPredictionProjector.Project(simulator.History, frame);
         }
 
         return null;

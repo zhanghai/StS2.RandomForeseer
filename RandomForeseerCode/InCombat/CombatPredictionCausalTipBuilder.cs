@@ -8,14 +8,16 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
 /// <summary>
-/// Collects causal lines for chained results that were accepted by the projector.
+/// Collects causal lines for non-root and listener results accepted by a combat projector.
 /// </summary>
 /// <remarks>
 /// Consecutive results are grouped by immutable trace frames and effect kind, so separate card replays remain
 /// distinct and non-consecutive timeline effects are not reordered. The builder receives prediction model snapshots
-/// and creates one localized text tip during projection finalization.
+/// and creates one localized text tip during projection finalization. <paramref name="rootFrame"/> must be the same
+/// root action frame used to scope the projector entries supplied to <see cref="AddEffect"/>.
 /// </remarks>
-internal sealed class CombatCardPredictionCausalTipBuilder(PredictionTraceFrame rootFrame)
+/// <param name="rootFrame">The exact root card-play or potion-use action frame used by the projector.</param>
+internal sealed class CombatPredictionCausalTipBuilder(PredictionTraceFrame rootFrame)
 {
     private const int MaxLines = 10;
 
@@ -33,12 +35,10 @@ internal sealed class CombatCardPredictionCausalTipBuilder(PredictionTraceFrame 
         CausalEffectKind effect,
         IEnumerable<AbstractModel> models)
     {
-        if (TryGetCause(entry.Trace) is not { } cause)
+        if (entry.Trace is { } trace && TryGetCause(trace) is { } cause)
         {
-            return;
+            AddGroup(cause, effect, models);
         }
-
-        AddGroup(cause, effect, models);
     }
 
     /// <summary>
@@ -50,8 +50,7 @@ internal sealed class CombatCardPredictionCausalTipBuilder(PredictionTraceFrame 
     /// <remarks>This method must be called only after all relevant history entries have been added in timeline order.</remarks>
     public IHoverTip? Build()
     {
-        if (_groups.Count == 0 ||
-            _groups.All(group => group.SourceFrame.Parent == rootFrame && group.ListenerFrame is null))
+        if (_groups.All(IsRootDirectEffect))
         {
             return null;
         }
@@ -65,21 +64,19 @@ internal sealed class CombatCardPredictionCausalTipBuilder(PredictionTraceFrame 
             lines.Add(more.GetFormattedText());
         }
 
-        return PredictionHoverTipFactory.Text("causal_prediction", description =>
+        return PredictionHoverTipFactory.Text(GetRootTipKey(), description =>
         {
             description.Add("Lines", lines);
         });
     }
 
-    private static CausalCause? TryGetCause(PredictionTraceFrame? trace)
+    private static CausalCause? TryGetCause(PredictionTraceFrame trace)
     {
-        if (trace?.FindOriginatingCardPlay() is not { Source: CardModel sourceCard } sourceFrame)
-        {
-            return null;
-        }
+        var sourceFrame = trace.FindOriginatingCardPlay() ?? trace.FindOriginatingAction();
 
-        var listenerFrame = trace.Source == sourceCard ? null : trace;
-        return new CausalCause(sourceFrame, listenerFrame, sourceCard);
+        return sourceFrame is not null
+            ? new(sourceFrame, trace.Source == sourceFrame.Source ? null : trace)
+            : null;
     }
 
     private void AddGroup(CausalCause cause, CausalEffectKind effect, IEnumerable<AbstractModel> models)
@@ -98,13 +95,28 @@ internal sealed class CombatCardPredictionCausalTipBuilder(PredictionTraceFrame 
         group.Models.AddRange(models);
     }
 
+    private bool IsRootDirectEffect(CausalGroup group)
+    {
+        return group.ListenerFrame is null && group.SourceFrame.FindOriginatingAction() == rootFrame;
+    }
+
     private string FormatGroup(CausalGroup group)
     {
         var line = PredictionLocalization.Text($"causal_prediction.{GetEffectKey(group.Effect)}");
-        line.Add("Source", group.SourceCard.Title);
+        line.Add("Source", group.Source.GetTitle());
         line.Add("Listener", group.Listener?.GetTitle() ?? string.Empty);
         line.Add("Models", [.. group.Models.Select(static model => model.GetTitle())]);
         return line.GetFormattedText();
+    }
+
+    private string GetRootTipKey()
+    {
+        return rootFrame.Invocation.Action switch
+        {
+            PredictionActionKind.CardPlay => "causal_prediction.card",
+            PredictionActionKind.PotionUse => "causal_prediction.potion",
+            var action => throw new InvalidOperationException($"Unexpected root action kind {action}.")
+        };
     }
 
     private static string GetEffectKey(CausalEffectKind effect)
@@ -133,16 +145,17 @@ internal sealed class CombatCardPredictionCausalTipBuilder(PredictionTraceFrame 
 
         public PredictionTraceFrame? ListenerFrame => Cause.ListenerFrame;
 
-        public CardModel SourceCard => Cause.SourceCard;
+        public AbstractModel Source => Cause.Source;
 
         public AbstractModel? Listener => Cause.Listener;
     }
 
     private readonly record struct CausalCause(
         PredictionTraceFrame SourceFrame,
-        PredictionTraceFrame? ListenerFrame,
-        CardModel SourceCard)
+        PredictionTraceFrame? ListenerFrame)
     {
+        public AbstractModel Source => SourceFrame.Source;
+
         public AbstractModel? Listener => ListenerFrame?.Source;
     }
 }

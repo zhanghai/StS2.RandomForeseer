@@ -10,9 +10,9 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
 /// <summary>
-/// Contains the presentation payload produced from one unified combat-card simulation.
+/// Contains the presentation payload produced from one unified combat-action simulation.
 /// </summary>
-internal sealed record CombatCardPredictionProjection(
+internal sealed record CombatPredictionProjection(
     IReadOnlyList<IHoverTip> HoverTips,
     DamagePrediction DamagePrediction,
     IReadOnlySet<CardModel> HighlightedCards,
@@ -21,12 +21,11 @@ internal sealed record CombatCardPredictionProjection(
 /// <summary>
 /// Streams a completed combat prediction history into the enabled HoverTip, damage, highlight, causal, and risk views.
 /// </summary>
-internal sealed class CombatCardPredictionProjector
+internal sealed class CombatPredictionProjector
 {
     private const int MaxHoverTips = 10;
 
     private readonly CombatPredictionHistory _history;
-    private readonly CardModel _rootCard;
     private readonly PredictionTraceFrame _rootFrame;
 
     private readonly Dictionary<Type, List<EntryHandler>> _handlers = [];
@@ -36,12 +35,12 @@ internal sealed class CombatCardPredictionProjector
     private readonly List<CombatPredictionDamageReceivedEntry> _damageEntries = [];
     private readonly List<CombatPredictionHistoryEntry> _relevantEntries = [];
 
-    private readonly CombatCardPredictionCausalTipBuilder _causalTips;
+    private readonly CombatPredictionCausalTipBuilder _causalTips;
 
     /// <summary>
     /// Returns whether at least one category consumed by the unified card-play projector is currently enabled.
     /// </summary>
-    public static bool HasEnabledFeature()
+    public static bool HasEnabledCardFeature()
     {
         return IsFeatureEnabled(RandomForeseerSettings.EnableCombatCardPrediction) ||
             IsFeatureEnabled(RandomForeseerSettings.EnablePotionGenerationPrediction) ||
@@ -53,31 +52,27 @@ internal sealed class CombatCardPredictionProjector
     }
 
     /// <summary>
-    /// Projects one completed card-play history relative to its exact root lifecycle frame.
+    /// Projects one completed combat-action history relative to its exact root action frame.
     /// </summary>
     /// <param name="history">The completed history produced by the same simulation as <paramref name="rootFrame"/>.</param>
-    /// <param name="rootCard">The live original card used as the root source identity.</param>
-    /// <param name="rootFrame">The root <see cref="PredictionActionKind.CardPlayLifecycle"/> frame returned by manual play.</param>
+    /// <param name="rootFrame">
+    /// The root <see cref="PredictionActionKind.CardPlay"/> or <see cref="PredictionActionKind.PotionUse"/> frame.
+    /// Its source is the original card or potion identity used by scope and causal classification.
+    /// </param>
     /// <returns>A presentation projection containing only results accepted by enabled feature policies.</returns>
     /// <remarks>
-    /// Callers must not combine a frame and history from different simulations. Entries are dispatched in timeline
-    /// order; deferred entries use their resolved snapshot and completion boundary.
+    /// Callers must pass an action frame returned by the simulation entry point and must not combine a frame and
+    /// history from different simulations. Entries are dispatched in timeline order; deferred entries use their
+    /// resolved snapshot and completion boundary.
     /// </remarks>
-    public static CombatCardPredictionProjection Project(
-        CombatPredictionHistory history,
-        CardModel rootCard,
-        PredictionTraceFrame rootFrame)
+    public static CombatPredictionProjection Project(CombatPredictionHistory history, PredictionTraceFrame rootFrame)
     {
-        return new CombatCardPredictionProjector(history, rootCard, rootFrame).Project();
+        return new CombatPredictionProjector(history, rootFrame).Project();
     }
 
-    private CombatCardPredictionProjector(
-        CombatPredictionHistory history,
-        CardModel rootCard,
-        PredictionTraceFrame rootFrame)
+    private CombatPredictionProjector(CombatPredictionHistory history, PredictionTraceFrame rootFrame)
     {
         _history = history;
-        _rootCard = rootCard;
         _rootFrame = rootFrame;
 
         _causalTips = new(rootFrame);
@@ -85,7 +80,7 @@ internal sealed class CombatCardPredictionProjector
         RegisterHandlers();
     }
 
-    private CombatCardPredictionProjection Project()
+    private CombatPredictionProjection Project()
     {
         foreach (var entry in _history.Entries)
         {
@@ -257,7 +252,7 @@ internal sealed class CombatCardPredictionProjector
         return entry;
     }
 
-    private CombatCardPredictionProjection FinalizeProjection()
+    private CombatPredictionProjection FinalizeProjection()
     {
         var damagePrediction = DamagePredictionProjector.Project(_damageEntries);
         var risk = _history.GetRisk(_relevantEntries);
@@ -265,9 +260,9 @@ internal sealed class CombatCardPredictionProjector
         {
             _hoverTips.Insert(0, causalTip);
         }
-        _hoverTips.AddDriftWarning("combat_card", risk);
+        _hoverTips.AddDriftWarning(GetDriftWarningKey(), risk);
 
-        return new CombatCardPredictionProjection(
+        return new CombatPredictionProjection(
             _hoverTips,
             damagePrediction,
             _highlightedCards,
@@ -292,21 +287,29 @@ internal sealed class CombatCardPredictionProjector
 
     private ProjectionScope GetProjectionScope(CombatPredictionHistoryEntry entry)
     {
-        if (entry.Trace is not { } trace ||
-            trace.FindOriginatingCardPlay() is not { } cardPlayFrame ||
-            !cardPlayFrame.Ancestors().Contains(_rootFrame))
+        if (entry.Trace is not { } trace || !trace.Ancestors().Contains(_rootFrame))
         {
             return ProjectionScope.None;
         }
 
-        if (cardPlayFrame.Parent == _rootFrame && cardPlayFrame.Source == _rootCard)
+        if (trace.FindOriginatingAction() == _rootFrame)
         {
-            return trace.Source == _rootCard
+            return trace.Source == _rootFrame.Source
                 ? ProjectionScope.Direct
                 : ProjectionScope.Indirect;
         }
 
         return ProjectionScope.Chained;
+    }
+
+    private string GetDriftWarningKey()
+    {
+        return _rootFrame.Invocation.Action switch
+        {
+            PredictionActionKind.CardPlay => "combat_card",
+            PredictionActionKind.PotionUse => "combat_potion",
+            var action => throw new InvalidOperationException($"Unexpected root action kind {action}.")
+        };
     }
 
     private static bool IsFeatureEnabled(bool setting)

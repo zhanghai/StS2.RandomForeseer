@@ -105,12 +105,13 @@ internal sealed partial class CombatPredictionSimulator
     /// </summary>
     /// <param name="card">The prediction-owned card wrapper to play.</param>
     /// <param name="target">The already-resolved target, if required.</param>
-    /// <param name="frame">The exact root card-play lifecycle frame when the play starts successfully.</param>
+    /// <param name="frame">The exact root card-play frame when the play starts successfully.</param>
     /// <returns><see langword="true"/> when the simulated play starts; otherwise <see langword="false"/>.</returns>
     /// <remarks>
-    /// The returned frame remains a stable identity after its trace scope is disposed and must be paired only with
-    /// this simulator's history. Resource affordability, <c>ShouldPlay</c>, and general playability checks are outside
-    /// this entry point; callers must perform any required UI/target gating before invocation.
+    /// The returned frame has <c>card.Original</c> as its source and <see cref="PredictionActionKind.CardPlay"/> as its
+    /// action. It remains a stable identity after its trace scope is disposed and must be paired only with this
+    /// simulator's history. Resource affordability, <c>ShouldPlay</c>, and general playability checks are outside this
+    /// entry point; callers must perform any required UI/target gating before invocation.
     /// </remarks>
     public bool ManualPlay(
         PredictedCard card,
@@ -197,7 +198,7 @@ internal sealed partial class CombatPredictionSimulator
         ResourceInfo resources,
         out PredictionTraceFrame frame)
     {
-        using var _ = PushActionSource(card.Original, PredictionActionKind.CardPlayLifecycle);
+        using var _ = PushActionSource(card.Original, PredictionActionKind.CardPlay);
         frame = CurrentFrame ?? throw new InvalidOperationException("No current frame after pushing action source.");
 
         var previewCard = card.MutablePreview;
