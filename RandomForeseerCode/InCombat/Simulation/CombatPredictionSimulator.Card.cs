@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -190,7 +191,7 @@ internal sealed partial class CombatPredictionSimulator
         };
     }
 
-    // Mirrors CardModel.OnPlayWrapper. ResourceInfo is not simulated yet.
+    // Mirrors CardModel.OnPlayWrapper.
     private void OnPlayWrapper(
         PredictedCard card,
         Creature? target,
@@ -199,7 +200,7 @@ internal sealed partial class CombatPredictionSimulator
         out PredictionTraceFrame frame)
     {
         using var _ = PushActionSource(card.Original, PredictionActionKind.CardPlay);
-        frame = CurrentFrame ?? throw new InvalidOperationException("No current frame after pushing action source.");
+        frame = CurrentFrame ?? throw new UnreachableException("No current frame after pushing action source.");
 
         var previewCard = card.MutablePreview;
         var originalOwner = previewCard.Owner;

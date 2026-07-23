@@ -51,6 +51,11 @@ internal sealed class CombatPredictionCardDrawResolvedEntry : CombatPredictionHi
     public required PredictedCard Card { get; init; }
 }
 
+internal sealed class CombatPredictionCardCostsRandomizedEntry : CombatPredictionHistoryEntry
+{
+    public required IReadOnlyList<PredictedCard> Cards { get; init; }
+}
+
 internal sealed class CombatPredictionCardsSelectedEntry : CombatPredictionHistoryEntry
 {
     public required IReadOnlyList<PredictedCard> Cards { get; init; }

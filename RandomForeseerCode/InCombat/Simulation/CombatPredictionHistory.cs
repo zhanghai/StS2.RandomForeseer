@@ -92,6 +92,11 @@ internal sealed class CombatPredictionHistory(PredictionTrace trace)
         });
     }
 
+    public void CardCostsRandomized(IReadOnlyList<PredictedCard> cards)
+    {
+        Record(new CombatPredictionCardCostsRandomizedEntry { Cards = SnapshotCards(cards) });
+    }
+
     public void CardsSelected(IReadOnlyList<PredictedCard> cards)
     {
         Record(new CombatPredictionCardsSelectedEntry { Cards = SnapshotCards(cards) });
