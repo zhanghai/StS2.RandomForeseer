@@ -102,9 +102,15 @@ internal sealed class CombatPredictionHistory(PredictionTrace trace)
         Record(new CombatPredictionCardsSelectedEntry { Cards = SnapshotCards(cards) });
     }
 
-    public CombatPredictionCardGeneratedEntry CardGenerated(PredictedCard card)
+    public CombatPredictionCardGeneratedEntry CardGenerated(
+        PredictedCard card,
+        CardGenerationResultKind resultKind)
     {
-        return Record(new CombatPredictionCardGeneratedEntry { Card = card.Clone() });
+        return Record(new CombatPredictionCardGeneratedEntry
+        {
+            Card = card.Clone(),
+            ResultKind = resultKind
+        });
     }
 
     public void CardGenerationResolved(CombatPredictionCardGeneratedEntry originalEntry, PredictedCard card)

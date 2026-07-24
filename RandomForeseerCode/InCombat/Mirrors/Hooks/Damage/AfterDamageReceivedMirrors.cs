@@ -177,10 +177,10 @@ internal static class AfterDamageReceivedMirrors
                 dealer = dealer.PetOwner?.Creature;
             }
 
-            if (dealer is not null)
+            if (dealer?.Player is { } player)
             {
-                context.Simulator.AddToCombat<Dazed>(
-                    dealer,
+                context.Simulator.CreateAndAddGeneratedCardsToCombat<Dazed>(
+                    player,
                     PileType.Draw,
                     power.Amount,
                     creator: null,

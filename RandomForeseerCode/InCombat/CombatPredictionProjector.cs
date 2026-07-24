@@ -141,9 +141,9 @@ internal sealed class CombatPredictionProjector
     /// Declares the single projection rule for each supported semantic history entry type.
     /// </summary>
     /// <remarks>
-    /// Results that mutate shadow state truncate later projection when their feature is disabled. Choice options and
-    /// generated potions do not mutate a simulated downstream state, while orb and damage results intentionally use
-    /// their specialized filtering without establishing a general truncation boundary.
+    /// A disabled result truncates later projection only when its entry-specific policy says the hidden outcome can
+    /// reveal downstream state. Choice options, fixed/contextual card generation, generated potions, orb results, and
+    /// damage results do not establish a general truncation boundary.
     /// </remarks>
     private void RegisterRules()
     {
@@ -151,7 +151,7 @@ internal sealed class CombatPredictionProjector
             HandleCardGenerated,
             cardSetting: RandomForeseerSettings.EnableCombatCardPrediction,
             potionSetting: RandomForeseerSettings.EnablePotionCardPrediction,
-            truncatesWhenDisabled: true);
+            shouldTruncateWhenDisabled: static entry => entry.ResultKind is CardGenerationResultKind.Random);
 
         Register<CombatPredictionCardGenerationOptionsEntry>(
             HandleCardGenerationOptions,
@@ -165,24 +165,24 @@ internal sealed class CombatPredictionProjector
         Register<CombatPredictionCardsSelectedEntry>(
             HandleCardsSelected,
             sharedSetting: RandomForeseerSettings.EnableCombatCardSelectionPrediction,
-            truncatesWhenDisabled: true);
+            shouldTruncateWhenDisabled: static entry => entry.Cards.Count > 0);
 
         Register<CombatPredictionAutoPlayFromDrawPileEntry>(
             HandleDrawPileAutoPlay,
             sharedSetting: RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction,
-            truncatesWhenDisabled: true);
+            shouldTruncateWhenDisabled: static _ => true);
 
         Register<CombatPredictionCardDrawnEntry>(
             HandleCardDrawn,
             cardSetting: RandomForeseerSettings.EnableCardDrawPrediction,
             potionSetting: RandomForeseerSettings.EnablePotionDrawPrediction,
-            truncatesWhenDisabled: true);
+            shouldTruncateWhenDisabled: static _ => true);
 
         Register<CombatPredictionCardCostsRandomizedEntry>(
             HandleCardCostsRandomized,
             cardSetting: RandomForeseerSettings.EnableCardDrawPrediction,
             potionSetting: RandomForeseerSettings.EnablePotionDrawPrediction,
-            truncatesWhenDisabled: true);
+            shouldTruncateWhenDisabled: static entry => entry.Cards.Count > 0);
 
         Register<CombatPredictionOrbChanneledEntry>(
             HandleOrbChanneled,
@@ -198,7 +198,7 @@ internal sealed class CombatPredictionProjector
         bool? cardSetting = null,
         bool? potionSetting = null,
         bool? sharedSetting = null,
-        bool truncatesWhenDisabled = false)
+        Predicate<TEntry>? shouldTruncateWhenDisabled = null)
         where TEntry : CombatPredictionHistoryEntry
     {
         // A shared setting supplies both action gates; an explicit action setting overrides it. Any omitted gate is
@@ -207,7 +207,7 @@ internal sealed class CombatPredictionProjector
             entry => handler((TEntry)entry),
             cardSetting ?? sharedSetting ?? true,
             potionSetting ?? sharedSetting ?? true,
-            truncatesWhenDisabled));
+            entry => shouldTruncateWhenDisabled?.Invoke((TEntry)entry) ?? false));
     }
 
     /// <summary>
@@ -245,7 +245,7 @@ internal sealed class CombatPredictionProjector
         };
         if (!IsSettingEnabled(setting))
         {
-            _projectionTruncated |= rule.TruncatesWhenDisabled;
+            _projectionTruncated |= rule.ShouldTruncateWhenDisabled(entry);
             return;
         }
 
@@ -257,6 +257,11 @@ internal sealed class CombatPredictionProjector
 
     private CombatPredictionHistoryEntry? HandleCardGenerated(CombatPredictionCardGeneratedEntry entry)
     {
+        if (entry.ResultKind is CardGenerationResultKind.Fixed)
+        {
+            return null;
+        }
+
         var resolved = _history.GetResolvedEntry<CombatPredictionCardGenerationResolvedEntry>(entry);
         AddHoverTip(PredictionHoverTipFactory.Card(resolved.Card.Preview));
         AddCausalEffect(entry, CausalEffectKind.GenerateCards, [resolved.Card.Preview]);
@@ -411,10 +416,12 @@ internal sealed class CombatPredictionProjector
     /// <param name="Handler">Projects an enabled entry and returns the history boundary consumed for shared risk.</param>
     /// <param name="CardSetting">The feature setting used when the nearest action frame is a card play.</param>
     /// <param name="PotionSetting">The feature setting used when the nearest action frame is a potion use.</param>
-    /// <param name="TruncatesWhenDisabled">Whether hiding this state-changing result also hides the remaining timeline.</param>
+    /// <param name="ShouldTruncateWhenDisabled">
+    /// Determines from the concrete entry whether hiding it also hides the remaining timeline.
+    /// </param>
     private readonly record struct EntryProjectionRule(
         EntryHandler Handler,
         bool CardSetting,
         bool PotionSetting,
-        bool TruncatesWhenDisabled);
+        Predicate<CombatPredictionHistoryEntry> ShouldTruncateWhenDisabled);
 }

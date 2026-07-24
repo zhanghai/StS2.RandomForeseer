@@ -92,8 +92,8 @@ internal static class AfterCardGeneratedForCombatMirrors
         state.IsAddingSoul = true;
         try
         {
-            context.Simulator.AddToCombat<Soul>(
-                power.Owner,
+            context.Simulator.CreateAndAddGeneratedCardsToCombat<Soul>(
+                player,
                 PileType.Draw,
                 power.Amount,
                 player,

@@ -55,7 +55,11 @@ internal static class AfterCardExhaustedMirrors
             var state = context.StateStore.Get(relic, () => new BurningSticksPredictionState(relic));
             if (!state.WasUsedThisCombat)
             {
-                context.Simulator.AddGeneratedCardToCombat(context.Card.CreateClone(), PileType.Hand, relic.Owner);
+                context.Simulator.AddGeneratedCardToCombat(
+                    context.Card.CreateClone(),
+                    PileType.Hand,
+                    relic.Owner,
+                    resultKind: CardGenerationResultKind.Contextual);
                 state.WasUsedThisCombat = true;
             }
         }

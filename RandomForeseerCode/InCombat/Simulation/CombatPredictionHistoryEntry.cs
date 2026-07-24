@@ -4,6 +4,19 @@ using RandomForeseer.RandomForeseerCode.Common;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
+/// <summary>Classifies how a generated card result is determined for projection policy.</summary>
+internal enum CardGenerationResultKind
+{
+    /// <summary>The generated card identity or visible state depends on prediction RNG.</summary>
+    Random,
+
+    /// <summary>The result is deterministic but depends on runtime context that is useful to surface.</summary>
+    Contextual,
+
+    /// <summary>The source always produces an already-described card result that does not need a prediction tip.</summary>
+    Fixed
+}
+
 /// <summary>
 /// Represents one identity-based occurrence in a combat prediction timeline.
 /// </summary>
@@ -64,6 +77,7 @@ internal sealed class CombatPredictionCardsSelectedEntry : CombatPredictionHisto
 internal sealed class CombatPredictionCardGeneratedEntry : CombatPredictionHistoryEntry
 {
     public required PredictedCard Card { get; init; }
+    public required CardGenerationResultKind ResultKind { get; init; }
 }
 
 internal sealed class CombatPredictionCardGenerationResolvedEntry : CombatPredictionHistoryEntry

@@ -40,10 +40,10 @@ internal static class AfterShuffleMirrors
     {
         if (relic.Owner == context.Player)
         {
-            var soot = PredictedCard.Create(ModelDb.Card<Soot>(), context.Player);
-            context.Simulator.AddGeneratedCardToCombat(
-                soot,
+            context.Simulator.CreateAndAddGeneratedCardsToCombat<Soot>(
+                context.Player,
                 PileType.Draw,
+                1,
                 context.Player,
                 CardPilePosition.Random);
         }

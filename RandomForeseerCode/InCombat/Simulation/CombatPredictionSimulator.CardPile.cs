@@ -1,3 +1,5 @@
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -105,8 +107,10 @@ internal sealed partial class CombatPredictionSimulator
         Shuffle(player);
     }
 
-    // Mirrors CardPileCmd.AddToCombatAndPreview<T>(Creature, PileType, int, Player?, CardPilePosition)
-    // up to card creation and AddGeneratedCardToCombat dispatch. Preview animation is UI-only.
+    /// <summary>
+    /// Mirrors <see cref="CardPileCmd.AddToCombatAndPreview{T}"/>, excluding preview UI.
+    /// It resolves the receiving player from the target and skips generation when that player is dead.
+    /// </summary>
     public void AddToCombat<TCard>(
         Creature target,
         PileType pileType,
@@ -121,31 +125,62 @@ internal sealed partial class CombatPredictionSimulator
             return;
         }
 
+        CreateAndAddGeneratedCardsToCombat<TCard>(player, pileType, count, creator, position);
+    }
+
+    /// <summary>
+    /// Mirrors the common vanilla sequence of <see cref="CombatState.CreateCard{T}"/> followed by
+    /// <see cref="CardPileCmd.AddGeneratedCardToCombat"/>. A generic card type determines the generated
+    /// identity, so these entries are Fixed even when pile insertion uses Shuffle RNG.
+    /// </summary>
+    public IReadOnlyList<SimCardPileAddResult> CreateAndAddGeneratedCardsToCombat<TCard>(
+        Player player,
+        PileType pileType,
+        int count,
+        Player? creator,
+        CardPilePosition position = CardPilePosition.Bottom)
+        where TCard : CardModel
+    {
         List<PredictedCard> cards = [];
         for (var i = 0; i < count; i++)
         {
             cards.Add(PredictedCard.Create(ModelDb.Card<TCard>(), player));
         }
 
-        AddGeneratedCardsToCombat(cards, pileType, creator, position);
+        return AddGeneratedCardsToCombat(cards, pileType, creator, position, CardGenerationResultKind.Fixed);
     }
 
-    // Convenience overload for AddGeneratedCardsToCombat with a single card.
+    /// <summary>
+    /// Mirrors <see cref="CardPileCmd.AddGeneratedCardToCombat"/>.
+    /// Adds one generated card while preserving how its result should be projected.
+    /// </summary>
+    /// <param name="resultKind">
+    /// How the card result itself is determined. Random pile placement alone does not make a fixed card random.
+    /// </param>
     public SimCardPileAddResult AddGeneratedCardToCombat(
         PredictedCard card,
         PileType newPileType,
         Player? creator,
-        CardPilePosition position = CardPilePosition.Bottom)
+        CardPilePosition position = CardPilePosition.Bottom,
+        CardGenerationResultKind resultKind = CardGenerationResultKind.Random)
     {
-        return AddGeneratedCardsToCombat([card], newPileType, creator, position)[0];
+        return AddGeneratedCardsToCombat([card], newPileType, creator, position, resultKind)[0];
     }
 
-    // Mirrors CardPileCmd.AddGeneratedCardsToCombat for combat piles.
+    /// <summary>
+    /// Mirrors <see cref="CardPileCmd.AddGeneratedCardsToCombat"/>.
+    /// Adds generated cards and records whether each result is random, contextual, or fixed.
+    /// </summary>
+    /// <remarks>
+    /// The result kind affects only projection; every card is still added to shadow state and dispatched through
+    /// generation hooks and history.
+    /// </remarks>
     public IReadOnlyList<SimCardPileAddResult> AddGeneratedCardsToCombat(
         IReadOnlyList<PredictedCard> cards,
         PileType newPileType,
         Player? creator,
-        CardPilePosition position = CardPilePosition.Bottom)
+        CardPilePosition position = CardPilePosition.Bottom,
+        CardGenerationResultKind resultKind = CardGenerationResultKind.Random)
     {
         if (cards.Count == 0)
         {
@@ -166,7 +201,7 @@ internal sealed partial class CombatPredictionSimulator
 
         foreach (var card in cards)
         {
-            var entry = History.CardGenerated(card);
+            var entry = History.CardGenerated(card, resultKind);
             results.Add(AddToPile(card, newPileType, position));
 
             HookMirrors.AfterCardGeneratedForCombat(this, card, creator);
