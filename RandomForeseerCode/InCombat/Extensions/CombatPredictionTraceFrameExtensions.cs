@@ -1,5 +1,6 @@
 
 
+using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
@@ -12,7 +13,8 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 internal static class CombatPredictionTraceFrameExtensions
 {
     /// <summary>
-    /// Finds the nearest card <c>OnPlay</c> or potion <c>OnUse</c> invocation responsible for the current frame.
+    /// Finds the nearest card <see cref="CardModel.OnPlay"/> or potion <see cref="PotionModel.OnUse"/> invocation
+    /// responsible for the current frame.
     /// </summary>
     /// <returns>
     /// The nearest method invocation frame, or <see langword="null"/> when the trace has no such invocation.

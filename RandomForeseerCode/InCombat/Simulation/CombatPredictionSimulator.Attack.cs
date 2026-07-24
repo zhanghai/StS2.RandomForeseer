@@ -9,10 +9,11 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 internal sealed partial class CombatPredictionSimulator
 {
     /// <summary>
-    /// Mirrors the prediction-relevant target and damage loop of <c>AttackCommand.Execute</c>.
+    /// Mirrors the prediction-relevant target and damage loop of <see cref="AttackCommand.Execute"/>.
     /// </summary>
     /// <remarks>
-    /// The command must have an attacker, a configured single- or multi-target mode, and a card <c>ModelSource</c>.
+    /// The command must have an attacker, a configured single- or multi-target mode, and a card
+    /// <see cref="AttackCommand.ModelSource"/>.
     /// Callers must already be inside that card's prediction trace; this method opens scopes only for hook listeners.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when a required attacker, card source, or target mode is absent.</exception>

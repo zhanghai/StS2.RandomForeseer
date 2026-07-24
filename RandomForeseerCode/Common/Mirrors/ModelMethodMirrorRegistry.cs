@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using MegaCrit.Sts2.Core.Modding;
+using MegaCrit.Sts2.Core.Models;
 
 namespace RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
@@ -149,7 +150,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
 /// Dispatches one mirrored virtual result method and falls back to a caller-provided value when no result is available.
 /// </summary>
 /// <remarks>
-/// This result-producing counterpart is used by methods such as <c>OrbModel.Evoke</c>. Registrations must finish
+/// This result-producing counterpart is used by methods such as <see cref="OrbModel.Evoke"/>. Registrations must finish
 /// before the first invocation because exact-type lookup results are cached.
 /// </remarks>
 internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(MirrorMethodSpec method)

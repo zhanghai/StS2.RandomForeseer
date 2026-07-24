@@ -74,7 +74,7 @@ internal static class PredictionHoverTipInitPatch
     /// Exactly one bundle tip is expanded into individual cards only when the complete set has no independent card
     /// tip. A bundle remains a stack when another individual card or another bundle is present. One transform
     /// explanation text tip is added when any transform bundle remains unexpanded. This method must run before
-    /// vanilla <c>NHoverTipSet.Init</c> removes duplicates and creates controls.
+    /// vanilla <see cref="NHoverTipSet.Init"/> removes duplicates and creates controls.
     /// </remarks>
     private static List<IHoverTip> PrepareForPresentation(IEnumerable<IHoverTip> hoverTips)
     {

@@ -41,7 +41,8 @@ internal static class PredictionCardHoverTipContainerPatches
     /// Marks the control vanilla just created for an individual prediction card and applies optional dimming.
     /// </summary>
     /// <remarks>
-    /// Vanilla appends exactly one top-level control during <c>Add</c>, so the container's last child corresponds to
+    /// Vanilla appends exactly one top-level control during <see cref="NHoverTipCardContainer.Add"/>, so the
+    /// container's last child corresponds to
     /// <paramref name="cardTip"/> at this postfix.
     /// </remarks>
     [HarmonyPatch(nameof(NHoverTipCardContainer.Add))]

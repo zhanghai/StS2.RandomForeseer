@@ -16,8 +16,9 @@ internal sealed partial class CombatPredictionSimulator
     /// <returns><see langword="true"/> when the simulated use starts; otherwise <see langword="false"/>.</returns>
     /// <remarks>
     /// This mirrors target completion from <see cref="PotionModel.EnqueueManualUse"/> and dispatches only the potion's
-    /// <c>OnUse</c> body. It intentionally does not call the real potion, <c>OnUseWrapper</c>, commands, choice contexts,
-    /// removal, hooks, history, VFX, or waits. The returned frame must be paired only with this simulator's history.
+    /// <see cref="PotionModel.OnUse"/> body. It intentionally does not call the real potion,
+    /// <see cref="PotionModel.OnUseWrapper"/>, commands, choice contexts, removal, hooks, history, VFX, or waits. The
+    /// returned frame must be paired only with this simulator's history.
     /// </remarks>
     public bool ManualUse(
         PotionModel potion,

@@ -35,8 +35,11 @@ internal static class PotionOnUseMirrors
         return ReferenceEquals(invocation.Method, OnUse.BaseMethod);
     }
 
-    /// <summary>Invokes the exact registered handler inside a potion <c>OnUse</c> method frame.</summary>
-    /// <remarks>Unsupported gameplay overrides record <c>MethodNotMirrored</c> risk through the supplied simulator.</remarks>
+    /// <summary>Invokes the exact registered handler inside a potion <see cref="PotionModel.OnUse"/> method frame.</summary>
+    /// <remarks>
+    /// Unsupported gameplay overrides record <see cref="PredictionRiskReason.MethodNotMirrored"/> risk through the
+    /// supplied simulator.
+    /// </remarks>
     public static MirrorDispatchResult Invoke(
         CombatPredictionSimulator simulator,
         PotionModel potion,

@@ -4,7 +4,10 @@ using MegaCrit.Sts2.Core.Models;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
 
-/// <summary>Provides simulator-owned state and the resolved source/target pair to one potion <c>OnUse</c> mirror.</summary>
+/// <summary>
+/// Provides simulator-owned state and the resolved source/target pair to one potion <see cref="PotionModel.OnUse"/>
+/// mirror.
+/// </summary>
 internal sealed class PotionOnUseMirrorContext : CombatPredictionMirrorContext<PotionModel>
 {
     /// <summary>The exact live mutable potion whose behavior is being mirrored.</summary>

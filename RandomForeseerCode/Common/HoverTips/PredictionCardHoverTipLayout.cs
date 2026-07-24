@@ -385,7 +385,7 @@ internal static class PredictionCardHoverTipLayout
     /// Applies prediction top/bottom fallback only when vanilla alignment still leaves cards or the combined set off-screen.
     /// </summary>
     /// <remarks>
-    /// Call this from an <c>NHoverTipSet</c> alignment postfix, after vanilla has positioned and horizontally corrected
+    /// Call this from an <see cref="NHoverTipSet"/> alignment postfix, after vanilla has positioned and horizontally corrected
     /// both containers. It is a no-op without recorded source geometry or prediction card controls.
     /// </remarks>
     public static void ApplyFallbackLayoutIfStillOverflowing(NHoverTipSet tipSet)
