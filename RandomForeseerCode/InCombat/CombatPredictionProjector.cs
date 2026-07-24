@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -344,7 +345,8 @@ internal sealed class CombatPredictionProjector
         }
 
         if (!IsSettingEnabled(RandomForeseerSettings.EnableRandomTargetAttackPrediction) &&
-            entry.Trace!.Ancestors().Any(static frame => IsRandomTargetAttackCard(frame.Source)))
+            entry.Trace!.Ancestors().Any(static frame =>
+                frame.Source is CardModel { Type: CardType.Attack, TargetType: TargetType.RandomEnemy }))
         {
             return null;
         }
@@ -399,18 +401,6 @@ internal sealed class CombatPredictionProjector
     private static bool IsSettingEnabled(bool setting)
     {
         return RandomForeseerSettings.IsPredictionFeatureEnabled(setting);
-    }
-
-    private static bool IsRandomTargetAttackCard(AbstractModel model)
-    {
-        return model is
-            FlakCannon or
-            Ricochet or
-            RipAndTear or
-            Stardust or
-            SweepingGaze or
-            SwordBoomerang or
-            Volley;
     }
 
     private delegate CombatPredictionHistoryEntry? EntryHandler(CombatPredictionHistoryEntry entry);
