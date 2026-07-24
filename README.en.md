@@ -19,7 +19,7 @@ The Workshop package automatically loads the newest compatible Mod version for t
 - **Chained card-effect prediction**: when enabled, combat card prediction also shows supported card and combat effects caused indirectly by the played card, with causal explanations.
 - **Combat card selection prediction**: shows or highlights existing cards that supported combat card-selection effects will select when hovering cards in hand or card-play targets; predictions that may be shifted by side effects show a warning that can be disabled.
 - **Random-target attack prediction**: shows targets that supported random-enemy attack cards will hit during combat, with health bar forecasts.
-- **Orb effect prediction**: shows targets that supported orb-triggering cards will hit when hovering cards or card-play targets during combat, with health bar forecasts.
+- **Orb effect prediction**: shows targets that supported orb-triggering cards and potions will hit when hovering those sources or their targets during combat, with health bar forecasts.
 - **End-turn effect prediction**: shows aggregated supported end-turn damage for all players ending their turn; overlay indicators and health bar forecasts can be configured separately for End Turn button hover or always during the player turn; hovering a target creature or prediction indicator shows per-hit damage source details.
 - **Draw-pile autoplay prediction**: shows the cards that Havoc, Cascade, and Distilled Chaos will play from the draw pile.
 - **Potion draw prediction**: shows the cards that supported draw potions will draw, including cards after shuffle.
@@ -114,6 +114,7 @@ Each feature can be toggled independently from the mod settings page, and predic
 - Coolheaded
 - Darkness
 - Dualcast
+- Essence of Darkness
 - Fusion
 - Glacier
 - Glasswork
@@ -217,7 +218,7 @@ Open the RitsuLib mod settings page and select **Random Foreseer**:
 | Predict chained card effects | Controls whether combat card prediction includes supported effects caused indirectly by the played card, default on |
 | Predict combat card selection | Controls whether supported in-hand combat cards show selected existing cards and hand highlights |
 | Predict combat damage | Controls all supported combat damage predictions and is the master switch for orb, random-target attack, and end-turn damage displays |
-| Predict orb effects | Controls whether supported orb-triggering cards show the targets that orb effects will hit |
+| Predict orb effects | Controls whether supported orb-triggering cards and potions show the targets that orb effects will hit |
 | Predict random-target attacks | Controls whether supported random-enemy attack cards show the targets they will hit |
 | Predict end-turn effects | Controls whether supported end-turn damage predictions are shown |
 | End-turn prediction overlay display | Controls whether end-turn damage prediction indicators appear on End Turn button hover or always during the player turn |

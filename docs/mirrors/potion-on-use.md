@@ -27,6 +27,7 @@ StS2 v0.109.0 executes `PotionModel.OnUse(PlayerChoiceContext, Creature?)` insid
 | Draw | `GlowwaterPotion` | Exhausts the complete shadow hand through exhaust hooks and then draws the configured count. |
 | Draw and cost randomization | `SneckoOil` | Draws first, then iterates the complete shadow hand in order and consumes cloned `CombatEnergyCosts` for each eligible non-X card. A final batch history entry snapshots all randomized hand cards for potion-draw presentation. |
 | Draw | `SwiftPotion` | Draws the configured count. |
+| Orb channel | `EssenceOfDarkness` | Reads the target shadow orb queue's initial capacity and channels that many Dark Orbs through the shared channel, evoke, hook and damage simulation. |
 
 `CardGenerationPotionMirrors.Generate` is shared by combat OnUse simulation and out-of-combat unfair previews so card pools, RNG order and card mutations have one implementation; `AddsToHand` tells the combat adapter whether to record choice options or add every result through generated-card history and hooks.
 

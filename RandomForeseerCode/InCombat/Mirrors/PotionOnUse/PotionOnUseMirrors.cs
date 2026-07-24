@@ -72,6 +72,8 @@ internal static class PotionOnUseMirrors
 
         registry.Register<DistilledChaos>(AutoPlayPotionMirrors.DistilledChaosOnUse);
 
+        registry.Register<EssenceOfDarkness>(OrbPotionMirrors.EssenceOfDarknessOnUse);
+
         return registry;
     }
 }

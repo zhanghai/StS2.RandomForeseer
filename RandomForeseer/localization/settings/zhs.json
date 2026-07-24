@@ -37,7 +37,7 @@
   "toggle.enable_combat_damage_prediction.label": "预测战斗伤害",
   "toggle.enable_combat_damage_prediction.description": "启用后，显示受支持的战斗伤害预测。此选项是所有伤害预测的总开关，也会影响充能球、随机目标攻击和回合结束预测的伤害显示。",
   "toggle.enable_orb_prediction.label": "预测充能球效果",
-  "toggle.enable_orb_prediction.description": "启用后，支持的充能球触发卡牌提示会显示充能球效果将命中的目标。",
+  "toggle.enable_orb_prediction.description": "启用后，支持的充能球触发卡牌和药水提示会显示充能球效果将命中的目标。",
   "toggle.enable_random_target_attack_prediction.label": "预测随机目标攻击",
   "toggle.enable_random_target_attack_prediction.description": "启用后，支持的随机敌人目标攻击牌会显示当前随机数状态将命中的目标。",
   "toggle.enable_end_turn_prediction.label": "预测回合结束效果",
