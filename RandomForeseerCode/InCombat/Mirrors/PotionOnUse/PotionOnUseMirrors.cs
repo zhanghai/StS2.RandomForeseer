@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Potions;
+using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
@@ -27,6 +28,11 @@ internal static class PotionOnUseMirrors
     public static bool CanMirror(PotionModel potion)
     {
         return Registry.Query(potion) is MirrorDispatchKind.Handled;
+    }
+
+    public static bool IsOnUseInvocation(PredictionInvocation invocation)
+    {
+        return ReferenceEquals(invocation.Method, OnUse.BaseMethod);
     }
 
     /// <summary>Invokes the exact registered handler inside a potion <c>OnUse</c> method frame.</summary>

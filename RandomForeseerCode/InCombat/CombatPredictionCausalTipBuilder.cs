@@ -8,7 +8,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
 /// <summary>
-/// Collects causal lines for non-root and listener results accepted by a combat projector.
+/// Collects causal lines for projected combat effects.
 /// </summary>
 /// <remarks>
 /// Consecutive results are grouped by immutable trace frames and effect kind, so separate card replays remain
@@ -24,7 +24,7 @@ internal sealed class CombatPredictionCausalTipBuilder(PredictionTraceFrame root
     private readonly List<CausalGroup> _groups = [];
 
     /// <summary>
-    /// Adds one accepted semantic result in projector dispatch order.
+    /// Adds one semantic result accepted for presentation or retained as prerequisite causal context.
     /// </summary>
     /// <remarks>
     /// The entry must be the started/semantic entry rather than a deferred resolution entry so grouping follows the
@@ -45,12 +45,14 @@ internal sealed class CombatPredictionCausalTipBuilder(PredictionTraceFrame root
     /// Finalizes the accumulated groups into one localized causal HoverTip.
     /// </summary>
     /// <returns>
-    /// A causal tip when accepted results include a non-root cause, otherwise <see langword="null"/>.
+    /// A causal tip when accepted results require listener, nested-action, or distinct effect-invocation attribution;
+    /// otherwise <see langword="null"/> for one ordinary root effect.
     /// </returns>
     /// <remarks>This method must be called only after all relevant history entries have been added in timeline order.</remarks>
     public IHoverTip? Build()
     {
-        if (_groups.All(IsRootDirectEffect))
+        if (_groups.All(IsRootDirectEffect) &&
+            !_groups.Select(static group => group.SourceFrame).Distinct().Skip(1).Any())
         {
             return null;
         }
@@ -72,7 +74,7 @@ internal sealed class CombatPredictionCausalTipBuilder(PredictionTraceFrame root
 
     private static CausalCause? TryGetCause(PredictionTraceFrame trace)
     {
-        var sourceFrame = trace.FindOriginatingCardPlay() ?? trace.FindOriginatingAction();
+        var sourceFrame = trace.FindOriginatingEffect() ?? trace.FindOriginatingAction();
 
         return sourceFrame is not null
             ? new(sourceFrame, trace.Source == sourceFrame.Source ? null : trace)

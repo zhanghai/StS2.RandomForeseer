@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -12,6 +13,10 @@ namespace RandomForeseer.RandomForeseerCode.InCombat;
 /// <summary>
 /// Contains the presentation payload produced from one unified combat-action simulation.
 /// </summary>
+/// <param name="HoverTips">Ordered prediction tips before the game separates text and card containers.</param>
+/// <param name="DamagePrediction">Damage overlay and health-bar payload accepted by damage-specific gates.</param>
+/// <param name="HighlightedCards">Original live cards selected by accepted card-selection entries.</param>
+/// <param name="Risk">Shared risk accumulated through the completion boundaries of accepted results.</param>
 internal sealed record CombatPredictionProjection(
     IReadOnlyList<IHoverTip> HoverTips,
     DamagePrediction DamagePrediction,
@@ -21,34 +26,61 @@ internal sealed record CombatPredictionProjection(
 /// <summary>
 /// Streams a completed combat prediction history into the enabled HoverTip, damage, highlight, causal, and risk views.
 /// </summary>
+/// <remarks>
+/// Projection follows history order until a disabled state-changing result, or the first nested action while chained
+/// prediction is disabled, truncates the remaining visible timeline.
+/// </remarks>
 internal sealed class CombatPredictionProjector
 {
     private const int MaxHoverTips = 10;
 
     private readonly CombatPredictionHistory _history;
     private readonly PredictionTraceFrame _rootFrame;
+    private readonly PredictionActionKind _rootAction;
 
-    private readonly Dictionary<Type, List<EntryHandler>> _handlers = [];
+    private readonly Dictionary<Type, EntryProjectionRule> _rules = [];
 
     private readonly List<IHoverTip> _hoverTips = [];
     private readonly HashSet<CardModel> _highlightedCards = [];
     private readonly List<CombatPredictionDamageReceivedEntry> _damageEntries = [];
     private readonly List<CombatPredictionHistoryEntry> _relevantEntries = [];
 
+    // Once a hidden result can affect later history, no later entry may contribute to the projection.
+    private bool _projectionTruncated;
+
     private readonly CombatPredictionCausalTipBuilder _causalTips;
 
     /// <summary>
-    /// Returns whether at least one category consumed by the unified card-play projector is currently enabled.
+    /// Returns whether at least one category reachable from the specified root action is currently enabled.
     /// </summary>
-    public static bool HasEnabledCardFeature()
+    /// <param name="action">The card-play or potion-use root action whose source-specific settings should be checked.</param>
+    /// <remarks>The result includes the current single-player or multiplayer prediction master gate.</remarks>
+    public static bool HasAnyEnabledFeature(PredictionActionKind action)
     {
-        return IsFeatureEnabled(RandomForeseerSettings.EnableCombatCardPrediction) ||
-            IsFeatureEnabled(RandomForeseerSettings.EnablePotionGenerationPrediction) ||
-            IsFeatureEnabled(RandomForeseerSettings.EnableCombatCardSelectionPrediction) ||
-            IsFeatureEnabled(RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction) ||
-            IsFeatureEnabled(RandomForeseerSettings.EnableCardDrawPrediction) ||
-            IsFeatureEnabled(RandomForeseerSettings.EnableOrbPrediction) ||
-            IsFeatureEnabled(RandomForeseerSettings.EnableCombatDamagePrediction);
+        var enabled = action switch
+        {
+            PredictionActionKind.CardPlay =>
+                RandomForeseerSettings.EnableCombatCardPrediction ||
+                RandomForeseerSettings.EnablePotionGenerationPrediction ||
+                RandomForeseerSettings.EnableCombatCardSelectionPrediction ||
+                RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction ||
+                RandomForeseerSettings.EnableCardDrawPrediction ||
+                RandomForeseerSettings.EnableOrbPrediction ||
+                RandomForeseerSettings.EnableCombatDamagePrediction,
+
+            PredictionActionKind.PotionUse =>
+                RandomForeseerSettings.EnablePotionCardPrediction ||
+                RandomForeseerSettings.EnablePotionGenerationPrediction ||
+                RandomForeseerSettings.EnableCombatCardSelectionPrediction ||
+                RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction ||
+                RandomForeseerSettings.EnablePotionDrawPrediction ||
+                RandomForeseerSettings.EnableOrbPrediction ||
+                RandomForeseerSettings.EnableCombatDamagePrediction,
+
+            _ => false
+        };
+
+        return IsSettingEnabled(enabled);
     }
 
     /// <summary>
@@ -72,99 +104,154 @@ internal sealed class CombatPredictionProjector
 
     private CombatPredictionProjector(CombatPredictionHistory history, PredictionTraceFrame rootFrame)
     {
+        var action = rootFrame.Invocation.Action;
+        if (action is not (PredictionActionKind.CardPlay or PredictionActionKind.PotionUse))
+        {
+            throw new ArgumentException(
+                $"Root frame must be a card-play or potion-use action, but was {action}.",
+                nameof(rootFrame));
+        }
+
         _history = history;
         _rootFrame = rootFrame;
+        _rootAction = action.Value;
 
         _causalTips = new(rootFrame);
 
-        RegisterHandlers();
+        RegisterRules();
     }
 
     private CombatPredictionProjection Project()
     {
         foreach (var entry in _history.Entries)
         {
+            if (_projectionTruncated)
+            {
+                break;
+            }
+
             Dispatch(entry);
         }
 
         return FinalizeProjection();
     }
 
-    private void RegisterHandlers()
+    /// <summary>
+    /// Declares the single projection rule for each supported semantic history entry type.
+    /// </summary>
+    /// <remarks>
+    /// Results that mutate shadow state truncate later projection when their feature is disabled. Choice options and
+    /// generated potions do not mutate a simulated downstream state, while orb and damage results intentionally use
+    /// their specialized filtering without establishing a general truncation boundary.
+    /// </remarks>
+    private void RegisterRules()
     {
-        if (IsFeatureEnabled(RandomForeseerSettings.EnableCombatCardPrediction))
-        {
-            Register<CombatPredictionCardGeneratedEntry>(HandleCardGenerated);
-            Register<CombatPredictionCardGenerationOptionsEntry>(HandleCardGenerationOptions);
-        }
+        Register<CombatPredictionCardGeneratedEntry>(
+            HandleCardGenerated,
+            cardSetting: RandomForeseerSettings.EnableCombatCardPrediction,
+            potionSetting: RandomForeseerSettings.EnablePotionCardPrediction,
+            truncatesWhenDisabled: true);
 
-        if (IsFeatureEnabled(RandomForeseerSettings.EnablePotionGenerationPrediction))
-        {
-            Register<CombatPredictionPotionGeneratedEntry>(HandlePotionGenerated);
-        }
+        Register<CombatPredictionCardGenerationOptionsEntry>(
+            HandleCardGenerationOptions,
+            cardSetting: RandomForeseerSettings.EnableCombatCardPrediction,
+            potionSetting: RandomForeseerSettings.EnablePotionCardPrediction);
 
-        if (IsFeatureEnabled(RandomForeseerSettings.EnableCombatCardSelectionPrediction))
-        {
-            Register<CombatPredictionCardsSelectedEntry>(HandleCardsSelected);
-        }
+        Register<CombatPredictionPotionGeneratedEntry>(
+            HandlePotionGenerated,
+            sharedSetting: RandomForeseerSettings.EnablePotionGenerationPrediction);
 
-        if (IsFeatureEnabled(RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction))
-        {
-            Register<CombatPredictionAutoPlayFromDrawPileEntry>(HandleDrawPileAutoPlay);
-        }
+        Register<CombatPredictionCardsSelectedEntry>(
+            HandleCardsSelected,
+            sharedSetting: RandomForeseerSettings.EnableCombatCardSelectionPrediction,
+            truncatesWhenDisabled: true);
 
-        if (IsFeatureEnabled(RandomForeseerSettings.EnableCardDrawPrediction))
-        {
-            Register<CombatPredictionCardDrawnEntry>(HandleCardDrawn);
-        }
+        Register<CombatPredictionAutoPlayFromDrawPileEntry>(
+            HandleDrawPileAutoPlay,
+            sharedSetting: RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction,
+            truncatesWhenDisabled: true);
 
-        if (IsFeatureEnabled(RandomForeseerSettings.EnableOrbPrediction))
-        {
-            Register<CombatPredictionOrbChanneledEntry>(HandleOrbChanneled);
-        }
+        Register<CombatPredictionCardDrawnEntry>(
+            HandleCardDrawn,
+            cardSetting: RandomForeseerSettings.EnableCardDrawPrediction,
+            potionSetting: RandomForeseerSettings.EnablePotionDrawPrediction,
+            truncatesWhenDisabled: true);
 
-        if (IsFeatureEnabled(RandomForeseerSettings.EnableCombatDamagePrediction))
-        {
-            Register<CombatPredictionDamageReceivedEntry>(HandleDamage);
-        }
+        Register<CombatPredictionCardCostsRandomizedEntry>(
+            HandleCardCostsRandomized,
+            cardSetting: RandomForeseerSettings.EnableCardDrawPrediction,
+            potionSetting: RandomForeseerSettings.EnablePotionDrawPrediction,
+            truncatesWhenDisabled: true);
+
+        Register<CombatPredictionOrbChanneledEntry>(
+            HandleOrbChanneled,
+            sharedSetting: RandomForeseerSettings.EnableOrbPrediction);
+
+        Register<CombatPredictionDamageReceivedEntry>(
+            HandleDamage,
+            sharedSetting: RandomForeseerSettings.EnableCombatDamagePrediction);
     }
 
-    private void Register<TEntry>(Func<TEntry, CombatPredictionHistoryEntry?> handler)
+    private void Register<TEntry>(
+        Func<TEntry, CombatPredictionHistoryEntry?> handler,
+        bool? cardSetting = null,
+        bool? potionSetting = null,
+        bool? sharedSetting = null,
+        bool truncatesWhenDisabled = false)
         where TEntry : CombatPredictionHistoryEntry
     {
-        if (!_handlers.TryGetValue(typeof(TEntry), out var handlers))
-        {
-            handlers = [];
-            _handlers.Add(typeof(TEntry), handlers);
-        }
-
-        handlers.Add(entry => handler((TEntry)entry));
+        // A shared setting supplies both action gates; an explicit action setting overrides it. Any omitted gate is
+        // treated as enabled, so every registration must deliberately provide the gates relevant to its source kinds.
+        _rules.Add(typeof(TEntry), new EntryProjectionRule(
+            entry => handler((TEntry)entry),
+            cardSetting ?? sharedSetting ?? true,
+            potionSetting ?? sharedSetting ?? true,
+            truncatesWhenDisabled));
     }
 
+    /// <summary>
+    /// Applies the exact-type projection rule selected by the entry's nearest card-play or potion-use action.
+    /// </summary>
+    /// <remarks>
+    /// Entries outside the supplied root trace are ignored. When chained prediction is disabled, the first entry owned
+    /// by a nested action truncates the remaining timeline even if that entry type has no projection rule.
+    /// </remarks>
     private void Dispatch(CombatPredictionHistoryEntry entry)
     {
-        if (!_handlers.TryGetValue(entry.GetType(), out var handlers) || !ShouldDispatch(entry))
+        if (entry.Trace?.FindOriginatingAction() is not { } actionFrame ||
+            !actionFrame.Ancestors().Contains(_rootFrame))
         {
             return;
         }
 
-        foreach (var handler in handlers)
+        if (!IsSettingEnabled(RandomForeseerSettings.EnableChainedCardEffectPrediction) &&
+            actionFrame != _rootFrame)
         {
-            if (handler(entry) is { } relevantEntry)
-            {
-                _relevantEntries.Add(relevantEntry);
-            }
+            _projectionTruncated = true;
+            return;
         }
-    }
 
-    private bool ShouldDispatch(CombatPredictionHistoryEntry entry)
-    {
-        return GetProjectionScope(entry) switch
+        if (!_rules.TryGetValue(entry.GetType(), out var rule))
         {
-            ProjectionScope.Direct or ProjectionScope.Indirect => true,
-            ProjectionScope.Chained => IsChainedPredictionEnabled(),
-            _ => false
+            return;
+        }
+
+        var setting = actionFrame.Invocation.Action switch
+        {
+            PredictionActionKind.CardPlay => rule.CardSetting,
+            PredictionActionKind.PotionUse => rule.PotionSetting,
+            var action => throw new UnreachableException($"Unexpected action kind {action}.")
         };
+        if (!IsSettingEnabled(setting))
+        {
+            _projectionTruncated |= rule.TruncatesWhenDisabled;
+            return;
+        }
+
+        if (rule.Handler(entry) is { } relevantEntry)
+        {
+            _relevantEntries.Add(relevantEntry);
+        }
     }
 
     private CombatPredictionHistoryEntry? HandleCardGenerated(CombatPredictionCardGeneratedEntry entry)
@@ -222,8 +309,22 @@ internal sealed class CombatPredictionProjector
         return resolved;
     }
 
+    private CombatPredictionHistoryEntry? HandleCardCostsRandomized(CombatPredictionCardCostsRandomizedEntry entry)
+    {
+        if (entry.Cards.Count == 0)
+        {
+            return null;
+        }
+
+        // Snecko Oil's final full-hand snapshot supersedes the draw tips recorded before cost randomization.
+        _hoverTips.Clear();
+        _hoverTips.AddRange(entry.Cards.SelectPreviews().ToPredictionHoverTips());
+        return entry;
+    }
+
     private CombatPredictionHistoryEntry? HandleOrbChanneled(CombatPredictionOrbChanneledEntry entry)
     {
+        // Deterministic channels are already described by their source; only random orb identities need a tip.
         if (entry.Trace!.Source is not (Chaos or TrashToTreasurePower))
         {
             return null;
@@ -236,13 +337,13 @@ internal sealed class CombatPredictionProjector
 
     private CombatPredictionHistoryEntry? HandleDamage(CombatPredictionDamageReceivedEntry entry)
     {
-        if (!IsFeatureEnabled(RandomForeseerSettings.EnableOrbPrediction) &&
+        if (!IsSettingEnabled(RandomForeseerSettings.EnableOrbPrediction) &&
             entry.Trace!.Ancestors().Any(static frame => frame.Source is OrbModel))
         {
             return null;
         }
 
-        if (!IsFeatureEnabled(RandomForeseerSettings.EnableRandomTargetAttackPrediction) &&
+        if (!IsSettingEnabled(RandomForeseerSettings.EnableRandomTargetAttackPrediction) &&
             entry.Trace!.Ancestors().Any(static frame => IsRandomTargetAttackCard(frame.Source)))
         {
             return null;
@@ -285,26 +386,9 @@ internal sealed class CombatPredictionProjector
         _causalTips.AddEffect(entry, effect, results);
     }
 
-    private ProjectionScope GetProjectionScope(CombatPredictionHistoryEntry entry)
-    {
-        if (entry.Trace is not { } trace || !trace.Ancestors().Contains(_rootFrame))
-        {
-            return ProjectionScope.None;
-        }
-
-        if (trace.FindOriginatingAction() == _rootFrame)
-        {
-            return trace.Source == _rootFrame.Source
-                ? ProjectionScope.Direct
-                : ProjectionScope.Indirect;
-        }
-
-        return ProjectionScope.Chained;
-    }
-
     private string GetDriftWarningKey()
     {
-        return _rootFrame.Invocation.Action switch
+        return _rootAction switch
         {
             PredictionActionKind.CardPlay => "combat_card",
             PredictionActionKind.PotionUse => "combat_potion",
@@ -312,14 +396,9 @@ internal sealed class CombatPredictionProjector
         };
     }
 
-    private static bool IsFeatureEnabled(bool setting)
+    private static bool IsSettingEnabled(bool setting)
     {
         return RandomForeseerSettings.IsPredictionFeatureEnabled(setting);
-    }
-
-    private static bool IsChainedPredictionEnabled()
-    {
-        return IsFeatureEnabled(RandomForeseerSettings.EnableChainedCardEffectPrediction);
     }
 
     private static bool IsRandomTargetAttackCard(AbstractModel model)
@@ -336,11 +415,16 @@ internal sealed class CombatPredictionProjector
 
     private delegate CombatPredictionHistoryEntry? EntryHandler(CombatPredictionHistoryEntry entry);
 
-    private enum ProjectionScope
-    {
-        None,
-        Direct,
-        Indirect,
-        Chained
-    }
+    /// <summary>
+    /// Couples one exact history-entry handler with its root-action gates and hidden-result truncation policy.
+    /// </summary>
+    /// <param name="Handler">Projects an enabled entry and returns the history boundary consumed for shared risk.</param>
+    /// <param name="CardSetting">The feature setting used when the nearest action frame is a card play.</param>
+    /// <param name="PotionSetting">The feature setting used when the nearest action frame is a potion use.</param>
+    /// <param name="TruncatesWhenDisabled">Whether hiding this state-changing result also hides the remaining timeline.</param>
+    private readonly record struct EntryProjectionRule(
+        EntryHandler Handler,
+        bool CardSetting,
+        bool PotionSetting,
+        bool TruncatesWhenDisabled);
 }

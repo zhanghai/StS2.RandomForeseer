@@ -72,7 +72,7 @@ internal static class CombatCardPrediction
     /// <remarks>Simulation and projection exceptions are intentionally handled by the calling UI injection boundary.</remarks>
     public static CombatPredictionProjection? Predict(CardModel card, Creature? target)
     {
-        if (!CombatPredictionProjector.HasEnabledCardFeature() ||
+        if (!CombatPredictionProjector.HasAnyEnabledFeature(PredictionActionKind.CardPlay) ||
             !card.IsMutable ||
             card.Owner?.Creature.CombatState is not { } combatState ||
             !CardOnPlayMirrors.CanMirror(card) ||
