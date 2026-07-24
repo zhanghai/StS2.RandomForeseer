@@ -10,12 +10,20 @@ namespace RandomForeseer.RandomForeseerCode.InCombat;
 /// <summary>Provides the unified simulation facade for in-combat potion prediction.</summary>
 internal static class CombatPotionPrediction
 {
-    /// <summary>Builds untargeted combat prediction HoverTips for one live mutable potion.</summary>
-    /// <remarks>Simulation and projection failures are contained at this ordinary HoverTip injection boundary.</remarks>
+    /// <summary>Builds or reuses combat prediction HoverTips for one live mutable potion.</summary>
+    /// <remarks>
+    /// An active controller-managed potion session returns its existing projection without repeating simulation. Calls
+    /// outside a managed interaction fall back to one local simulation, with failures contained at this HoverTip boundary.
+    /// </remarks>
     public static IReadOnlyList<IHoverTip> GetHoverTips(PotionModel potion)
     {
         try
         {
+            if (CombatPotionPredictionController.TryGetActiveHoverTips(potion, out var hoverTips))
+            {
+                return hoverTips;
+            }
+
             return Predict(potion, target: null)?.HoverTips ?? [];
         }
         catch (Exception ex)

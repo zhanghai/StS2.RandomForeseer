@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Multiplayer;
@@ -31,10 +32,12 @@ internal static class CombatPredictionTargetResolver
 /// <see cref="NTargetManager"/> emits creature signals for <see cref="NCreature"/> and node signals for targets such
 /// as <see cref="NMultiplayerPlayerState"/>. Consumers must therefore observe both families. Unhover events are
 /// matched by exact node identity so a stale event cannot clear a newer target that represents the same creature.
-/// The observer automatically stops listening when the targeting session ends.
+/// The observer automatically stops listening immediately before the target manager resolves the targeting result.
 /// </remarks>
 internal sealed class CombatPredictionTargetObserver : IDisposable
 {
+    private static readonly HashSet<CombatPredictionTargetObserver> _activeObservers = [];
+
     private readonly NTargetManager _targetManager;
 
     private Node? _hoveredNode;
@@ -43,11 +46,13 @@ internal sealed class CombatPredictionTargetObserver : IDisposable
     /// <summary>
     /// Raised when the active target node changes, or with <see langword="null"/> when that node is unhovered.
     /// </summary>
-    /// <remarks>Ending targeting raises <see cref="TargetingEnded"/> without synthesizing an unhover event.</remarks>
+    /// <remarks>Finishing targeting raises <see cref="TargetingFinishing"/> without synthesizing an unhover event.</remarks>
     public event Action<Creature?>? TargetChanged;
 
-    /// <summary>Raised after the observer stops listening to the ended targeting session.</summary>
-    public event Action? TargetingEnded;
+    /// <summary>
+    /// Raised after the observer stops listening, immediately before the target manager resolves the targeting result.
+    /// </summary>
+    public event Action? TargetingFinishing;
 
     /// <summary>Begins observing one target manager until targeting ends or this instance is disposed.</summary>
     public CombatPredictionTargetObserver(NTargetManager targetManager)
@@ -57,7 +62,7 @@ internal sealed class CombatPredictionTargetObserver : IDisposable
         targetManager.CreatureUnhovered += OnCreatureUnhovered;
         targetManager.NodeHovered += OnNodeHovered;
         targetManager.NodeUnhovered += OnNodeUnhovered;
-        targetManager.TargetingEnded += OnTargetingEnded;
+        _activeObservers.Add(this);
     }
 
     /// <summary>Stops observing the target manager. Repeated calls are ignored.</summary>
@@ -73,7 +78,7 @@ internal sealed class CombatPredictionTargetObserver : IDisposable
         _targetManager.CreatureUnhovered -= OnCreatureUnhovered;
         _targetManager.NodeHovered -= OnNodeHovered;
         _targetManager.NodeUnhovered -= OnNodeUnhovered;
-        _targetManager.TargetingEnded -= OnTargetingEnded;
+        _activeObservers.Remove(this);
     }
 
     private void OnCreatureHovered(NCreature creature)
@@ -98,31 +103,44 @@ internal sealed class CombatPredictionTargetObserver : IDisposable
 
     private void SetHoveredTarget(Node node)
     {
-        if (ReferenceEquals(_hoveredNode, node) ||
-            !CombatPredictionTargetResolver.TryResolveCreature(node, out var creature))
+        if (!ReferenceEquals(_hoveredNode, node) &&
+            CombatPredictionTargetResolver.TryResolveCreature(node, out var creature))
         {
-            return;
+            _hoveredNode = node;
+            TargetChanged?.Invoke(creature);
         }
-
-        _hoveredNode = node;
-        TargetChanged?.Invoke(creature);
     }
 
     private void ClearHoveredTarget(Node node)
     {
-        if (!ReferenceEquals(_hoveredNode, node))
+        if (ReferenceEquals(_hoveredNode, node))
         {
-            return;
+            _hoveredNode = null;
+            TargetChanged?.Invoke(null);
         }
-
-        _hoveredNode = null;
-        TargetChanged?.Invoke(null);
     }
 
-    private void OnTargetingEnded()
+    private void OnTargetingFinishing()
     {
         _hoveredNode = null;
         Dispose();
-        TargetingEnded?.Invoke();
+        TargetingFinishing?.Invoke();
+    }
+
+    [HarmonyPatch(typeof(NTargetManager))]
+    internal static class NTargetManagerPatches
+    {
+        [HarmonyPatch(nameof(NTargetManager.FinishTargeting))]
+        [HarmonyPrefix]
+        private static void OnTargetingFinishing(NTargetManager __instance)
+        {
+            foreach (var observer in _activeObservers.ToArray())
+            {
+                if (ReferenceEquals(observer._targetManager, __instance))
+                {
+                    observer.OnTargetingFinishing();
+                }
+            }
+        }
     }
 }

@@ -2,48 +2,68 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
 
 namespace RandomForeseer.RandomForeseerCode.Common;
 
 internal static class PotionPrediction
 {
-    private static readonly PredictionHoverTipRegistry<PotionPredictionContext> PredictionProviders = CreateRegistry();
-
-    private static PredictionHoverTipRegistry<PotionPredictionContext> CreateRegistry()
-    {
-        var registry = new PredictionHoverTipRegistry<PotionPredictionContext>();
-
-        registry.Register("potion card generation", CombatCardGenerationPrediction.GetPotionHoverTips);
-        registry.Register("potion generation", PotionGenerationPrediction.GetPotionHoverTips);
-        registry.Register("potion auto-play from draw pile", AutoPlayFromDrawPilePrediction.GetPotionHoverTips);
-        registry.Register("potion draw", PotionDrawPrediction.GetPotionHoverTips);
-
-        return registry;
-    }
-
     public static IReadOnlyList<IHoverTip> GetHoverTips(PotionModel potion)
     {
-        return GetHoverTips(potion, potion.Owner);
-    }
+        if (potion.Owner is not { } owner)
+        {
+            return [];
+        }
 
-    public static IReadOnlyList<IHoverTip> GetHoverTips(PotionModel potion, Player target)
-    {
-        return PredictionProviders.GetHoverTips(new PotionPredictionContext(potion, target));
+        if (owner.Creature.CombatState is not null)
+        {
+            return CombatPotionPrediction.GetHoverTips(potion);
+        }
+
+        try
+        {
+            return GetOutOfCombatHoverTips(potion, owner);
+        }
+        catch (Exception ex)
+        {
+            Entry.Logger.Warn($"Out-of-combat potion prediction failed for {potion.Id}: {ex}");
+            return [];
+        }
     }
 
     public static IReadOnlyList<IHoverTip> GetHoverTips(Player player, PotionModel potion)
     {
-        var previewPotion = PredictionUtils.CreatePotion(potion, player);
-        return GetHoverTips(previewPotion, player);
+        return GetHoverTips(PredictionUtils.CreatePotion(potion, player));
     }
-}
 
-internal readonly record struct PotionPredictionContext(PotionModel Source, Player Target)
-{
-    public Player SourceOwner => Source.Owner;
+    /// <summary>Builds only the pure RNG previews supported outside combat.</summary>
+    private static List<IHoverTip> GetOutOfCombatHoverTips(PotionModel potion, Player target)
+    {
+        List<IHoverTip> hoverTips = [];
+
+        if (RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnablePotionCardPrediction) &&
+            RandomForeseerSettings.IsFairPredictionAllowed(PredictionFairness.UnfairInAllModes))
+        {
+            var rng = target.RunState.Rng.CombatCardGeneration.Clone();
+            if (CardGenerationPotionMirrors.Generate(potion, target, rng) is { } result)
+            {
+                hoverTips.AddRange(result.Cards.SelectPreviews().ToPredictionHoverTips());
+            }
+        }
+
+        if (RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnablePotionGenerationPrediction) &&
+            potion is EntropicBrew)
+        {
+            var rng = target.RunState.Rng.CombatPotionGeneration.Clone();
+            hoverTips.AddRange(EntropicBrewMirrors.Generate(target, rng).ToPredictionHoverTips());
+        }
+
+        return hoverTips;
+    }
 }
 
 [HarmonyPatch(typeof(PotionModel), nameof(PotionModel.HoverTips), MethodType.Getter)]

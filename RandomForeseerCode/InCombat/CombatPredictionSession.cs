@@ -10,7 +10,7 @@ internal enum CombatPredictionSessionMode
     /// <summary>Allows automatic target resolution and exposes HoverTips through the model's ordinary hover UI.</summary>
     Hover = 1,
 
-    /// <summary>Allows automatic target resolution but suppresses action-source HoverTips.</summary>
+    /// <summary>Owns an initiated action; source adapters decide which action-specific HoverTip surfaces to expose.</summary>
     Action = 2
 }
 
@@ -34,10 +34,6 @@ internal abstract class CombatPredictionSession(CombatPredictionSessionMode mode
     public CombatPredictionSessionMode Mode { get; } = mode;
 
     /// <summary>Whether this action session has entered explicit target selection.</summary>
-    /// <remarks>
-    /// This remains <see langword="true"/> after the observer stops listening at targeting completion so the final
-    /// target projection stays in targeting presentation mode until source-specific cleanup disposes the session.
-    /// </remarks>
     public bool IsTargeting => _targetObserver is not null;
 
     /// <summary>The explicit targeting selection, or <see langword="null"/> outside a selected targeting state.</summary>
@@ -51,6 +47,11 @@ internal abstract class CombatPredictionSession(CombatPredictionSessionMode mode
     /// </summary>
     /// <remarks>Adapters use this only for source-specific UI such as explicitly positioned targeting HoverTips.</remarks>
     public event Action? ProjectionChanged;
+
+    /// <summary>
+    /// Raised immediately before the target manager resolves a finished or canceled targeting result.
+    /// </summary>
+    public event Action? TargetingFinishing;
 
     /// <summary>Runs an untargeted prediction, allowing the source facade to resolve a unique target automatically.</summary>
     public void RefreshUntargeted()
@@ -86,6 +87,7 @@ internal abstract class CombatPredictionSession(CombatPredictionSessionMode mode
 
         _targetObserver = new(targetManager);
         _targetObserver.TargetChanged += OnTargetChanged;
+        _targetObserver.TargetingFinishing += OnTargetingFinishing;
     }
 
     /// <summary>Stops target observation and releases this session's shared projection ownership.</summary>
@@ -118,6 +120,12 @@ internal abstract class CombatPredictionSession(CombatPredictionSessionMode mode
         }
     }
 
+    private void OnTargetingFinishing()
+    {
+        StopObservingTargets();
+        TargetingFinishing?.Invoke();
+    }
+
     private void RefreshProjection()
     {
         CombatPredictionProjection? projection;
@@ -148,7 +156,6 @@ internal abstract class CombatPredictionSession(CombatPredictionSessionMode mode
             return;
         }
 
-        _targetObserver.TargetChanged -= OnTargetChanged;
         _targetObserver.Dispose();
         _targetObserver = null;
     }
