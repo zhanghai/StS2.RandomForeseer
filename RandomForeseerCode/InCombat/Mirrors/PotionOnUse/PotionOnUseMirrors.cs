@@ -54,14 +54,14 @@ internal static class PotionOnUseMirrors
     {
         var registry = new Registry(OnUse);
 
-        registry.Register<AttackPotion>(CardGenerationPotionMirrors.AttackPotionOnUse);
-        registry.Register<SkillPotion>(CardGenerationPotionMirrors.SkillPotionOnUse);
-        registry.Register<PowerPotion>(CardGenerationPotionMirrors.PowerPotionOnUse);
-        registry.Register<ColorlessPotion>(CardGenerationPotionMirrors.ColorlessPotionOnUse);
-        registry.Register<CosmicConcoction>(CardGenerationPotionMirrors.CosmicConcoctionOnUse);
-        registry.Register<OrobicAcid>(CardGenerationPotionMirrors.OrobicAcidOnUse);
+        registry.Register<AttackPotion>(CardGenerationPotionMirrors.OnUse);
+        registry.Register<SkillPotion>(CardGenerationPotionMirrors.OnUse);
+        registry.Register<PowerPotion>(CardGenerationPotionMirrors.OnUse);
+        registry.Register<ColorlessPotion>(CardGenerationPotionMirrors.OnUse);
+        registry.Register<CosmicConcoction>(CardGenerationPotionMirrors.OnUse);
+        registry.Register<OrobicAcid>(CardGenerationPotionMirrors.OnUse);
 
-        registry.Register<EntropicBrew>(PotionGenerationPotionMirrors.EntropicBrewOnUse);
+        registry.Register<EntropicBrew>(EntropicBrewMirrors.OnUse);
 
         registry.Register<BottledPotential>(DrawPotionMirrors.BottledPotentialOnUse);
         registry.Register<Clarity>(DrawPotionMirrors.ClarityOnUse);

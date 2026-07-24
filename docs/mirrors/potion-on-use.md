@@ -28,6 +28,10 @@ StS2 v0.109.0 executes `PotionModel.OnUse(PlayerChoiceContext, Creature?)` insid
 | Draw and cost randomization | `SneckoOil` | Draws first, then iterates the complete shadow hand in order and consumes cloned `CombatEnergyCosts` for each eligible non-X card. A final batch history entry snapshots all randomized hand cards for potion-draw presentation. |
 | Draw | `SwiftPotion` | Draws the configured count. |
 
+`CardGenerationPotionMirrors.Generate` is shared by combat OnUse simulation and out-of-combat unfair previews so card pools, RNG order and card mutations have one implementation; `AddsToHand` tells the combat adapter whether to record choice options or add every result through generated-card history and hooks.
+
+`EntropicBrewMirrors.Generate` similarly shares the full-belt potion reward policy between combat history and out-of-combat HoverTips without fabricating combat state or mutating potion slots.
+
 ## Unsupported and intentionally omitted behavior
 
 All unregistered exact potion runtime types remain unsupported and are rejected by `CanMirror`; direct invocation records `MethodNotMirrored` risk. `Hook.BeforePotionUsed` and `Hook.AfterPotionUsed` are not mirrored and must not be assumed to run around a predicted potion use. Potion removal, VFX, waits, combat effect bookkeeping, vanilla potion-use history, run history, empty-hand checks, potion-slot mutation and UI cost animations are intentionally outside this entry.

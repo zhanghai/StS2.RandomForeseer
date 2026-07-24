@@ -1,13 +1,8 @@
 using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Potions;
-using MegaCrit.Sts2.Core.Random;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -21,7 +16,11 @@ internal static class CombatCardGenerationPrediction
             return [];
         }
 
-        return [.. PredictPotionCards(context).ToPredictionHoverTips()];
+        var rng = context.Target.RunState.Rng.CombatCardGeneration.Clone();
+        var result = CardGenerationPotionMirrors.Generate(context.Source, context.Target, rng);
+        return result is not null
+            ? [.. result.Cards.SelectPreviews().ToPredictionHoverTips()]
+            : [];
     }
 
     private static bool ShouldShowPotionCardPrediction(PotionPredictionContext context)
@@ -30,42 +29,5 @@ internal static class CombatCardGenerationPrediction
             CombatManager.Instance.IsInProgress &&
             !context.SourceOwner.Creature.IsDead &&
             !context.Target.Creature.IsDead;
-    }
-
-    private static IReadOnlyList<CardModel> PredictPotionCards(PotionPredictionContext context)
-    {
-        var source = context.Source;
-        var target = context.Target;
-        var previewRng = target.RunState.Rng.CombatCardGeneration.Clone();
-
-        return source switch
-        {
-            AttackPotion => PredictCharacterCards(target, CardType.Attack, 3, previewRng),
-            SkillPotion => PredictCharacterCards(target, CardType.Skill, 3, previewRng),
-            PowerPotion => PredictCharacterCards(target, CardType.Power, 3, previewRng),
-            ColorlessPotion => PredictColorlessCards(target, 3, previewRng),
-            CosmicConcoction => PredictColorlessCards(target, source.DynamicVars.Cards.IntValue, previewRng)
-                .Select(PredictionUtils.ToUpgradedCard)
-                .ToList(),
-            OrobicAcid => new[] { CardType.Attack, CardType.Skill, CardType.Power }
-                .SelectMany(type => PredictCharacterCards(target, type, 1, previewRng))
-                .ToList(),
-            _ => []
-        };
-    }
-
-    private static List<CardModel> PredictCharacterCards(Player player, CardType type, int count, Rng previewRng)
-    {
-        return player.GetUnlockedCharacterCards()
-            .Where(candidate => candidate.Type == type)
-            .TakeRandomDistinctForCombat(player, count, previewRng)
-            .ToList();
-    }
-
-    private static List<CardModel> PredictColorlessCards(Player player, int count, Rng previewRng)
-    {
-        return player.GetUnlockedColorlessCards()
-            .TakeRandomDistinctForCombat(player, count, previewRng)
-            .ToList();
     }
 }
