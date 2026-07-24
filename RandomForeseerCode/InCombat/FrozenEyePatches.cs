@@ -14,6 +14,7 @@ using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 using STS2RitsuLib.Utils.HarmonyIl;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -37,9 +38,9 @@ internal static class FrozenEyeDrawPileViewState
         return PredictedShuffleCardsByGrid.TryGetValue(grid, out predictedCards);
     }
 
-    public static void SetPredictedShuffleCards(NCardGrid grid, IReadOnlyList<CardModel> predictedCards)
+    public static void SetPredictedShuffleCards(NCardGrid grid, IEnumerable<CardModel> predictedCards)
     {
-        PredictedShuffleCardsByGrid.AddOrUpdate(grid, predictedCards.ToHashSet());
+        PredictedShuffleCardsByGrid.AddOrUpdate(grid, [.. predictedCards]);
     }
 }
 
@@ -56,9 +57,8 @@ internal static class FrozenEyeDrawPileView
 
         var previewCards = screen.Pile.Cards;
 
-        if (TryGetShufflePrediction(screen, out var prediction))
+        if (GetShufflePrediction(screen) is { Count: > 0 } cards)
         {
-            var cards = prediction.Cards.SelectPreviews().ToList();
             FrozenEyeDrawPileViewState.SetPredictedShuffleCards(grid, cards);
             previewCards = [..previewCards, ..cards];
         }
@@ -71,32 +71,33 @@ internal static class FrozenEyeDrawPileView
         return true;
     }
 
-    private static bool TryGetShufflePrediction(
-        NCardPileScreen screen,
-        out DrawPilePredictionResult prediction)
+    private static IReadOnlyList<CardModel> GetShufflePrediction(NCardPileScreen screen)
     {
-        prediction = DrawPilePredictionResult.Empty;
-
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableShufflePrediction))
+        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableShufflePrediction) ||
+            !CardPileUtils.TryGetDrawPileOwner(screen.Pile, out var player) ||
+            player.Creature.CombatState is not { } combatState ||
+            combatState.CurrentSide != player.Creature.Side)
         {
-            return false;
-        }
-
-        if (!CardPileUtils.TryGetDrawPileOwner(screen.Pile, out var player) ||
-            player.Creature.CombatState?.CurrentSide != player.Creature.Side)
-        {
-            return false;
+            return [];
         }
 
         try
         {
-            prediction = DrawPilePrediction.PredictShuffleAfterDrawPileDepleted(player);
-            return prediction.Cards.Count > 0;
+            var simulator = new CombatPredictionSimulator(combatState);
+            var playerState = simulator.State.GetPlayerCombatState(player);
+            if (playerState.DiscardPile.IsEmpty)
+            {
+                return [];
+            }
+
+            playerState.DrawPile.Clear();
+            simulator.Shuffle(player);
+            return [.. playerState.DrawPile.Cards.SelectPreviews()];
         }
         catch (Exception ex)
         {
             Entry.Logger.Warn($"Failed to predict draw pile shuffle for {player.Creature.Name}: {ex}");
-            return false;
+            return [];
         }
     }
 }
@@ -286,31 +287,44 @@ internal static class FrozenEyeDrawPileRawTextPatch
 {
     private static void Postfix(LocString __instance, ref string __result)
     {
+        try
+        {
+            ReplaceText(__instance, ref __result);
+        }
+        catch (Exception ex)
+        {
+            Entry.Logger.Warn($"Failed to replace raw text for {__instance}: {ex}");
+        }
+    }
+
+    private static void ReplaceText(LocString locString, ref string text)
+    {
         if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableFrozenEye))
         {
             return;
         }
 
-        switch (__instance)
+        switch (locString)
         {
             case { LocTable: "static_hover_tips", LocEntryKey: "DRAW_PILE.description" }:
             {
-                var mainDescription = __result.Split("\n\n", 2)[0];
+                var mainDescription = text.Split("\n\n", 2)[0];
                 var viewDescription = PredictionLocalization.Text("frozen_eye.draw_pile_hover_view").GetRawText();
 
-                __result = $"{mainDescription}\n\n{viewDescription}";
+                text = $"{mainDescription}\n\n{viewDescription}";
                 break;
             }
+
             case { LocTable: "gameplay_ui", LocEntryKey: "DRAW_PILE_INFO" }:
             {
-                var firstLine = __result.Split('\n', 2)[0];
+                var firstLine = text.Split('\n', 2)[0];
                 var orderInfoKey = RandomForeseerSettings.IsPredictionFeatureEnabled(
                     RandomForeseerSettings.EnableShufflePrediction)
                     ? "frozen_eye.draw_pile_info_order_with_shuffle_prediction"
                     : "frozen_eye.draw_pile_info_order";
                 var orderInfo = PredictionLocalization.Text(orderInfoKey).GetRawText();
 
-                __result = $"{firstLine}\n{orderInfo}";
+                text = $"{firstLine}\n{orderInfo}";
                 break;
             }
         }
