@@ -154,6 +154,7 @@ Steam 创意工坊：[随机数预测](https://steamcommunity.com/sharedfiles/fi
 - 重启（Reboot）
 - 计算下注（Calculated Gamble）
 - 冷静头脑（Coolheaded）
+- 群星荟萃（Constellation）
 
 ### 战斗随机变牌
 

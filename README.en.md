@@ -154,6 +154,7 @@ Each feature can be toggled independently from the mod settings page, and predic
 - Reboot
 - Calculated Gamble
 - Coolheaded
+- Constellation
 
 ### Combat Transform
 

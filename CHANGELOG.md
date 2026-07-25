@@ -4,6 +4,9 @@
 
 ### feat
 
+- 战斗抽牌预测现在支持群星荟萃，会显示目标队友将抽到的牌。<br>
+  Combat card draw prediction now supports Constellation, showing the targeted teammate's card draw.
+
 - 充能球效果预测现在支持黑暗精华，包括填充栏位时被释放的充能球造成的伤害和目标。<br>
   Orb effect prediction now supports Essence of Darkness, including damage and targets from orbs evoked while filling the queue.
 
