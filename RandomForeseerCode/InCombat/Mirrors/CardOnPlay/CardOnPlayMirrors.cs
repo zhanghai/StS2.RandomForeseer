@@ -24,7 +24,7 @@ internal static class CardOnPlayMirrors
 
     public static bool CanMirror(CardModel card)
     {
-        return Registry.Query(card) is MirrorDispatchKind.Handled;
+        return Registry.Query(card) is MirrorDispatchKind.Handled or MirrorDispatchKind.Inferred;
     }
 
     public static bool IsOnPlayInvocation(PredictionInvocation invocation)
@@ -52,8 +52,8 @@ internal static class CardOnPlayMirrors
     {
         var registry = new Registry(OnPlay);
 
-        registry.Register<HowlFromBeyond>(AutoPlayCardMirrors.HowlFromBeyondOnPlay);
-        registry.Register<IAmInvincible>(AutoPlayCardMirrors.IAmInvincibleOnPlay);
+        registry.Register<HowlFromBeyond>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<IAmInvincible>(GeneralCardMirrors.GeneralBlockOnPlay);
         registry.Register<Havoc>(AutoPlayCardMirrors.HavocOnPlay);
         registry.Register<Cascade>(AutoPlayCardMirrors.CascadeOnPlay);
 
@@ -123,6 +123,20 @@ internal static class CardOnPlayMirrors
         registry.Register<Splash>(CardGenerationCardMirrors.SplashOnPlay);
         registry.Register<Stoke>(CardGenerationCardMirrors.StokeOnPlay);
         registry.Register<WhiteNoise>(CardGenerationCardMirrors.WhiteNoiseOnPlay);
+
+        registry.Register<StrikeIronclad>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<StrikeSilent>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<StrikeRegent>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<StrikeNecrobinder>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<StrikeDefect>(GeneralCardMirrors.GeneralAttackOnPlay);
+
+        registry.Register<DefendIronclad>(GeneralCardMirrors.GeneralBlockOnPlay);
+        registry.Register<DefendSilent>(GeneralCardMirrors.GeneralBlockOnPlay);
+        registry.Register<DefendRegent>(GeneralCardMirrors.GeneralBlockOnPlay);
+        registry.Register<DefendNecrobinder>(GeneralCardMirrors.GeneralBlockOnPlay);
+        registry.Register<DefendDefect>(GeneralCardMirrors.GeneralBlockOnPlay);
+
+        registry.RegisterInferer(CardOnPlayInferer.Instance);
 
         return registry;
     }

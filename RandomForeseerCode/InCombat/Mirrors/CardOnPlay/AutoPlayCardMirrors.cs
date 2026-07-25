@@ -6,16 +6,6 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
 
 internal static class AutoPlayCardMirrors
 {
-    public static void HowlFromBeyondOnPlay(HowlFromBeyond card, CardOnPlayMirrorContext context)
-    {
-        context.AttackAllOpponents();
-    }
-
-    public static void IAmInvincibleOnPlay(IAmInvincible card, CardOnPlayMirrorContext context)
-    {
-        context.GainBlock(card.Owner.Creature);
-    }
-
     public static void HavocOnPlay(Havoc card, CardOnPlayMirrorContext context)
     {
         context.Simulator.AutoPlayFromDrawPile(card.Owner, 1, CardPilePosition.Top, forceExhaust: true);

@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
@@ -55,5 +56,26 @@ internal static class CardOnPlayMirrorContextExtensions
             context.PreviewCard.DynamicVars.Block,
             context.Card,
             context.CardPlay);
+    }
+
+    /// <summary>
+    /// See <see cref="CombatPredictionSimulator.GainBlock(Creature, int, ValueProp, PredictedCard?, CardPlay?)"/>.
+    /// </summary>
+    public static decimal GainBlock(this CardOnPlayMirrorContext context, Creature target, decimal amount, ValueProp props)
+    {
+        return context.Simulator.GainBlock(
+            target,
+            amount,
+            props,
+            context.Card,
+            context.CardPlay);
+    }
+
+    /// <summary>
+    /// See <see cref="CombatPredictionDynamicVarExtensions.InvokeCalculate"/>.
+    /// </summary>
+    public static decimal Calculate(this CardOnPlayMirrorContext context, CalculatedVar calculatedVar)
+    {
+        return calculatedVar.InvokeCalculate(context.Simulator, context.Card, context.CardPlay.Target);
     }
 }
