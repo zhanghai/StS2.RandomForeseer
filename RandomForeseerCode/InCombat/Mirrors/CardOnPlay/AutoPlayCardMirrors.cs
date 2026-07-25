@@ -13,7 +13,7 @@ internal static class AutoPlayCardMirrors
 
     public static void IAmInvincibleOnPlay(IAmInvincible card, CardOnPlayMirrorContext context)
     {
-        context.Simulator.GainBlock(card.Owner.Creature, card.DynamicVars.Block, context.Card);
+        context.GainBlock(card.Owner.Creature);
     }
 
     public static void HavocOnPlay(Havoc card, CardOnPlayMirrorContext context)

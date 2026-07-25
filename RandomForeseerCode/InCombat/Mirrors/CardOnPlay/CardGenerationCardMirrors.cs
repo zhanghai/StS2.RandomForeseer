@@ -113,7 +113,7 @@ internal static class CardGenerationCardMirrors
             return;
         }
 
-        context.Simulator.GainBlock(card.Owner.Creature, card.DynamicVars.Block, context.Card);
+        context.GainBlock(card.Owner.Creature);
 
         var cards = card.Owner.GetUnlockedCharacterCards()
             .GetDistinctForCombat(card.Owner, 1, context.Rng.CombatCardGeneration)
@@ -125,7 +125,7 @@ internal static class CardGenerationCardMirrors
 
     public static void ManifestAuthorityOnPlay(ManifestAuthority card, CardOnPlayMirrorContext context)
     {
-        context.Simulator.GainBlock(card.Owner.Creature, card.DynamicVars.Block, context.Card);
+        context.GainBlock(card.Owner.Creature);
 
         var cards = card.Owner.GetUnlockedColorlessCards()
             .GetDistinctForCombat(card.Owner, 1, context.Rng.CombatCardGeneration)

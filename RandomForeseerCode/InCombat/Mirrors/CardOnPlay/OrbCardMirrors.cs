@@ -74,13 +74,13 @@ internal static class OrbCardMirrors
 
     public static void GlacierOnPlay(Glacier card, CardOnPlayMirrorContext context)
     {
-        context.Simulator.GainBlock(card.Owner.Creature, card.DynamicVars.Block, context.Card);
+        context.GainBlock(card.Owner.Creature);
         context.Simulator.OrbChannel<FrostOrb>(card.Owner, 2);
     }
 
     public static void GlassworkOnPlay(Glasswork card, CardOnPlayMirrorContext context)
     {
-        context.Simulator.GainBlock(card.Owner.Creature, card.DynamicVars.Block, context.Card);
+        context.GainBlock(card.Owner.Creature);
         context.Simulator.OrbChannel<GlassOrb>(card.Owner);
     }
 
@@ -137,7 +137,7 @@ internal static class OrbCardMirrors
 
     public static void ShadowShieldOnPlay(ShadowShield card, CardOnPlayMirrorContext context)
     {
-        context.Simulator.GainBlock(card.Owner.Creature, card.DynamicVars.Block, context.Card);
+        context.GainBlock(card.Owner.Creature);
         context.Simulator.OrbChannel<DarkOrb>(card.Owner);
     }
 

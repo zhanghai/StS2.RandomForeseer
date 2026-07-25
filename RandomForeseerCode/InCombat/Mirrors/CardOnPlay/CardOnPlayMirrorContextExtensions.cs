@@ -1,4 +1,8 @@
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
@@ -39,5 +43,17 @@ internal static class CardOnPlayMirrorContextExtensions
             .WithHitCount(hitCount)
             .TargetingRandomOpponents(context.CombatState)
             .Simulate(context.Simulator);
+    }
+
+    /// <summary>
+    /// See <see cref="CombatPredictionSimulator.GainBlock(Creature, BlockVar, PredictedCard?, CardPlay?)"/>.
+    /// </summary>
+    public static decimal GainBlock(this CardOnPlayMirrorContext context, Creature target)
+    {
+        return context.Simulator.GainBlock(
+            target,
+            context.PreviewCard.DynamicVars.Block,
+            context.Card,
+            context.CardPlay);
     }
 }

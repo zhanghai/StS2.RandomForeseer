@@ -238,7 +238,7 @@ internal static class CardSelectionCardMirrors
 
     public static void TrueGritOnPlay(TrueGrit card, CardOnPlayMirrorContext context)
     {
-        context.Simulator.GainBlock(card.Owner.Creature, card.DynamicVars.Block, context.Card);
+        context.GainBlock(card.Owner.Creature);
 
         if (card.IsUpgraded)
         {

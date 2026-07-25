@@ -46,6 +46,8 @@ Mirror files:
   `AfterCurrentHpChanged` and post-damage hooks.
 - `CombatPredictionSimulator.GainBlock` follows v0.109.0 by returning before block hooks when the
   target is already dead in shadow state.
+- Card-sourced block gains forward the simulated `CardPlay` to `Hook.ModifyBlock`, matching
+  vanilla modifiers that inspect the current card play.
 
 ## Mock model list
 

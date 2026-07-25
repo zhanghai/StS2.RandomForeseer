@@ -1,3 +1,5 @@
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
@@ -9,14 +11,42 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 internal sealed partial class CombatPredictionSimulator
 {
-    // Convenience overload for GainBlock with a BlockVar.
-    public decimal GainBlock(Creature creature, BlockVar blockVar, PredictedCard? cardSource = null)
+    /// <summary>
+    /// Mirrors <see cref="CreatureCmd.GainBlock(Creature, BlockVar, CardPlay?, bool)"/>.
+    /// Convenience overload for when a <see cref="BlockVar"/> is supplied and the block source is not a card play.
+    /// </summary>
+    public decimal GainBlock(Creature creature, BlockVar blockVar)
     {
-        return GainBlock(creature, blockVar.BaseValue, blockVar.Props, cardSource);
+        return GainBlock(creature, blockVar.BaseValue, blockVar.Props, cardSource: null, cardPlay: null);
     }
 
-    // Mirrors CreatureCmd.GainBlock without mutating real Creature state.
-    public decimal GainBlock(Creature creature, decimal amount, ValueProp props, PredictedCard? cardSource = null)
+    /// <summary>
+    /// Mirrors <see cref="CreatureCmd.GainBlock(Creature, BlockVar, CardPlay?, bool)"/>.
+    /// Convenience overload for when a <see cref="BlockVar"/> is supplied.
+    /// </summary>
+    public decimal GainBlock(Creature creature, BlockVar blockVar, PredictedCard? cardSource, CardPlay? cardPlay)
+    {
+        return GainBlock(creature, blockVar.BaseValue, blockVar.Props, cardSource, cardPlay);
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="CreatureCmd.GainBlock(Creature, decimal, ValueProp, CardPlay?, bool)"/>.
+    /// Convenience overload for when the block source is not a card play.
+    /// </summary>
+    public decimal GainBlock(Creature creature, decimal amount, ValueProp props)
+    {
+        return GainBlock(creature, amount, props, cardSource: null, cardPlay: null);
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="CreatureCmd.GainBlock(Creature, decimal, ValueProp, CardPlay?, bool)"/>.
+    /// </summary>
+    public decimal GainBlock(
+        Creature creature,
+        decimal amount,
+        ValueProp props,
+        PredictedCard? cardSource,
+        CardPlay? cardPlay)
     {
         if (State.GetCreature(creature).IsDead || amount <= 0m)
         {
@@ -32,8 +62,8 @@ internal sealed partial class CombatPredictionSimulator
             creature,
             amount,
             props,
-            cardSource?.Preview,
-            null,
+            cardPlay?.Card,
+            cardPlay,
             out var modifiers);
         // Hook.ModifyBlock is used by vanilla card previews, so it is treated as a safe
         // read-only value path. AfterModifyingBlockAmount is not mirrored in Phase 1.
