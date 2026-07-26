@@ -103,7 +103,7 @@ internal static class AfterDamageReceivedMirrors
         if (!state.UsedThisCombat)
         {
             state.UsedThisCombat = true;
-            context.Simulator.Draw(relic.Owner, relic.DynamicVars.Cards.IntValue);
+            context.Simulator.Draw(relic.Owner, relic.DynamicVars.Cards.BaseValue);
         }
     }
 

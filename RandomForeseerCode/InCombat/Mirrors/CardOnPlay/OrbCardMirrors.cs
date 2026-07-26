@@ -44,7 +44,7 @@ internal static class OrbCardMirrors
     public static void CoolheadedOnPlay(Coolheaded card, CardOnPlayMirrorContext context)
     {
         context.Simulator.OrbChannel<FrostOrb>(card.Owner);
-        context.Simulator.Draw(card.Owner, card.DynamicVars.Cards.IntValue);
+        context.Simulator.Draw(card.Owner, card.DynamicVars.Cards.BaseValue);
     }
 
     public static void DarknessOnPlay(Darkness card, CardOnPlayMirrorContext context)

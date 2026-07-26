@@ -55,7 +55,7 @@ internal static class AfterDeathMirrors
         if (context.Creature.Side != relic.Owner.Creature.Side)
         {
             context.Simulator.GainEnergy(relic.Owner, relic.DynamicVars.Energy.BaseValue);
-            context.Simulator.Draw(relic.Owner, relic.DynamicVars.Cards.IntValue);
+            context.Simulator.Draw(relic.Owner, relic.DynamicVars.Cards.BaseValue);
         }
     }
 

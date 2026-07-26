@@ -15,7 +15,7 @@ internal static class CardDrawCardMirrors
     {
         if (context.CardPlay.Target?.Player is { } player)
         {
-            context.Simulator.Draw(player, card.DynamicVars.Cards.IntValue);
+            context.Simulator.Draw(player, card.DynamicVars.Cards.BaseValue);
             context.Simulator.GainEnergy(player, card.DynamicVars.Energy.IntValue);
             context.GainBlock(player.Creature);
         }
@@ -25,6 +25,6 @@ internal static class CardDrawCardMirrors
     {
         context.Simulator.MoveHandToDrawPile(card.Owner);
         context.Simulator.Shuffle(card.Owner);
-        context.Simulator.Draw(card.Owner, card.DynamicVars.Cards.IntValue);
+        context.Simulator.Draw(card.Owner, card.DynamicVars.Cards.BaseValue);
     }
 }

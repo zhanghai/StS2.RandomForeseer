@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Extensions;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
@@ -14,52 +15,65 @@ internal sealed partial class CombatPredictionSimulator
 {
     private const int MaxSimulatedDraws = 100;
 
-    // Mirrors CardPileCmd.Draw.
-    public void Draw(Player player, int drawCount, bool fromHandDraw = false)
+    /// <summary>
+    /// See <see cref="Draw(Player, int, bool)"/> for the main overload.
+    /// This overload rounds the draw count to an integer.
+    /// </summary>
+    public IReadOnlyList<PredictedCard> Draw(Player player, decimal drawCount, bool fromHandDraw = false)
+    {
+        var roundedCount = drawCount > 0m ? (int)Math.Ceiling(drawCount) : 0;
+        return Draw(player, roundedCount, fromHandDraw);
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="CardPileCmd.Draw(PlayerChoiceContext, decimal, Player, bool)"/>.
+    /// </summary>
+    public IReadOnlyList<PredictedCard> Draw(Player player, int drawCount, bool fromHandDraw = false)
     {
         if (!HookMirrors.ShouldDraw(this, player, fromHandDraw, out _))
         {
             // Vanilla calls Hook.AfterPreventingDraw here, but all current listeners are cosmetic.
-            return;
+            return [];
         }
 
-        var hand = State.GetPlayerCombatState(player).Hand;
+        var state = State.GetPlayerCombatState(player);
+        List<PredictedCard> drawnCards = [];
 
         for (var i = 0; i < drawCount; i++)
         {
-            if (hand.Cards.Count >= CardPile.MaxCardsInHand || !DrawOne(player, fromHandDraw))
+            if (state.Hand.Cards.Count >= CardPile.MaxCardsInHand)
             {
                 break;
             }
+
+            if (History.Count<CombatPredictionCardDrawnEntry>() >= MaxSimulatedDraws)
+            {
+                History.RecordRisk(PredictionRiskReason.CardDrawLimitExceeded);
+                break;
+            }
+
+            ShuffleIfNecessary(player);
+
+            if (state.DrawPile.IsEmpty || state.Hand.Cards.Count >= CardPile.MaxCardsInHand)
+            {
+                break;
+            }
+
+            var card = state.DrawPile.Cards[0];
+            drawnCards.Add(card);
+            AddToPile(card, state.Hand);
+            var entry = History.CardDrawn(card, fromHandDraw);
+
+            HookMirrors.AfterCardDrawn(this, card, fromHandDraw);
+            History.CardDrawResolved(entry, card);
         }
+
+        return drawnCards;
     }
 
-    // Mirrors the body of the draw loop in CardPileCmd.Draw.
-    private bool DrawOne(Player player, bool fromHandDraw)
-    {
-        if (History.Count<CombatPredictionCardDrawnEntry>() >= MaxSimulatedDraws)
-        {
-            History.RecordRisk(PredictionRiskReason.CardDrawLimitExceeded);
-            return false;
-        }
-
-        ShuffleIfNecessary(player);
-
-        var state = State.GetPlayerCombatState(player);
-        if (state.DrawPile.IsEmpty)
-        {
-            return false;
-        }
-
-        var predictedCard = state.DrawPile.Cards[0];
-        AddToPile(predictedCard, state.Hand);
-        var entry = History.CardDrawn(predictedCard, fromHandDraw);
-
-        HookMirrors.AfterCardDrawn(this, predictedCard, fromHandDraw);
-        History.CardDrawResolved(entry, predictedCard);
-        return true;
-    }
-
+    /// <summary>
+    /// Mirrors <see cref="CardPileCmd.Shuffle"/>.
+    /// </summary>
     public void Shuffle(Player player)
     {
         // Mirrors CardPileCmd.Shuffle: merge discard cards with current draw-pile cards,
@@ -96,15 +110,16 @@ internal sealed partial class CombatPredictionSimulator
         HookMirrors.AfterShuffle(this, player);
     }
 
+    /// <summary>
+    /// Mirrors <see cref="CardPileCmd.ShuffleIfNecessary"/>.
+    /// </summary>
     private void ShuffleIfNecessary(Player player)
     {
         var state = State.GetPlayerCombatState(player);
-        if (!state.DrawPile.IsEmpty || state.DiscardPile.IsEmpty)
+        if (state.DrawPile.IsEmpty && !state.DiscardPile.IsEmpty)
         {
-            return;
+            Shuffle(player);
         }
-
-        Shuffle(player);
     }
 
     /// <summary>
