@@ -155,6 +155,17 @@ Steam 创意工坊：[随机数预测](https://steamcommunity.com/sharedfiles/fi
 - 计算下注（Calculated Gamble）
 - 冷静头脑（Coolheaded）
 - 群星荟萃（Constellation）
+- 编译冲击（Compile Driver）
+- 逃脱计划（Escape Plan）
+- 独门技术（Expertise）
+- 取回（Fetch）
+- 超越光速（FTL）
+- 抱团（Huddle Up）
+- 急躁（Impatience）
+- 劫掠（Pillage）
+- 心神不宁（Restlessness）
+- 刮削（Scrape）
+- 潦草急就（Scrawl）
 
 ### 战斗随机变牌
 

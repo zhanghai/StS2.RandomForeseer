@@ -155,6 +155,17 @@ Each feature can be toggled independently from the mod settings page, and predic
 - Calculated Gamble
 - Coolheaded
 - Constellation
+- Compile Driver
+- Escape Plan
+- Expertise
+- Fetch
+- FTL
+- Huddle Up
+- Impatience
+- Pillage
+- Restlessness
+- Scrape
+- Scrawl
 
 ### Combat Transform
 

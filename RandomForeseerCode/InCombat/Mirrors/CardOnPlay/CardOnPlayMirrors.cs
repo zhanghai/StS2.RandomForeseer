@@ -60,7 +60,19 @@ internal static class CardOnPlayMirrors
         registry.Register<Alchemize>(PotionGenerationCardMirrors.AlchemizeOnPlay);
 
         registry.Register<CalculatedGamble>(CardDrawCardMirrors.CalculatedGambleOnPlay);
+        registry.Register<CompileDriver>(CardDrawCardMirrors.CompileDriverOnPlay);
+        registry.Register<Constellation>(CardDrawCardMirrors.ConstellationOnPlay);
+        registry.Register<EscapePlan>(CardDrawCardMirrors.EscapePlanOnPlay);
+        registry.Register<Expertise>(CardDrawCardMirrors.ExpertiseOnPlay);
+        registry.Register<Fetch>(CardDrawCardMirrors.FetchOnPlay);
+        registry.Register<Ftl>(CardDrawCardMirrors.FtlOnPlay);
+        registry.Register<HuddleUp>(CardDrawCardMirrors.HuddleUpOnPlay);
+        registry.Register<Impatience>(CardDrawCardMirrors.ImpatienceOnPlay);
+        registry.Register<Pillage>(CardDrawCardMirrors.PillageOnPlay);
         registry.Register<Reboot>(CardDrawCardMirrors.RebootOnPlay);
+        registry.Register<Restlessness>(CardDrawCardMirrors.RestlessnessOnPlay);
+        registry.Register<Scrape>(CardDrawCardMirrors.ScrapeOnPlay);
+        registry.Register<Scrawl>(CardDrawCardMirrors.ScrawlOnPlay);
 
         registry.Register<FlakCannon>(RandomTargetAttackCardMirrors.FlakCannonOnPlay);
         registry.Register<Ricochet>(RandomTargetAttackCardMirrors.RicochetOnPlay);
