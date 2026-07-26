@@ -184,7 +184,7 @@ internal sealed partial class CombatPredictionSimulator
             // TODO: Dispatch Hook.AfterStarsSpent.
         }
 
-		return new ResourceInfo
+        return new ResourceInfo
         {
             EnergySpent = energyValue,
             EnergyValue = energyValue,
@@ -274,7 +274,10 @@ internal sealed partial class CombatPredictionSimulator
                 // TODO: Simulate affliction effects
             }
 
-            // TODO: Record CardPlayFinished history
+            History.CardPlayFinished(
+                card,
+                cardPlay,
+                card.GetKeywords(State).Contains(CardKeyword.Ethereal));
             // TODO: Dispatch AfterCardPlayed hooks
 
             if (ownerCreature.IsDead)

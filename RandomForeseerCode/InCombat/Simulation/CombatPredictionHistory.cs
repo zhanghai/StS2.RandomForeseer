@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
@@ -100,6 +101,16 @@ internal sealed class CombatPredictionHistory(PredictionTrace trace)
     public void CardsSelected(IReadOnlyList<PredictedCard> cards)
     {
         Record(new CombatPredictionCardsSelectedEntry { Cards = SnapshotCards(cards) });
+    }
+
+    public void CardPlayFinished(PredictedCard card, CardPlay cardPlay, bool wasEthereal)
+    {
+        Record(new CombatPredictionCardPlayFinishedEntry
+        {
+            Card = card,
+            CardPlay = cardPlay,
+            WasEthereal = wasEthereal
+        });
     }
 
     public CombatPredictionCardGeneratedEntry CardGenerated(

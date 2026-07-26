@@ -1,3 +1,5 @@
+using MegaCrit.Sts2.Core.Combat.History.Entries;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
@@ -31,6 +33,16 @@ internal abstract class CombatPredictionHistoryEntry
 internal sealed class CombatPredictionRiskEntry : CombatPredictionHistoryEntry
 {
     public required PredictionRiskReason Reason { get; init; }
+}
+
+/// <summary>
+/// Mirrors <see cref="CardPlayFinishedEntry"/>.
+/// </summary>
+internal sealed class CombatPredictionCardPlayFinishedEntry : CombatPredictionHistoryEntry
+{
+    public required PredictedCard Card { get; init; }
+    public required CardPlay CardPlay { get; init; }
+    public required bool WasEthereal { get; init; }
 }
 
 internal sealed class CombatPredictionDamageReceivedEntry : CombatPredictionHistoryEntry
