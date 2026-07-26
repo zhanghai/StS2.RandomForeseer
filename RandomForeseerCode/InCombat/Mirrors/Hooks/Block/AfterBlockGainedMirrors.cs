@@ -56,7 +56,10 @@ internal static class AfterBlockGainedMirrors
         }
 
         var teammates = context.CombatState.GetTeammatesOf(power.Owner)
-            .Where(creature => creature is { IsAlive: true, IsPlayer: true } && creature != power.Owner)
+            .Where(creature =>
+                creature.IsPlayer &&
+                context.State.GetCreature(creature).IsAlive &&
+                creature != power.Owner)
             .ToList();
 
         state.HasAlreadyBeenGivenBlock = true;

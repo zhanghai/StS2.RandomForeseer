@@ -132,7 +132,7 @@ internal static class GeneralCardMirrors
 
             case TargetType.AllAllies:
                 var allies = context.CombatState.GetTeammatesOf(card.Owner.Creature)
-                    .Where(creature => creature is { IsAlive: true, IsPlayer: true });
+                    .Where(creature => creature.IsPlayer && context.State.GetCreature(creature).IsAlive);
                 foreach (var ally in allies)
                 {
                     blockAction(ally);
