@@ -14,15 +14,10 @@ internal static class CardOnPlayMirrorContextExtensions
     // Callers should ensure that the card play has a target before calling this method.
     public static void AttackSingle(this CardOnPlayMirrorContext context, int hitCount = 1)
     {
-        if (context.CardPlay.Target is null)
-        {
-            throw new InvalidOperationException("Cannot simulate a targeted attack without a target.");
-        }
-
         DamageCmd.Attack(context.PreviewCard.DynamicVars.Damage.BaseValue)
             .FromCard(context.PreviewCard, context.CardPlay)
             .WithHitCount(hitCount)
-            .Targeting(context.CardPlay.Target)
+            .Targeting(context.Target)
             .Simulate(context.Simulator);
     }
 
@@ -76,6 +71,8 @@ internal static class CardOnPlayMirrorContextExtensions
     /// </summary>
     public static decimal Calculate(this CardOnPlayMirrorContext context, CalculatedVar calculatedVar)
     {
+        // We use context.CardPlay.Target here instead of context.Target because the card play may not have a target,
+        // and context.Target will throw in that case.
         return calculatedVar.InvokeCalculate(context.Simulator, context.Card, context.CardPlay.Target);
     }
 }

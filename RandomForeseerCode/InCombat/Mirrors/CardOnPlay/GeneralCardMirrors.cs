@@ -60,7 +60,7 @@ internal static class GeneralCardMirrors
         switch (card.TargetType)
         {
             case TargetType.AnyEnemy:
-                command.Targeting(context.CardPlay.Target!);
+                command.Targeting(context.Target);
                 break;
 
             case TargetType.AllEnemies:
@@ -124,10 +124,7 @@ internal static class GeneralCardMirrors
                 break;
 
             case TargetType.AnyAlly:
-                if (context.CardPlay.Target is { } target)
-                {
-                    blockAction(target);
-                }
+                blockAction(context.Target);
                 break;
 
             case TargetType.AllAllies:

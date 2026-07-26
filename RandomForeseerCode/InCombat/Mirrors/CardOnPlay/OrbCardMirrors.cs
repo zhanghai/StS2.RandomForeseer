@@ -92,10 +92,7 @@ internal static class OrbCardMirrors
 
     public static void IgnitionOnPlay(Ignition card, CardOnPlayMirrorContext context)
     {
-        if (context.CardPlay.Target?.Player is { } player)
-        {
-            context.Simulator.OrbChannel<PlasmaOrb>(player);
-        }
+        context.Simulator.OrbChannel<PlasmaOrb>(context.TargetPlayer);
     }
 
     public static void MeteorStrikeOnPlay(MeteorStrike card, CardOnPlayMirrorContext context)
@@ -178,7 +175,7 @@ internal static class OrbCardMirrors
         {
             for (var i = 0; i < triggerCount; i++)
             {
-                context.Simulator.OrbPassive(lightningOrb, context.CardPlay.Target);
+                context.Simulator.OrbPassive(lightningOrb, context.Target);
             }
         }
     }

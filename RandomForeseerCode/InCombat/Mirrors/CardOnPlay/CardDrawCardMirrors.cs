@@ -13,12 +13,10 @@ internal static class CardDrawCardMirrors
 
     public static void ConstellationOnPlay(Constellation card, CardOnPlayMirrorContext context)
     {
-        if (context.CardPlay.Target?.Player is { } player)
-        {
-            context.Simulator.Draw(player, card.DynamicVars.Cards.BaseValue);
-            context.Simulator.GainEnergy(player, card.DynamicVars.Energy.IntValue);
-            context.GainBlock(player.Creature);
-        }
+        var player = context.TargetPlayer;
+        context.Simulator.Draw(player, card.DynamicVars.Cards.BaseValue);
+        context.Simulator.GainEnergy(player, card.DynamicVars.Energy.IntValue);
+        context.GainBlock(player.Creature);
     }
 
     public static void RebootOnPlay(Reboot card, CardOnPlayMirrorContext context)

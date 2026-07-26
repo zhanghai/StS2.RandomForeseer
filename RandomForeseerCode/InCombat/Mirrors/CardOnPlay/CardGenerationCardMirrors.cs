@@ -94,9 +94,7 @@ internal static class CardGenerationCardMirrors
 
     public static void LargesseOnPlay(Largesse card, CardOnPlayMirrorContext context)
     {
-        var targetPlayer = context.CardPlay.Target?.Player
-            ?? throw new InvalidOperationException("Largesse must have a target player");
-
+        var targetPlayer = context.TargetPlayer;
         var cards = targetPlayer.GetUnlockedColorlessCards()
             .GetDistinctForCombat(targetPlayer, 1, context.Rng.CombatCardGeneration)
             .UpgradeIf(card.IsUpgraded)
