@@ -35,6 +35,11 @@ internal abstract class CombatPredictionMirrorContext<TBase> : IPredictionMirror
     {
         History.RecordRisk(PredictionRiskReason.MethodNotMirrored);
     }
+
+    void IPredictionMirrorContext<TBase>.RecordMethodMirrorIncompleteRisk()
+    {
+        History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+    }
 }
 
 internal abstract class CombatPredictionMirrorContext : CombatPredictionMirrorContext<AbstractModel>;

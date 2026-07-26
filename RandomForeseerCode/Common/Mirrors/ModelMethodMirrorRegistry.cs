@@ -16,6 +16,9 @@ internal enum MirrorDispatchKind
     /// <summary>The runtime type has a registered prediction handler.</summary>
     Handled,
 
+    /// <summary>The runtime type has an unregistered override with a best-effort inferred prediction handler.</summary>
+    Inferred,
+
     /// <summary>The override was reviewed and intentionally has no prediction-relevant behavior.</summary>
     Ignored,
 
@@ -26,6 +29,24 @@ internal enum MirrorDispatchKind
 internal readonly record struct MirrorDispatchResult(MirrorDispatchKind Kind);
 
 internal readonly record struct MirrorDispatchResult<TResult>(MirrorDispatchKind Kind, TResult Value);
+
+/// <summary>
+/// Analyzes one unregistered virtual action override and, when structurally supported, creates its inferred handler.
+/// </summary>
+/// <remarks>
+/// Inference is performed once per exact runtime type and must depend only on type-level method structure. The returned
+/// handler may resolve instance-dependent values or skip inapplicable candidates, but it must not capture a receiver or
+/// context instance. The registry owns incomplete-risk recording for inferred invocations.
+/// </remarks>
+internal interface IModelMethodMirrorInferer<TBase, TContext>
+    where TBase : class
+    where TContext : IPredictionMirrorContext<TBase>
+{
+    bool TryInfer(
+        Type runtimeType,
+        MethodInfo overrideMethod,
+        [NotNullWhen(true)] out Action<TBase, TContext>? handler);
+}
 
 /// <summary>
 /// Dispatches one mirrored virtual action method against the exact runtime type of one receiver.
@@ -41,6 +62,8 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
     // All registrations must be completed before the first invocation. Registries are built during
     // static initialization and do not support runtime registration.
     private readonly Dictionary<Type, LookupResult> _lookups = [];
+
+    private IModelMethodMirrorInferer<TBase, TContext>? _inferer;
 
     public void Register<TModel>(Action<TModel, TContext> handler)
         where TModel : TBase
@@ -62,6 +85,18 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
     }
 
     /// <summary>
+    /// Registers the single type-level fallback used to infer unregistered, gameplay-relevant overrides.
+    /// </summary>
+    public void RegisterInferer(IModelMethodMirrorInferer<TBase, TContext> inferer)
+    {
+        ArgumentNullException.ThrowIfNull(inferer);
+
+        _inferer = _inferer is not null
+            ? throw new InvalidOperationException($"Mirror for {method.Name} already has a registered inferer.")
+            : inferer;
+    }
+
+    /// <summary>
     /// Queries the cached exact-type dispatch policy without opening a trace scope, invoking a handler, or recording risk.
     /// </summary>
     public MirrorDispatchKind Query(TBase receiver)
@@ -79,13 +114,26 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
 
         using (context.PushDispatchSource(receiver, method))
         {
-            if (kind is MirrorDispatchKind.Handled)
+            switch (kind)
             {
-                handler!(receiver, context);
-                return new(kind);
+                case MirrorDispatchKind.Handled:
+                    handler!(receiver, context);
+                    break;
+
+                case MirrorDispatchKind.Inferred:
+                    // Inferred mirrors are always incomplete by definition. Record the risk before invoking the handler.
+                    context.RecordMethodMirrorIncompleteRisk();
+                    handler!(receiver, context);
+                    break;
+
+                case MirrorDispatchKind.Unsupported:
+                    context.RecordMethodNotMirroredRisk();
+                    break;
+
+                default:
+                    throw new InvalidOperationException($"Unexpected mirror dispatch kind {kind}.");
             }
 
-            context.RecordMethodNotMirroredRisk();
             return new(kind);
         }
     }
@@ -106,6 +154,12 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
             Entry.Logger.Info(
                 $"Mirror for {method.Name} ignored unsupported {type.FullName} from non-gameplay mod {mod.manifest?.id}.");
             result = new(MirrorDispatchKind.Ignored, null);
+        }
+        else if (_inferer?.TryInfer(type, overrideMethod, out var inferredHandler) is true)
+        {
+            Entry.Logger.Info(
+                $"Mirror for {method.Name} will best-effort infer behavior for unregistered {type.FullName}.");
+            result = new(MirrorDispatchKind.Inferred, inferredHandler);
         }
         else
         {

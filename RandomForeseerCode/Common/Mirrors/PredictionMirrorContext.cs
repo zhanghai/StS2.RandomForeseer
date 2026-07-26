@@ -6,4 +6,6 @@ internal interface IPredictionMirrorContext<in TBase>
     IDisposable PushDispatchSource(TBase receiver, MirrorMethodSpec method);
 
     void RecordMethodNotMirroredRisk();
+
+    void RecordMethodMirrorIncompleteRisk();
 }

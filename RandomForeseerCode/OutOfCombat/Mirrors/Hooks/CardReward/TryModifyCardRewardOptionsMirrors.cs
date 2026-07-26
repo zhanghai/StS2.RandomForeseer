@@ -326,4 +326,9 @@ internal sealed class TryModifyCardRewardOptionsMirrorContext : IPredictionMirro
     {
         HasRisk = true;
     }
+
+    void IPredictionMirrorContext<AbstractModel>.RecordMethodMirrorIncompleteRisk()
+    {
+        HasRisk = true;
+    }
 }
