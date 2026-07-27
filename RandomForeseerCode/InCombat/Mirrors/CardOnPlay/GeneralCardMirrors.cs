@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using RandomForeseer.RandomForeseerCode.Common;
@@ -71,6 +72,19 @@ internal static class GeneralCardMirrors
         if (card.DynamicVars.ContainsKey("Repeat"))
         {
             command.WithHitCount(card.DynamicVars.Repeat.IntValue);
+        }
+        else if (card.DynamicVars.ContainsKey("CalculatedHits") &&
+                 card.DynamicVars["CalculatedHits"] is CalculatedVar calculatedVar)
+        {
+            command.WithHitCount((int)context.Calculate(calculatedVar));
+        }
+        else if (card.EnergyCost.CostsX)
+        {
+            command.WithHitCount(context.Card.ResolveEnergyXValue(context.State));
+        }
+        else if (card.HasStarCostX)
+        {
+            command.WithHitCount(context.Card.ResolveStarXValue(context.State));
         }
 
         switch (card.TargetType)
