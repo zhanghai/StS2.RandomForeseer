@@ -12,6 +12,22 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
 internal static class GeneralCardMirrors
 {
     /// <summary>
+    /// Simulates a general draw of one card for the card's owner.
+    /// </summary>
+    public static void GeneralOwnerDrawOneOnPlay(CardModel card, CardOnPlayMirrorContext context)
+    {
+        context.Simulator.Draw(card.Owner, 1);
+    }
+
+    /// <summary>
+    /// Simulates an unconditional draw based on the card's <c>Cards</c> dynamic var for the card's owner.
+    /// </summary>
+    public static void GeneralOwnerDrawOnPlay(CardModel card, CardOnPlayMirrorContext context)
+    {
+        context.Simulator.Draw(card.Owner, card.DynamicVars.Cards.BaseValue);
+    }
+
+    /// <summary>
     /// Simulates a general attack when a card is played.
     /// </summary>
     /// <remarks>

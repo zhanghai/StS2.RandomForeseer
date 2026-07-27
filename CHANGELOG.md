@@ -4,8 +4,8 @@
 
 ### feat
 
-- 战斗预测现在可通过通用规则识别更多未单独适配卡牌的攻击和格挡行为。<br>
-  Combat prediction can now recognize the attack and block behavior of more cards without dedicated support by using general rules.
+- 战斗预测现在可通过通用规则识别更多未单独适配卡牌的攻击、格挡和抽牌行为。<br>
+  Combat prediction can now recognize the attack, block, and card-draw behavior of more cards without dedicated support by using general rules.
 
 - 战斗抽牌预测现在支持群星荟萃，会显示目标队友将抽到的牌。<br>
   Combat card draw prediction now supports Constellation, showing the targeted teammate's card draw.

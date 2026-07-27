@@ -38,15 +38,9 @@ internal readonly record struct MirrorDispatchResult<TResult>(MirrorDispatchKind
 /// handler may resolve instance-dependent values or skip inapplicable candidates, but it must not capture a receiver or
 /// context instance. The registry owns incomplete-risk recording for inferred invocations.
 /// </remarks>
-internal interface IModelMethodMirrorInferer<TBase, TContext>
+internal delegate Action<TBase, TContext>? ModelMethodMirrorInferer<TBase, TContext>(Type runtimeType, MethodInfo overrideMethod)
     where TBase : class
-    where TContext : IPredictionMirrorContext<TBase>
-{
-    bool TryInfer(
-        Type runtimeType,
-        MethodInfo overrideMethod,
-        [NotNullWhen(true)] out Action<TBase, TContext>? handler);
-}
+    where TContext : IPredictionMirrorContext<TBase>;
 
 /// <summary>
 /// Dispatches one mirrored virtual action method against the exact runtime type of one receiver.
@@ -63,7 +57,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
     // static initialization and do not support runtime registration.
     private readonly Dictionary<Type, LookupResult> _lookups = [];
 
-    private IModelMethodMirrorInferer<TBase, TContext>? _inferer;
+    private ModelMethodMirrorInferer<TBase, TContext>? _inferer;
 
     public void Register<TModel>(Action<TModel, TContext> handler)
         where TModel : TBase
@@ -87,7 +81,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
     /// <summary>
     /// Registers the single type-level fallback used to infer unregistered, gameplay-relevant overrides.
     /// </summary>
-    public void RegisterInferer(IModelMethodMirrorInferer<TBase, TContext> inferer)
+    public void RegisterInferer(ModelMethodMirrorInferer<TBase, TContext> inferer)
     {
         ArgumentNullException.ThrowIfNull(inferer);
 
@@ -155,7 +149,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
                 $"Mirror for {method.Name} ignored unsupported {type.FullName} from non-gameplay mod {mod.manifest?.id}.");
             result = new(MirrorDispatchKind.Ignored, null);
         }
-        else if (_inferer?.TryInfer(type, overrideMethod, out var inferredHandler) is true)
+        else if (_inferer?.Invoke(type, overrideMethod) is { } inferredHandler)
         {
             Entry.Logger.Info(
                 $"Mirror for {method.Name} will best-effort infer behavior for unregistered {type.FullName}.");

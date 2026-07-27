@@ -23,7 +23,7 @@ The Workshop package automatically loads the newest compatible Mod version for t
 - **End-turn effect prediction**: shows aggregated supported end-turn damage for all players ending their turn; overlay indicators and health bar forecasts can be configured separately for End Turn button hover or always during the player turn; hovering a target creature or prediction indicator shows per-hit damage source details.
 - **Draw-pile autoplay prediction**: shows the cards that Havoc, Cascade, and Distilled Chaos will play from the draw pile.
 - **Potion draw prediction**: shows the cards that supported draw potions will draw, including cards after shuffle.
-- **Card draw prediction**: shows the cards that supported card-play draw effects such as Reboot and Calculated Gamble will draw, including cards after shuffle.
+- **Card draw prediction**: shows the cards drawn by supported card-play effects and other cards that match general draw rules, including cards after shuffle.
 - **Combat transform prediction**: shows the cards that Entropy will transform selected hand cards into during combat.
 - **Driftwood reroll prediction**: shows the cards that a card reward reroll will offer when hovering the Reroll button.
 - **Pael's Wing sacrifice prediction**: shows the relic awarded by an activating Sacrifice button.
@@ -151,6 +151,7 @@ Each feature can be toggled independently from the mod settings page, and predic
 
 ### Card Draw
 
+- Fixed-count owner draw cards that match the general rules
 - Reboot
 - Calculated Gamble
 - Coolheaded

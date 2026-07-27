@@ -148,7 +148,7 @@ internal static class CardOnPlayMirrors
         registry.Register<DefendNecrobinder>(GeneralCardMirrors.GeneralBlockOnPlay);
         registry.Register<DefendDefect>(GeneralCardMirrors.GeneralBlockOnPlay);
 
-        registry.RegisterInferer(CardOnPlayInferer.Instance);
+        registry.RegisterInferer(CardOnPlayInferer.Infer);
 
         return registry;
     }
