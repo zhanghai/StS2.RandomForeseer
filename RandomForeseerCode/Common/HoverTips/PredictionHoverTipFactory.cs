@@ -18,8 +18,6 @@ internal static class PredictionHoverTipFactory
     /// </summary>
     public const string HoverTipIdPrefix = $"{Entry.ModId}:Prediction";
 
-    private const int MaxDriftWarningModelNames = 3;
-
     /// <summary>
     /// Creates a non-dimmed prediction tip for one card.
     /// </summary>
@@ -113,31 +111,6 @@ internal static class PredictionHoverTipFactory
             Id = $"{HoverTipIdPrefix}:{key}",
             IsInstanced = true
         };
-        return tip;
-    }
-
-    /// <summary>
-    /// Creates a drift-warning text tip when the risk is non-empty and drift warnings are enabled.
-    /// </summary>
-    /// <param name="key">Warning key suffix under the <c>drift_warning</c> localization group.</param>
-    /// <returns>The warning tip, or <see langword="null"/> when no warning should be displayed.</returns>
-    public static HoverTip? DriftWarning(string key, PredictionRisk risk)
-    {
-        if (!risk.HasRisk || !RandomForeseerSettings.EnableDriftWarnings)
-        {
-            return null;
-        }
-
-        var tip = Text($"drift_warning.{key}", description =>
-        {
-            var modelNames = risk.Models.Select(model => model.GetTitle()).Distinct().ToList();
-            var shownModelNames = modelNames.Take(MaxDriftWarningModelNames).ToList();
-            var extraModelCount = modelNames.Count - shownModelNames.Count;
-
-            description.Add("HasModels", shownModelNames.Count > 0);
-            description.Add("Models", shownModelNames);
-            description.Add("ExtraModelCount", extraModelCount);
-        });
         return tip;
     }
 

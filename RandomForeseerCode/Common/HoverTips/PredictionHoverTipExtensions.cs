@@ -62,18 +62,6 @@ internal static class PredictionHoverTipExtensions
     }
 
     /// <summary>
-    /// Appends a drift warning when the risk and current settings require one.
-    /// </summary>
-    public static void AddDriftWarning(this List<IHoverTip> tips, string key, PredictionRisk risk)
-    {
-        var warningTip = PredictionHoverTipFactory.DriftWarning(key, risk);
-        if (warningTip is not null)
-        {
-            tips.Add(warningTip);
-        }
-    }
-
-    /// <summary>
     /// Returns whether a tip is any prediction-owned text/model or card tip.
     /// </summary>
     public static bool IsPredictionHoverTip(this IHoverTip tip)

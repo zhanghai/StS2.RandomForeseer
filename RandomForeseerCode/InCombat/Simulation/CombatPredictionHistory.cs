@@ -227,27 +227,10 @@ internal sealed class CombatPredictionHistory(PredictionTrace trace)
         }
     }
 
-    private PredictionRisk GetRiskThrough(int boundaryIndex)
+    private CombatPredictionRisk GetRiskThrough(int boundaryIndex)
     {
-        List<AbstractModel> models = [];
-        HashSet<ModelId> modelIds = [];
-        HashSet<PredictionRiskReason> reasons = [];
-
-        foreach (var riskEntry in _entries.Take(boundaryIndex + 1).OfType<CombatPredictionRiskEntry>())
-        {
-            reasons.Add(riskEntry.Reason);
-
-            foreach (var frame in riskEntry.Trace?.Ancestors().Reverse() ?? [])
-            {
-                if (modelIds.Add(frame.Source.Id))
-                {
-                    models.Add(frame.Source);
-                }
-            }
-        }
-
-        return reasons.Count == 0
-            ? PredictionRisk.None
-            : new PredictionRisk(true, models, reasons);
+        return new CombatPredictionRisk([.. _entries
+            .Take(boundaryIndex + 1)
+            .OfType<CombatPredictionRiskEntry>()]);
     }
 }

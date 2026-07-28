@@ -368,7 +368,7 @@ internal sealed class CombatPredictionProjector
         {
             _hoverTips.Insert(0, causalTip);
         }
-        _hoverTips.AddDriftWarning(GetDriftWarningKey(), risk);
+        _hoverTips.AddRange(risk.ToHoverTips());
 
         return new CombatPredictionProjection(
             _hoverTips,
@@ -391,16 +391,6 @@ internal sealed class CombatPredictionProjector
         IEnumerable<AbstractModel> results)
     {
         _causalTips.AddEffect(entry, effect, results);
-    }
-
-    private string GetDriftWarningKey()
-    {
-        return _rootAction switch
-        {
-            PredictionActionKind.CardPlay => "combat_card",
-            PredictionActionKind.PotionUse => "combat_potion",
-            var action => throw new InvalidOperationException($"Unexpected root action kind {action}.")
-        };
     }
 
     private static bool IsSettingEnabled(bool setting)

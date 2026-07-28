@@ -18,6 +18,9 @@
 
 ### fix
 
+- 精简战斗预测偏移提示，分别汇总未完整模拟的结算、未纳入预测的玩家选择和达到模拟上限的效果。<br>
+  Streamlined combat prediction drift warnings by separately summarizing incomplete simulation, unresolved player choices, and simulation limits.
+
 - 修复选择队友作为卡牌或药水目标时，悬停左上角队友名字牌不会显示对应预测的问题。<br>
   Fixed card and potion predictions not updating when hovering a teammate's nameplate while selecting them as the target.
 

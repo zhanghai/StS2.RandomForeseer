@@ -18,8 +18,7 @@ internal static class EndTurnPredictionCreatureHoverTips
     {
         TipsByTarget.Clear();
 
-        var warningTips = new List<IHoverTip>();
-        warningTips.AddDriftWarning("end_turn", risk);
+        IHoverTip[] warningTips = [.. risk.ToHoverTips()];
 
         foreach (var target in prediction.Targets)
         {
