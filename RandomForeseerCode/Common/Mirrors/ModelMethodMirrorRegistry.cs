@@ -55,9 +55,31 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
 {
     // All registrations must be completed before the first invocation. Registries are built during
     // static initialization and do not support runtime registration.
-    private readonly Dictionary<Type, LookupResult> _lookups = [];
+    private readonly Dictionary<Type, LookupResult> _registrations = [];
+    private readonly Dictionary<Type, LookupResult> _lookupCache = [];
 
     private ModelMethodMirrorInferer<TBase, TContext>? _inferer;
+    private bool _allowInference = true;
+
+    /// <summary>
+    /// Gets or sets whether unregistered gameplay overrides may use the registered Type-level inferer.
+    /// </summary>
+    /// <remarks>
+    /// Changing this policy clears only resolved Type lookups. Explicit handled and ignored registrations remain
+    /// intact, and the registered inferer remains available if inference is enabled again.
+    /// </remarks>
+    public bool AllowInference
+    {
+        get => _allowInference;
+        set
+        {
+            if (_allowInference != value)
+            {
+                _allowInference = value;
+                _lookupCache.Clear();
+            }
+        }
+    }
 
     public void Register<TModel>(Action<TModel, TContext> handler)
         where TModel : TBase
@@ -65,7 +87,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
         var type = typeof(TModel);
         ValidateOverride(type);
         // Exact type matching is intentional: derived models must be reviewed independently.
-        _lookups.Add(type, new(
+        _registrations.Add(type, new(
             MirrorDispatchKind.Handled,
             (receiver, context) => handler((TModel)receiver, context)));
     }
@@ -75,7 +97,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
     {
         var type = typeof(TModel);
         ValidateOverride(type);
-        _lookups.Add(type, new(MirrorDispatchKind.Ignored, null));
+        _registrations.Add(type, new(MirrorDispatchKind.Ignored, null));
     }
 
     /// <summary>
@@ -134,7 +156,8 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
 
     private LookupResult Lookup(Type type)
     {
-        if (_lookups.TryGetValue(type, out var result))
+        if (_registrations.TryGetValue(type, out var result) ||
+            _lookupCache.TryGetValue(type, out result))
         {
             return result;
         }
@@ -149,7 +172,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
                 $"Mirror for {method.Name} ignored unsupported {type.FullName} from non-gameplay mod {mod.manifest?.id}.");
             result = new(MirrorDispatchKind.Ignored, null);
         }
-        else if (_inferer?.Invoke(type, overrideMethod) is { } inferredHandler)
+        else if (_allowInference && _inferer?.Invoke(type, overrideMethod) is { } inferredHandler)
         {
             Entry.Logger.Info(
                 $"Mirror for {method.Name} will best-effort infer behavior for unregistered {type.FullName}.");
@@ -162,7 +185,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
             result = new(MirrorDispatchKind.Unsupported, null);
         }
 
-        _lookups.Add(type, result);
+        _lookupCache.Add(type, result);
         return result;
     }
 
