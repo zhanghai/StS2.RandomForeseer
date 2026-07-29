@@ -16,14 +16,13 @@ The Workshop package automatically loads the newest compatible Mod version for t
 - **Random-card-generation potion prediction**: adds the predicted generated cards to random-card-generation potion hover tips.
 - **Potion generation prediction**: shows the potions that Entropic Brew and Alchemize will generate.
 - **Combat card generation prediction**: shows predicted generated cards when hovering supported random-card generators in hand during combat.
-- **Chained card-effect prediction**: when enabled, combat card prediction also shows supported card and combat effects caused indirectly by the played card, with causal explanations.
 - **Combat card selection prediction**: shows or highlights existing cards that supported combat card-selection effects will select when hovering cards in hand or card-play targets; predictions that may be shifted by side effects show a warning that can be disabled.
 - **Random-target attack prediction**: shows targets that supported random-enemy attack cards will hit during combat, with health bar forecasts.
 - **Orb effect prediction**: shows targets that supported orb-triggering cards and potions will hit when hovering those sources or their targets during combat, with health bar forecasts.
 - **End-turn effect prediction**: shows aggregated supported end-turn damage for all players ending their turn; overlay indicators and health bar forecasts can be configured separately for End Turn button hover or always during the player turn; hovering a target creature or prediction indicator shows per-hit damage source details.
 - **Draw-pile autoplay prediction**: shows the cards that Havoc, Cascade, and Distilled Chaos will play from the draw pile.
 - **Potion draw prediction**: shows the cards that supported draw potions will draw, including cards after shuffle.
-- **Card draw prediction**: shows the cards drawn by supported card-play effects and other cards that match general draw rules, including cards after shuffle.
+- **Card draw prediction**: shows cards drawn by supported card-play effects, including cards after shuffle.
 - **Combat transform prediction**: shows the cards that Entropy will transform selected hand cards into during combat.
 - **Driftwood reroll prediction**: shows the cards that a card reward reroll will offer when hovering the Reroll button.
 - **Pael's Wing sacrifice prediction**: shows the relic awarded by an activating Sacrifice button.
@@ -35,6 +34,11 @@ The Workshop package automatically loads the newest compatible Mod version for t
 - **Frozen Eye**: shows the combat draw pile in actual draw order when opened, and previews the discard pile order after shuffle during the player's turn.
 
 Each feature can be toggled independently from the mod settings page, and predictions can also be disabled globally for singleplayer or multiplayer. Fair mode is enabled by default and limits predictions to information obtainable through Save & Load.
+
+### Experimental Features
+
+- **Experimental card prediction**: combat prediction can use general rules to recognize attack, block, and card-draw behavior for more cards without dedicated support, and show related effects triggered by those cards. Disabled by default.
+- **Chained card-effect prediction**: combat card prediction can show supported card and combat effects indirectly triggered by the current card, with causal explanations. Disabled by default.
 
 ## Currently Supported Predictions
 
@@ -151,7 +155,6 @@ Each feature can be toggled independently from the mod settings page, and predic
 
 ### Card Draw
 
-- Fixed-count owner draw cards that match the general rules
 - Reboot
 - Calculated Gamble
 - Coolheaded
@@ -228,7 +231,6 @@ Open the RitsuLib mod settings page and select **Random Foreseer**:
 | Predict potion card results | Controls whether random-card-generation potions show predicted cards |
 | Predict potion generation | Controls whether Entropic Brew and Alchemize show predicted potions |
 | Predict combat card generation | Controls whether supported in-hand combat cards show predicted generated cards |
-| Predict chained card effects | Controls whether combat card prediction includes supported effects caused indirectly by the played card, default on |
 | Predict combat card selection | Controls whether supported in-hand combat cards show selected existing cards and hand highlights |
 | Predict combat damage | Controls all supported combat damage predictions and is the master switch for orb, random-target attack, and end-turn damage displays |
 | Predict orb effects | Controls whether supported orb-triggering cards and potions show the targets that orb effects will hit |
@@ -250,6 +252,8 @@ Open the RitsuLib mod settings page and select **Random Foreseer**:
 | Predict next Act Ancient and boss | Controls whether the top bar on boss reward screens shows the next Act's Ancient and boss |
 | Enable Frozen Eye | Controls whether the draw pile screen shows cards in actual draw order |
 | Predict shuffle order | Controls whether the Frozen Eye draw pile screen previews the discard pile order after shuffle |
+| Predict cards without complete support | Experimental; controls whether to infer the on-play effects of cards without complete support and show predictions, default off |
+| Predict chained card effects | Experimental; controls whether combat card prediction shows effects indirectly triggered by the current card, default off |
 
 ## Build From Source
 

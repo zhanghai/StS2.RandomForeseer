@@ -40,6 +40,7 @@ public partial class Entry
 
         PredictionLocalization.Register();
         RandomForeseerSettings.Register();
+        CombatCardPredictionSettingsController.Register();
         RitsuLibFramework.RegisterHealthBarForecast<DamagePredictionHealthBarForecastSource>(
             ModId,
             "combat_prediction");

@@ -4,17 +4,20 @@
 
 ### feat
 
-- 战斗预测现在可通过通用规则识别更多未单独适配卡牌的攻击、格挡和抽牌行为。<br>
-  Combat prediction can now recognize the attack, block, and card-draw behavior of more cards without dedicated support by using general rules.
-
 - 战斗抽牌预测现在支持群星荟萃，会显示目标队友将抽到的牌。<br>
   Combat card draw prediction now supports Constellation, showing the targeted teammate's card draw.
 
 - 充能球效果预测现在支持黑暗精华，包括填充栏位时被释放的充能球造成的伤害和目标。<br>
   Orb effect prediction now supports Essence of Darkness, including damage and targets from orbs evoked while filling the queue.
 
-- 统一战斗卡牌和药水预测入口，现在一次模拟即可同时展示支持的卡牌或药水效果、伤害、手牌高亮和因果说明；可单独关闭嵌套出牌的连锁效果预测，并新增控制充能球、随机目标攻击和回合结束伤害显示的战斗伤害总开关。<br>
-  Unified combat card and potion prediction entry points so one simulation can show supported card or potion effects, damage, hand highlights, and causal explanations together; chained effects from nested card plays can be disabled separately, and a new combat-damage master switch governs orb, random-target attack, and end-turn damage displays.
+- 统一战斗卡牌和药水预测入口，现在一次模拟即可同时展示支持的卡牌或药水效果、伤害、手牌高亮和因果说明，并新增控制充能球、随机目标攻击和回合结束伤害显示的战斗伤害总开关。<br>
+  Unified combat card and potion prediction entry points so one simulation can show supported card or potion effects, damage, hand highlights, and causal explanations together, with a new combat-damage master switch governing orb, random-target attack, and end-turn damage displays.
+
+- 实验性功能：战斗预测可通过通用规则识别更多未单独适配卡牌的攻击、格挡和抽牌行为，并显示这些卡牌触发的连带效果。默认关闭。<br>
+  Experimental: Combat prediction can use general rules to recognize attack, block, and card-draw behavior for more cards without dedicated support, and show related effects triggered by those cards. Disabled by default.
+
+- 实验性功能：战斗预测现在可以显示被破灭、倾泻、精炼混沌等来源自动打出的卡牌的后续效果，并提供因果说明。默认关闭。<br>
+  Experimental: Combat prediction can now show downstream effects from cards auto-played by sources such as Havoc, Cascade, and Distilled Chaos, with causal explanations. Disabled by default.
 
 ### fix
 

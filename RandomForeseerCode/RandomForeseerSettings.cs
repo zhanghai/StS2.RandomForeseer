@@ -43,7 +43,9 @@ internal sealed class RandomForeseerSettingsData
 
     public bool EnableCombatCardPrediction { get; set; } = true;
 
-    public bool EnableChainedCardEffectPrediction { get; set; } = true;
+    public bool EnableBestEffortCardPlayPrediction { get; set; }
+
+    public bool EnableChainedCardEffectPrediction { get; set; }
 
     public bool EnableCombatCardSelectionPrediction { get; set; } = true;
 
@@ -223,6 +225,14 @@ internal static class RandomForeseerSettings
             (settings, value) => settings.EnableCombatCardPrediction = value)
         .WithDefault(() => Default.EnableCombatCardPrediction);
 
+    private static readonly IModSettingsValueBinding<bool> EnableBestEffortCardPlayPredictionBinding =
+        ModSettingsBindings.Global<RandomForeseerSettingsData, bool>(
+            Entry.ModId,
+            DataKey,
+            settings => settings.EnableBestEffortCardPlayPrediction,
+            (settings, value) => settings.EnableBestEffortCardPlayPrediction = value)
+        .WithDefault(() => Default.EnableBestEffortCardPlayPrediction);
+
     private static readonly IModSettingsValueBinding<bool> EnableChainedCardEffectPredictionBinding =
         ModSettingsBindings.Global<RandomForeseerSettingsData, bool>(
             Entry.ModId,
@@ -392,6 +402,8 @@ internal static class RandomForeseerSettings
 
     public static bool EnableCombatCardPrediction => EnableCombatCardPredictionBinding.Read();
 
+    public static bool EnableBestEffortCardPlayPrediction => EnableBestEffortCardPlayPredictionBinding.Read();
+
     public static bool EnableChainedCardEffectPrediction => EnableChainedCardEffectPredictionBinding.Read();
 
     public static bool EnableCombatCardSelectionPrediction => EnableCombatCardSelectionPredictionBinding.Read();
@@ -444,6 +456,11 @@ internal static class RandomForeseerSettings
     public static bool IsDamagePredictionHealthBarColorBinding(IModSettingsBinding binding)
     {
         return ReferenceEquals(binding, DamagePredictionHealthBarColorBinding);
+    }
+
+    public static bool IsBestEffortCardPlayPredictionBinding(IModSettingsBinding binding)
+    {
+        return ReferenceEquals(binding, EnableBestEffortCardPlayPredictionBinding);
     }
 
     public static bool IsPredictionFeatureEnabled(bool featureEnabled)
@@ -606,12 +623,6 @@ internal static class RandomForeseerSettings
                     Text("toggle.enable_combat_card_prediction.description"));
 
                 section.AddToggle(
-                    "enable_chained_card_effect_prediction",
-                    Text("toggle.enable_chained_card_effect_prediction.label"),
-                    EnableChainedCardEffectPredictionBinding,
-                    Text("toggle.enable_chained_card_effect_prediction.description"));
-
-                section.AddToggle(
                     "enable_combat_card_selection_prediction",
                     Text("toggle.enable_combat_card_selection_prediction.label"),
                     EnableCombatCardSelectionPredictionBinding,
@@ -700,6 +711,24 @@ internal static class RandomForeseerSettings
                     Text("toggle.enable_shuffle_prediction.label"),
                     EnableShufflePredictionBinding,
                     Text("toggle.enable_shuffle_prediction.description"));
+            });
+
+            page.AddSection("experimental_features", section =>
+            {
+                section.WithTitle(Text("section.experimental_features.title"));
+                section.WithDescription(Text("section.experimental_features.description"));
+
+                section.AddToggle(
+                    "enable_best_effort_card_play_prediction",
+                    Text("toggle.enable_best_effort_card_play_prediction.label"),
+                    EnableBestEffortCardPlayPredictionBinding,
+                    Text("toggle.enable_best_effort_card_play_prediction.description"));
+
+                section.AddToggle(
+                    "enable_chained_card_effect_prediction",
+                    Text("toggle.enable_chained_card_effect_prediction.label"),
+                    EnableChainedCardEffectPredictionBinding,
+                    Text("toggle.enable_chained_card_effect_prediction.description"));
             });
 
         });

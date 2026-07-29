@@ -113,11 +113,13 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
     }
 
     /// <summary>
-    /// Queries the cached exact-type dispatch policy without opening a trace scope, invoking a handler, or recording risk.
+    /// Returns whether the exact runtime type has an explicitly registered handler without resolving or caching a
+    /// fallback lookup.
     /// </summary>
-    public MirrorDispatchKind Query(TBase receiver)
+    public bool HasRegisteredHandler(TBase receiver)
     {
-        return Lookup(receiver.GetType()).Kind;
+        return _registrations.TryGetValue(receiver.GetType(), out var registration) &&
+            registration.Kind is MirrorDispatchKind.Handled;
     }
 
     public MirrorDispatchResult Invoke(TBase receiver, TContext context)

@@ -22,9 +22,15 @@ internal static class CardOnPlayMirrors
 
     private static readonly Registry Registry = CreateRegistry();
 
+    public static bool AllowInference
+    {
+        get => Registry.AllowInference;
+        set => Registry.AllowInference = value;
+    }
+
     public static bool CanMirror(CardModel card)
     {
-        return Registry.Query(card) is MirrorDispatchKind.Handled or MirrorDispatchKind.Inferred;
+        return Registry.HasRegisteredHandler(card);
     }
 
     public static bool IsOnPlayInvocation(PredictionInvocation invocation)

@@ -15,7 +15,18 @@ Combat prediction never invokes the real virtual method. `CombatPredictionSimula
 3. `CardOnPlayInferer` may classify an unregistered gameplay override as `Inferred`.
 4. Every other gameplay override is `Unsupported`.
 
-Exact handlers always win and are never combined with inferred behavior. `CanMirror` accepts `Handled` and `Inferred`; unsupported cards do not open a combat-card prediction session. Every inferred invocation records `MethodMirrorIncomplete` before executing its first candidate so projections retain the best-effort warning even when the simulated part succeeds.
+Exact handlers always win and are never combined with inferred behavior. `CanMirror` accepts only `Handled`, so the
+default combat-card prediction entry opens sessions only for exact registrations. The experimental best-effort card
+play setting bypasses that entry gate and enables the registry's `AllowInference` policy. With it enabled, every
+dispatch kind may enter the shadow card-play lifecycle: `Inferred` executes its inferred handler and records
+`MethodMirrorIncomplete`; `Unsupported` skips the unknown `OnPlay` body and records `MethodNotMirrored`;
+`NotOverridden` has no override to simulate, and `Ignored` is intentionally skipped. Resource spending, result-pile
+movement, exhaust hooks and other supported lifecycle effects still run around those bodies. `CanMirror` checks the
+explicit registration table directly, so the default root gate does not analyze or cache unregistered types.
+
+The setting is synchronized at runtime. Disabling inference clears resolved Type lookups but preserves exact
+registrations and the registered inferer; enabling it again analyzes and caches encountered unregistered types.
+Disabling it also prevents previously cached inferred handlers from running for nested card plays.
 
 ## General inference
 
@@ -73,4 +84,9 @@ These limits are intentional. Expanding inference should add narrowly named, off
 
 ## Maintenance
 
-Keep exact registrations in `CardOnPlayMirrors.CreateRegistry` and register the single general inferer after them. When adding an inferred template, match an unambiguous original command, define conservative instance-time parameter and target resolution, preserve call order where RitsuLib exposes it, add positive and negative offline samples, and document omitted control flow. New templates must continue to clone RNG and mutate only prediction-owned state.
+Keep exact registrations in `CardOnPlayMirrors.CreateRegistry` and register the single general inferer after them. The
+best-effort setting controls both the root prediction gate and the registry inference policy so nested plays follow the
+same rule. When adding an inferred template, match an unambiguous original command, define conservative instance-time
+parameter and target resolution, preserve call order where RitsuLib exposes it, add positive and negative offline
+samples, and document omitted control flow. New templates must continue to clone RNG and mutate only prediction-owned
+state.

@@ -75,7 +75,7 @@ internal static class CombatCardPrediction
         if (!CombatPredictionProjector.HasAnyEnabledFeature(PredictionActionKind.CardPlay) ||
             !card.IsMutable ||
             card.Owner?.Creature.CombatState is not { } combatState ||
-            !CardOnPlayMirrors.CanMirror(card) ||
+            (!RandomForeseerSettings.EnableBestEffortCardPlayPrediction && !CardOnPlayMirrors.CanMirror(card)) ||
             !card.TryResolveTarget(ref target))
         {
             return null;

@@ -27,7 +27,7 @@ internal static class PotionOnUseMirrors
     /// </summary>
     public static bool CanMirror(PotionModel potion)
     {
-        return Registry.Query(potion) is MirrorDispatchKind.Handled;
+        return Registry.HasRegisteredHandler(potion);
     }
 
     public static bool IsOnUseInvocation(PredictionInvocation invocation)
