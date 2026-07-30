@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -12,7 +13,7 @@ internal static class BattlewornDummyPrediction
 {
     public static IReadOnlyList<IHoverTip> GetHoverTips(BattlewornDummy battlewornDummy, EventOption option)
     {
-        if (!RandomForeseerSettings.IsFairPredictionAllowed(PredictionFairness.UnfairInAllModes))
+        if (!ModData.Settings.Allows(PredictionFairness.UnfairInAllModes))
         {
             return [];
         }

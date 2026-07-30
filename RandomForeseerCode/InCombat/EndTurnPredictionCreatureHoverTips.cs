@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.HoverTips;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Localization;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -55,7 +56,7 @@ internal static class EndTurnPredictionCreatureHoverTips
 
     private static string FormatDamageLine(DamagePredictionLine line)
     {
-        var loc = PredictionLocalization.Text("end_turn_damage_details.line");
+        var loc = ModLocalization.Text("end_turn_damage_details.line");
         loc.Add("Source", line.Source.GetTitle());
         loc.Add("Damage", line.Damage);
         loc.Add("UnblockedDamage", line.UnblockedDamage);

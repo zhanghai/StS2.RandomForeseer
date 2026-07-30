@@ -14,6 +14,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
 
@@ -23,7 +24,8 @@ internal static class RelicPickupPrediction
 
     public static IReadOnlyList<IHoverTip> GetHoverTips(Player player, RelicModel relic)
     {
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableRelicPickupPrediction))
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.RelicPickupPredictionEnabled)
         {
             return [];
         }
@@ -529,12 +531,12 @@ internal static class RelicPickupPrediction
 
     private static bool IsSingleplayerUnfairPredictionAllowed(RelicModel? relicSource = null)
     {
-        return RandomForeseerSettings.IsFairPredictionAllowed(PredictionFairness.UnfairInSingleplayer) ||
+        return ModData.Settings.Allows(PredictionFairness.UnfairInSingleplayer) ||
             (relicSource is not null && RewardPagePredictionContext.HasOtherPendingReward(relicSource));
     }
 
     private static bool IsAllModesUnfairPredictionAllowed()
     {
-        return RandomForeseerSettings.IsFairPredictionAllowed(PredictionFairness.UnfairInAllModes);
+        return ModData.Settings.Allows(PredictionFairness.UnfairInAllModes);
     }
 }

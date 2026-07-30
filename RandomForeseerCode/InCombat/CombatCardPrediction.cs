@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
@@ -66,16 +67,15 @@ internal static class CombatCardPrediction
     /// <param name="card">The live mutable card whose original identity anchors the prediction trace.</param>
     /// <param name="target">The selected target, or <see langword="null"/> when the card can resolve one automatically.</param>
     /// <returns>
-    /// The completed presentation projection, or <see langword="null"/> when no feature is enabled, the card cannot
-    /// be mirrored, its target cannot be resolved, or the simulated play is invalid.
+    /// The completed presentation projection, or <see langword="null"/> when the card cannot be mirrored, its target cannot be
+    /// resolved, or the simulated play is invalid.
     /// </returns>
     /// <remarks>Simulation and projection exceptions are intentionally handled by the calling UI injection boundary.</remarks>
     public static CombatPredictionProjection? Predict(CardModel card, Creature? target)
     {
-        if (!CombatPredictionProjector.HasAnyEnabledFeature(PredictionActionKind.CardPlay) ||
-            !card.IsMutable ||
+        if (!card.IsMutable ||
             card.Owner?.Creature.CombatState is not { } combatState ||
-            (!RandomForeseerSettings.EnableBestEffortCardPlayPrediction && !CardOnPlayMirrors.CanMirror(card)) ||
+            (!ModData.Settings.ExperimentalBestEffortCardPlayPredictionEnabled && !CardOnPlayMirrors.CanMirror(card)) ||
             !card.TryResolveTarget(ref target))
         {
             return null;
@@ -94,7 +94,10 @@ internal static class CombatCardPrediction
 
     private static bool ShouldShowCombatPlayPrediction(CardModel card)
     {
-        if (card.Owner?.Creature.CombatState == null)
+        var settings = ModData.Settings;
+
+        if (!settings.IsPredictionEnabled || !settings.CardPlayPredictionEnabled ||
+            card.Owner?.Creature.CombatState == null)
         {
             return false;
         }

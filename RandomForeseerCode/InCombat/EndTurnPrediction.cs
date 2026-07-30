@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -10,7 +11,7 @@ internal static class EndTurnPrediction
 {
     public static EndTurnPredictionResult? Predict()
     {
-        if (!ShouldPredict() || CombatManager.Instance._state is not { } combatState)
+        if (CombatManager.Instance._state is not { } combatState)
         {
             return null;
         }
@@ -28,7 +29,8 @@ internal static class EndTurnPrediction
 
     public static bool ShouldPredict()
     {
-        return RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableEndTurnPrediction) &&
+        var settings = ModData.Settings;
+        return settings.IsPredictionEnabled && settings.EndTurnPredictionEnabled &&
             CombatManager.Instance._state?.CurrentSide is CombatSide.Player &&
             CombatManager.Instance.IsInProgress &&
             RunManager.Instance.ActionQueueSynchronizer.CombatState is ActionSynchronizerCombatState.PlayPhase;
@@ -49,6 +51,7 @@ internal sealed record EndTurnPredictionResult(
     {
         var history = simulator.History
             .OfType<CombatPredictionDamageReceivedEntry>()
+            .Where(DamagePredictionProjector.ShouldIncludeEntry)
             .ToList();
         return new EndTurnPredictionResult(
             DamagePredictionProjector.Project(history),

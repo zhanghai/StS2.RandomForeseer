@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Random;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -20,7 +21,8 @@ internal static class CombatTransformPrediction
     {
         _session = null;
 
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableCombatTransformPrediction))
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.CombatTransformPredictionEnabled)
         {
             return;
         }

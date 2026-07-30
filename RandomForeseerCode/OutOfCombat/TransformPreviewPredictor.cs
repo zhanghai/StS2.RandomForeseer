@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Random;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
 
@@ -16,8 +17,9 @@ internal sealed class TransformPreviewPredictor(Rng realRng, bool upgradePreview
         PredictionFairness fairness = PredictionFairness.Fair,
         RelicModel? relicSource = null)
     {
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableTransformPrediction) ||
-            !(RandomForeseerSettings.IsFairPredictionAllowed(fairness) ||
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.DeckTransformPredictionEnabled ||
+            !(settings.Allows(fairness) ||
                 (relicSource is not null && RewardPagePredictionContext.HasOtherPendingReward(relicSource))))
         {
             return null;

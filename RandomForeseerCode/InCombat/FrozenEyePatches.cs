@@ -14,7 +14,9 @@ using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
+using RandomForeseer.RandomForeseerCode.Localization;
 using STS2RitsuLib.Utils.HarmonyIl;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -48,9 +50,9 @@ internal static class FrozenEyeDrawPileView
 {
     public static bool TryRefresh(NCardPileScreen screen)
     {
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableFrozenEye) ||
-            screen.Pile.Type != PileType.Draw ||
-            screen._grid is not NCardGrid grid)
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.FrozenEyeEnabled ||
+            screen is not { Pile.Type: PileType.Draw, _grid: NCardGrid grid })
         {
             return false;
         }
@@ -73,7 +75,7 @@ internal static class FrozenEyeDrawPileView
 
     private static IReadOnlyList<CardModel> GetShufflePrediction(NCardPileScreen screen)
     {
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableShufflePrediction) ||
+        if (!ModData.Settings.ShufflePredictionEnabled ||
             !CardPileUtils.TryGetDrawPileOwner(screen.Pile, out var player) ||
             player.Creature.CombatState is not { } combatState ||
             combatState.CurrentSide != player.Creature.Side)
@@ -156,8 +158,7 @@ internal static class FrozenEyeCardPileScreenPatches
     {
         public void Refresh()
         {
-            if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableFrozenEye) ||
-                !RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableShufflePrediction))
+            if (!ModData.Settings.ShufflePredictionEnabled)
             {
                 return;
             }
@@ -199,8 +200,8 @@ internal static class FrozenEyeEmptyDrawPileOpenPatch
             return false;
         }
 
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableFrozenEye) ||
-            !RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableShufflePrediction) ||
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.FrozenEyeEnabled || !settings.ShufflePredictionEnabled ||
             !CardPileUtils.TryGetDrawPileOwner(pile, out var player) ||
             player.Creature.CombatState?.CurrentSide != player.Creature.Side)
         {
@@ -299,7 +300,8 @@ internal static class FrozenEyeDrawPileRawTextPatch
 
     private static void ReplaceText(LocString locString, ref string text)
     {
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableFrozenEye))
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.FrozenEyeEnabled)
         {
             return;
         }
@@ -309,7 +311,7 @@ internal static class FrozenEyeDrawPileRawTextPatch
             case { LocTable: "static_hover_tips", LocEntryKey: "DRAW_PILE.description" }:
             {
                 var mainDescription = text.Split("\n\n", 2)[0];
-                var viewDescription = PredictionLocalization.Text("frozen_eye.draw_pile_hover_view").GetRawText();
+                var viewDescription = ModLocalization.Text("frozen_eye.draw_pile_hover_view").GetRawText();
 
                 text = $"{mainDescription}\n\n{viewDescription}";
                 break;
@@ -318,11 +320,10 @@ internal static class FrozenEyeDrawPileRawTextPatch
             case { LocTable: "gameplay_ui", LocEntryKey: "DRAW_PILE_INFO" }:
             {
                 var firstLine = text.Split('\n', 2)[0];
-                var orderInfoKey = RandomForeseerSettings.IsPredictionFeatureEnabled(
-                    RandomForeseerSettings.EnableShufflePrediction)
+                var orderInfoKey = settings.ShufflePredictionEnabled
                     ? "frozen_eye.draw_pile_info_order_with_shuffle_prediction"
                     : "frozen_eye.draw_pile_info_order";
-                var orderInfo = PredictionLocalization.Text(orderInfoKey).GetRawText();
+                var orderInfo = ModLocalization.Text(orderInfoKey).GetRawText();
 
                 text = $"{firstLine}\n{orderInfo}";
                 break;

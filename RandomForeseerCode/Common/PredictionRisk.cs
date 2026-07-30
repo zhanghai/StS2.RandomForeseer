@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.Common;
 
@@ -20,7 +21,7 @@ internal abstract class PredictionRisk
     /// <summary>Creates the presentation tips for this risk snapshot.</summary>
     public IEnumerable<IHoverTip> ToHoverTips()
     {
-        return HasRisk && RandomForeseerSettings.EnableDriftWarnings
+        return HasRisk && ModData.Settings.ShowDriftWarnings
             ? GetHoverTips()
             : [];
     }

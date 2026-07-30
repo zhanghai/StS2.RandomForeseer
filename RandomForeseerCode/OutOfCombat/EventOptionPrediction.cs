@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
@@ -100,7 +101,8 @@ internal static class EventOptionPrediction
             tips.AddRange(RelicPickupPrediction.GetHoverTips(eventModel.Owner, relic));
         }
 
-        if (RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableEventOptionPrediction) &&
+        var settings = ModData.Settings;
+        if (settings.IsPredictionEnabled && settings.EventOptionPredictionEnabled &&
             Registry.TryPredict(eventModel, option, out var hoverTips))
         {
             tips.AddRange(hoverTips);

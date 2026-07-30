@@ -216,45 +216,6 @@ Current manifest targets:
 | Minimum game version | `0.109.0` |
 | RitsuLib dependency | `0.4.63` |
 
-## Settings
-
-Open the RitsuLib mod settings page and select **Random Foreseer**:
-
-| Setting | Effect |
-|---|---|
-| Enable singleplayer prediction | Controls whether any prediction results are shown in singleplayer, default on |
-| Enable multiplayer prediction | Controls whether any prediction results are shown in multiplayer, default on |
-| Enable fair mode | Limits predictions to information obtainable through Save & Load, default on |
-| Show prediction drift warnings | Controls whether side-effect-sensitive predictions show a warning, default on |
-| Predict transform results | Controls whether transform selection grid hover tips and confirmation previews show predicted cards |
-| Predict combat transform results | Controls whether combat transform selections show predicted cards |
-| Predict potion card results | Controls whether random-card-generation potions show predicted cards |
-| Predict potion generation | Controls whether Entropic Brew and Alchemize show predicted potions |
-| Predict combat card generation | Controls whether supported in-hand combat cards show predicted generated cards |
-| Predict combat card selection | Controls whether supported in-hand combat cards show selected existing cards and hand highlights |
-| Predict combat damage | Controls all supported combat damage predictions and is the master switch for orb, random-target attack, and end-turn damage displays |
-| Predict orb effects | Controls whether supported orb-triggering cards and potions show the targets that orb effects will hit |
-| Predict random-target attacks | Controls whether supported random-enemy attack cards show the targets they will hit |
-| Predict end-turn effects | Controls whether supported end-turn damage predictions are shown |
-| End-turn prediction overlay display | Controls whether end-turn damage prediction indicators appear on End Turn button hover or always during the player turn |
-| End-turn health bar forecast display | Controls when end-turn damage is shown on target health bars, default always during the player turn |
-| Damage prediction health bar color | Controls the color used for damage prediction segments on target health bars, default yellow |
-| Predict draw-pile autoplay | Controls whether Havoc, Cascade, and Distilled Chaos show the cards that will be played from the draw pile |
-| Predict potion draw | Controls whether supported potion draw effects show predicted cards |
-| Predict card draw | Controls whether supported card-play draw effects show predicted cards |
-| Predict Driftwood rerolls | Controls whether Driftwood card reward rerolls show predicted cards |
-| Predict Pael's Wing sacrifices | Controls whether activating Pael's Wing Sacrifice buttons show the relic that will be awarded |
-| Predict relic pickup effects | Controls whether relic tooltips (including Ancient options) show random cards, relics, potions, curses, and transform results that happen immediately on pickup |
-| Predict rest-site results | Controls whether rest-site options show immediate random results from relics such as Dream Catcher, Tiny Mailbox, and Shovel |
-| Predict event option results | Controls whether non-Ancient event options show immediate random results |
-| Enable Crystal Sphere clairvoyance | Controls whether the Crystal Sphere minigame shows items through unrevealed fog |
-| Slippery Bridge reroll previews | Controls how many future Hold On rerolls are previewed for Slippery Bridge, default 5 |
-| Predict next Act Ancient and boss | Controls whether the top bar on boss reward screens shows the next Act's Ancient and boss |
-| Enable Frozen Eye | Controls whether the draw pile screen shows cards in actual draw order |
-| Predict shuffle order | Controls whether the Frozen Eye draw pile screen previews the discard pile order after shuffle |
-| Predict cards without complete support | Experimental; controls whether to infer the on-play effects of cards without complete support and show predictions, default off |
-| Predict chained card effects | Experimental; controls whether combat card prediction shows effects indirectly triggered by the current card, default off |
-
 ## Build From Source
 
 Before the first build, copy the local path configuration:
@@ -294,14 +255,16 @@ RandomForeseer.json - Mod manifest
 RandomForeseer/localization/ - Mod settings and UI localization resources
 RandomForeseerCode/ - C# source code
 RandomForeseerCode/Common/ - Shared prediction HoverTip, RNG, and localization utilities
+RandomForeseerCode/Data/ - Settings data, persistence, and migrations
 RandomForeseerCode/Debug/ - Debug entry points and test reward screens
 RandomForeseerCode/Entry.cs - Mod entry point and Harmony patch registration
 RandomForeseerCode/InCombat/ - In-combat card, potion, and Frozen Eye predictions
 RandomForeseerCode/Integrations/ - Optional integration patches for other mods
+RandomForeseerCode/Localization/ - Mod localization registration and text access
 RandomForeseerCode/OutOfCombat/ - Out-of-combat event, reward, merchant, rest-site, and transform predictions
 RandomForeseerCode/OutOfCombat/Events/ - Non-Ancient event option predictions
-RandomForeseerCode/RandomForeseerSettings.cs - Setting definitions, persistence, and feature gates
+RandomForeseerCode/Settings/ - Settings page registration and UI bindings
 project.godot - Godot project used for PCK export
-scripts/release.ps1 - Local build, packaging, and release script
+scripts/ - Local development, maintenance, and release scripts
 workshop/loader/ - Steam Workshop multi-version package loader
 ```

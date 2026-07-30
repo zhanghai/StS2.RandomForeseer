@@ -1,5 +1,7 @@
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -48,7 +50,8 @@ internal static class DamagePredictionProjector
     /// <exception cref="InvalidOperationException">Thrown when an accepted damage entry has no source trace.</exception>
     public static DamagePrediction Project(IEnumerable<CombatPredictionDamageReceivedEntry> history)
     {
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableCombatDamagePrediction))
+        var settings = ModData.Settings;
+        if (!settings.CombatDamagePredictionEnabled)
         {
             return DamagePrediction.Empty;
         }
@@ -66,5 +69,25 @@ internal static class DamagePredictionProjector
             .ToList();
 
         return targets.Count == 0 ? DamagePrediction.Empty : new DamagePrediction(targets);
+    }
+
+    public static bool ShouldIncludeEntry(CombatPredictionDamageReceivedEntry entry)
+    {
+        var settings = ModData.Settings;
+
+        if (!settings.OrbDamagePredictionEnabled &&
+            entry.Trace!.Ancestors().Any(static frame => frame.Source is OrbModel))
+        {
+            return false;
+        }
+
+        if (!settings.RandomTargetAttackPredictionEnabled &&
+            entry.Trace!.Ancestors().Any(static frame =>
+                frame.Source is CardModel { Type: CardType.Attack, TargetType: TargetType.RandomEnemy }))
+        {
+            return false;
+        }
+
+        return true;
     }
 }

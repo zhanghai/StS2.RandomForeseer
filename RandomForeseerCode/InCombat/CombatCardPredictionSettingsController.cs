@@ -1,4 +1,6 @@
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
+using RandomForeseer.RandomForeseerCode.Settings;
 using STS2RitsuLib.Settings;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -24,7 +26,7 @@ internal static class CombatCardPredictionSettingsController
 
     private static void OnSettingsValueWritten(IModSettingsBinding binding)
     {
-        if (RandomForeseerSettings.IsBestEffortCardPlayPredictionBinding(binding))
+        if (ReferenceEquals(binding, SettingsUiBindings.ExperimentalBestEffortCardPlayPredictionEnabled))
         {
             SyncPredictionSettings();
         }
@@ -32,6 +34,6 @@ internal static class CombatCardPredictionSettingsController
 
     private static void SyncPredictionSettings()
     {
-        CardOnPlayMirrors.AllowInference = RandomForeseerSettings.EnableBestEffortCardPlayPrediction;
+        CardOnPlayMirrors.AllowInference = ModData.Settings.ExperimentalBestEffortCardPlayPredictionEnabled;
     }
 }

@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Potions;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -93,7 +94,10 @@ internal static class CombatPotionPredictionController
 
     private static void BeginSession(CombatPredictionSessionMode mode, NPotionHolder holder)
     {
-        if (holder.Potion?.Model is not { } potion ||
+        var settings = ModData.Settings;
+
+        if (!settings.IsPredictionEnabled || !settings.PotionPredictionEnabled ||
+            holder.Potion?.Model is not { } potion ||
             potion.Owner?.Creature.CombatState is null ||
             _session?.Mode > mode)
         {

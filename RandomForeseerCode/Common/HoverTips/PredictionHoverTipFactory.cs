@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
+using RandomForeseer.RandomForeseerCode.Localization;
 
 namespace RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
@@ -102,8 +103,8 @@ internal static class PredictionHoverTipFactory
     /// <param name="configureDescription">Optional callback to add formatter variables before display.</param>
     public static HoverTip Text(string key, Action<LocString>? configureDescription = null)
     {
-        var title = PredictionLocalization.Text($"{key}.title");
-        var description = PredictionLocalization.Text($"{key}.description");
+        var title = ModLocalization.Text($"{key}.title");
+        var description = ModLocalization.Text($"{key}.description");
         configureDescription?.Invoke(description);
 
         var tip = new HoverTip(title, description)

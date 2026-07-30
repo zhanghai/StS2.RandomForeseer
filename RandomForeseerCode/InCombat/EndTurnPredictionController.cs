@@ -8,6 +8,8 @@ using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Rooms;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
+using RandomForeseer.RandomForeseerCode.Settings;
 using STS2RitsuLib.Settings;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -102,7 +104,8 @@ internal static class EndTurnPredictionController
 
         EndTurnPredictionCreatureHoverTips.Set(prediction.DamagePrediction, prediction.Risk);
 
-        if (ShouldShow(RandomForeseerSettings.EndTurnPredictionDisplayMode))
+        var settings = ModData.Settings;
+        if (ShouldShow(settings.EndTurnPredictionDisplayMode))
         {
             CombatPredictionOverlay.Show(
                 prediction.DamagePrediction,
@@ -114,7 +117,7 @@ internal static class EndTurnPredictionController
             CombatPredictionOverlay.Clear();
         }
 
-        if (ShouldShow(RandomForeseerSettings.EndTurnHealthBarForecastDisplayMode))
+        if (ShouldShow(settings.EndTurnHealthBarForecastDisplayMode))
         {
             DamagePredictionHealthBarForecast.Set(prediction.DamagePrediction);
         }
@@ -123,7 +126,7 @@ internal static class EndTurnPredictionController
             DamagePredictionHealthBarForecast.Clear();
         }
 
-        if (RandomForeseerSettings.EndTurnPredictionDisplayMode is EndTurnPredictionDisplayMode.EndTurnButtonHover &&
+        if (settings.EndTurnPredictionDisplayMode is EndTurnPredictionDisplayMode.EndTurnButtonHover &&
             _focusedEndTurnButton != null)
         {
             EndTurnButtonHoverTipHelper.ShowHoverTips(_focusedEndTurnButton,
@@ -200,14 +203,24 @@ internal static class EndTurnPredictionController
 
     private static void OnSettingsValueWritten(IModSettingsBinding binding)
     {
-        if (RandomForeseerSettings.IsDamagePredictionHealthBarColorBinding(binding))
+        if (ReferenceEquals(binding, SettingsUiBindings.DamagePredictionHealthBarColor))
         {
             DamagePredictionHealthBarForecast.RefreshActiveForecasts();
         }
-        else if (RandomForeseerSettings.IsEndTurnPredictionRefreshBinding(binding))
+        else if (IsEndTurnPredictionRefreshBinding(binding))
         {
             Refresh();
         }
+    }
+
+    private static bool IsEndTurnPredictionRefreshBinding(IModSettingsBinding binding)
+    {
+        return ReferenceEquals(binding, SettingsUiBindings.CombatDamagePredictionEnabled) ||
+            ReferenceEquals(binding, SettingsUiBindings.RandomTargetAttackPredictionEnabled) ||
+            ReferenceEquals(binding, SettingsUiBindings.OrbDamagePredictionEnabled) ||
+            ReferenceEquals(binding, SettingsUiBindings.EndTurnPredictionEnabled) ||
+            ReferenceEquals(binding, SettingsUiBindings.EndTurnPredictionDisplayMode) ||
+            ReferenceEquals(binding, SettingsUiBindings.EndTurnHealthBarForecastDisplayMode);
     }
 }
 

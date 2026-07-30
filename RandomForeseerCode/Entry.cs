@@ -2,10 +2,12 @@ using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat;
 using RandomForeseer.RandomForeseerCode.Integrations;
 using RandomForeseer.RandomForeseerCode.Integrations.LemonSpire;
+using RandomForeseer.RandomForeseerCode.Localization;
+using RandomForeseer.RandomForeseerCode.Settings;
 using STS2RitsuLib;
 using STS2RitsuLib.Interop;
 using Logger = MegaCrit.Sts2.Core.Logging.Logger;
@@ -38,19 +40,16 @@ public partial class Entry
         // 新增内容类后，只要 attribute 写对，通常不需要在入口里手动逐个注册。
         ModTypeDiscoveryHub.RegisterModAssembly(ModId, assembly);
 
-        PredictionLocalization.Register();
-        RandomForeseerSettings.Register();
+        ModData.Register();
+        ModLocalization.Register();
+        SettingsBootstrap.Register();
         CombatCardPredictionSettingsController.Register();
-        RitsuLibFramework.RegisterHealthBarForecast<DamagePredictionHealthBarForecastSource>(
-            ModId,
-            "combat_prediction");
+        RitsuLibFramework.RegisterHealthBarForecast<DamagePredictionHealthBarForecastSource>(ModId);
 
         var harmony = new Harmony($"{ModId}.Harmony");
         harmony.PatchAllUncategorized(assembly);
         var integrationPatcher = new IntegrationCategoryPatcher(harmony, assembly);
-        integrationPatcher.Register(
-            LemonSpireTypes.ModId,
-            LemonSpireTypes.PatchCategory);
+        integrationPatcher.Register(LemonSpireTypes.ModId, LemonSpireTypes.PatchCategory);
 
         Logger.Info("RandomForeseer initialized.");
     }

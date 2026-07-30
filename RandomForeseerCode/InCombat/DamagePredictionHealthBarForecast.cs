@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using RandomForeseer.RandomForeseerCode.Data;
 using STS2RitsuLib.Combat.HealthBars;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -23,7 +24,7 @@ internal static class DamagePredictionHealthBarForecast
         return DamageByTarget.TryGetValue(context.Creature, out var amount) && amount > 0
             ? [new HealthBarForecastSegment(
                 amount,
-                RandomForeseerSettings.DamagePredictionHealthBarColor,
+                ModData.Settings.DamagePredictionHealthBarColorValue,
                 HealthBarForecastGrowthDirection.FromRight,
                 HealthBarForecastOrder.ForSideTurnEnd(context.Creature, CombatSide.Player))]
             : [];

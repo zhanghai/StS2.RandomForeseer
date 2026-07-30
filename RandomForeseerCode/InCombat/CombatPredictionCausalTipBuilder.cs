@@ -4,6 +4,7 @@ using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
+using RandomForeseer.RandomForeseerCode.Localization;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -61,7 +62,7 @@ internal sealed class CombatPredictionCausalTipBuilder(PredictionTraceFrame root
 
         if (_groups.Count > MaxLines)
         {
-            var more = PredictionLocalization.Text("causal_prediction.more");
+            var more = ModLocalization.Text("causal_prediction.more");
             more.Add("Count", _groups.Count - MaxLines);
             lines.Add(more.GetFormattedText());
         }
@@ -104,7 +105,7 @@ internal sealed class CombatPredictionCausalTipBuilder(PredictionTraceFrame root
 
     private string FormatGroup(CausalGroup group)
     {
-        var line = PredictionLocalization.Text($"causal_prediction.{GetEffectKey(group.Effect)}");
+        var line = ModLocalization.Text($"causal_prediction.{GetEffectKey(group.Effect)}");
         line.Add("Source", group.Source.GetTitle());
         line.Add("Listener", group.Listener?.GetTitle() ?? string.Empty);
         line.Add("Models", [.. group.Models.Select(static model => model.GetTitle())]);

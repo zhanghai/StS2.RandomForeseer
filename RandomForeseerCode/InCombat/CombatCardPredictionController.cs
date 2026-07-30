@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -79,7 +80,12 @@ internal static class CombatCardPredictionController
 
     private static void BeginSession(CombatPredictionSessionMode mode, NHandCardHolder holder)
     {
-        if (holder.CardModel is not { } card || _session?.Mode > mode)
+        var settings = ModData.Settings;
+
+        if (!settings.IsPredictionEnabled || !settings.CardPlayPredictionEnabled ||
+            holder.CardModel is not { } card ||
+            card.Owner?.Creature.CombatState is null ||
+            _session?.Mode > mode)
         {
             return;
         }

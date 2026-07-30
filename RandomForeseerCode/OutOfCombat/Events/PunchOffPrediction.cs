@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -27,7 +28,7 @@ internal static class PunchOffPrediction
 
     private static IReadOnlyList<IHoverTip> PredictFightRewards(Player player)
     {
-        if (!RandomForeseerSettings.IsFairPredictionAllowed(PredictionFairness.UnfairInAllModes))
+        if (!ModData.Settings.Allows(PredictionFairness.UnfairInAllModes))
         {
             return [];
         }

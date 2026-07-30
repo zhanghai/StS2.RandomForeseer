@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
@@ -37,7 +38,6 @@ internal sealed class CombatPredictionProjector
 
     private readonly CombatPredictionHistory _history;
     private readonly PredictionTraceFrame _rootFrame;
-    private readonly PredictionActionKind _rootAction;
 
     private readonly Dictionary<Type, EntryProjectionRule> _rules = [];
 
@@ -50,39 +50,6 @@ internal sealed class CombatPredictionProjector
     private bool _projectionTruncated;
 
     private readonly CombatPredictionCausalTipBuilder _causalTips;
-
-    /// <summary>
-    /// Returns whether at least one category reachable from the specified root action is currently enabled.
-    /// </summary>
-    /// <param name="action">The card-play or potion-use root action whose source-specific settings should be checked.</param>
-    /// <remarks>The result includes the current single-player or multiplayer prediction master gate.</remarks>
-    public static bool HasAnyEnabledFeature(PredictionActionKind action)
-    {
-        var enabled = action switch
-        {
-            PredictionActionKind.CardPlay =>
-                RandomForeseerSettings.EnableCombatCardPrediction ||
-                RandomForeseerSettings.EnablePotionGenerationPrediction ||
-                RandomForeseerSettings.EnableCombatCardSelectionPrediction ||
-                RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction ||
-                RandomForeseerSettings.EnableCardDrawPrediction ||
-                RandomForeseerSettings.EnableOrbPrediction ||
-                RandomForeseerSettings.EnableCombatDamagePrediction,
-
-            PredictionActionKind.PotionUse =>
-                RandomForeseerSettings.EnablePotionCardPrediction ||
-                RandomForeseerSettings.EnablePotionGenerationPrediction ||
-                RandomForeseerSettings.EnableCombatCardSelectionPrediction ||
-                RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction ||
-                RandomForeseerSettings.EnablePotionDrawPrediction ||
-                RandomForeseerSettings.EnableOrbPrediction ||
-                RandomForeseerSettings.EnableCombatDamagePrediction,
-
-            _ => false
-        };
-
-        return IsSettingEnabled(enabled);
-    }
 
     /// <summary>
     /// Projects one completed combat-action history relative to its exact root action frame.
@@ -115,7 +82,6 @@ internal sealed class CombatPredictionProjector
 
         _history = history;
         _rootFrame = rootFrame;
-        _rootAction = action.Value;
 
         _causalTips = new(rootFrame);
 
@@ -147,50 +113,52 @@ internal sealed class CombatPredictionProjector
     /// </remarks>
     private void RegisterRules()
     {
+        var settings = ModData.Settings;
+
         Register<CombatPredictionCardGeneratedEntry>(
             HandleCardGenerated,
-            cardSetting: RandomForeseerSettings.EnableCombatCardPrediction,
-            potionSetting: RandomForeseerSettings.EnablePotionCardPrediction,
+            cardSetting: settings.CombatCardGenerationPredictionEnabled,
+            potionSetting: settings.PotionCardGenerationPredictionEnabled,
             shouldTruncateWhenDisabled: static entry => entry.ResultKind is CardGenerationResultKind.Random);
 
         Register<CombatPredictionCardGenerationOptionsEntry>(
             HandleCardGenerationOptions,
-            cardSetting: RandomForeseerSettings.EnableCombatCardPrediction,
-            potionSetting: RandomForeseerSettings.EnablePotionCardPrediction);
+            cardSetting: settings.CombatCardGenerationPredictionEnabled,
+            potionSetting: settings.PotionCardGenerationPredictionEnabled);
 
         Register<CombatPredictionPotionGeneratedEntry>(
             HandlePotionGenerated,
-            sharedSetting: RandomForeseerSettings.EnablePotionGenerationPrediction);
+            sharedSetting: settings.PotionGenerationPredictionEnabled);
 
         Register<CombatPredictionCardsSelectedEntry>(
             HandleCardsSelected,
-            sharedSetting: RandomForeseerSettings.EnableCombatCardSelectionPrediction,
+            sharedSetting: settings.CombatCardSelectionPredictionEnabled,
             shouldTruncateWhenDisabled: static entry => entry.Cards.Count > 0);
 
         Register<CombatPredictionAutoPlayFromDrawPileEntry>(
             HandleDrawPileAutoPlay,
-            sharedSetting: RandomForeseerSettings.EnableAutoPlayFromDrawPilePrediction,
+            sharedSetting: settings.AutoPlayFromDrawPilePredictionEnabled,
             shouldTruncateWhenDisabled: static _ => true);
 
         Register<CombatPredictionCardDrawnEntry>(
             HandleCardDrawn,
-            cardSetting: RandomForeseerSettings.EnableCardDrawPrediction,
-            potionSetting: RandomForeseerSettings.EnablePotionDrawPrediction,
+            cardSetting: settings.CardDrawPredictionEnabled,
+            potionSetting: settings.PotionDrawPredictionEnabled,
             shouldTruncateWhenDisabled: static _ => true);
 
         Register<CombatPredictionCardCostsRandomizedEntry>(
             HandleCardCostsRandomized,
-            cardSetting: RandomForeseerSettings.EnableCardDrawPrediction,
-            potionSetting: RandomForeseerSettings.EnablePotionDrawPrediction,
+            cardSetting: settings.CardDrawPredictionEnabled,
+            potionSetting: settings.PotionDrawPredictionEnabled,
             shouldTruncateWhenDisabled: static entry => entry.Cards.Count > 0);
 
         Register<CombatPredictionOrbChanneledEntry>(
             HandleOrbChanneled,
-            sharedSetting: RandomForeseerSettings.EnableOrbPrediction);
+            sharedSetting: settings.CombatOrbGenerationPredictionEnabled);
 
         Register<CombatPredictionDamageReceivedEntry>(
             HandleDamage,
-            sharedSetting: RandomForeseerSettings.EnableCombatDamagePrediction);
+            sharedSetting: settings.CombatDamagePredictionEnabled);
     }
 
     private void Register<TEntry>(
@@ -225,7 +193,7 @@ internal sealed class CombatPredictionProjector
             return;
         }
 
-        if (!IsSettingEnabled(RandomForeseerSettings.EnableChainedCardEffectPrediction) &&
+        if (!ModData.Settings.ExperimentalChainedCardEffectPredictionEnabled &&
             actionFrame != _rootFrame)
         {
             _projectionTruncated = true;
@@ -243,7 +211,7 @@ internal sealed class CombatPredictionProjector
             PredictionActionKind.PotionUse => rule.PotionSetting,
             var action => throw new UnreachableException($"Unexpected action kind {action}.")
         };
-        if (!IsSettingEnabled(setting))
+        if (!setting)
         {
             _projectionTruncated |= rule.ShouldTruncateWhenDisabled(entry);
             return;
@@ -343,15 +311,7 @@ internal sealed class CombatPredictionProjector
 
     private CombatPredictionHistoryEntry? HandleDamage(CombatPredictionDamageReceivedEntry entry)
     {
-        if (!IsSettingEnabled(RandomForeseerSettings.EnableOrbPrediction) &&
-            entry.Trace!.Ancestors().Any(static frame => frame.Source is OrbModel))
-        {
-            return null;
-        }
-
-        if (!IsSettingEnabled(RandomForeseerSettings.EnableRandomTargetAttackPrediction) &&
-            entry.Trace!.Ancestors().Any(static frame =>
-                frame.Source is CardModel { Type: CardType.Attack, TargetType: TargetType.RandomEnemy }))
+        if (!DamagePredictionProjector.ShouldIncludeEntry(entry))
         {
             return null;
         }
@@ -391,11 +351,6 @@ internal sealed class CombatPredictionProjector
         IEnumerable<AbstractModel> results)
     {
         _causalTips.AddEffect(entry, effect, results);
-    }
-
-    private static bool IsSettingEnabled(bool setting)
-    {
-        return RandomForeseerSettings.IsPredictionFeatureEnabled(setting);
     }
 
     private delegate CombatPredictionHistoryEntry? EntryHandler(CombatPredictionHistoryEntry entry);

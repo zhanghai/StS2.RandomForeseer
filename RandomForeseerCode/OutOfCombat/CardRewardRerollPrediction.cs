@@ -2,6 +2,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Rewards;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
 
@@ -12,8 +13,8 @@ internal static class CardRewardRerollPrediction
 
     public static IReadOnlyList<IHoverTip> GetHoverTips(CardReward reward)
     {
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableDriftwoodRerollPrediction) ||
-            !reward.CanReroll)
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.DriftwoodRerollPredictionEnabled || !reward.CanReroll)
         {
             return [];
         }

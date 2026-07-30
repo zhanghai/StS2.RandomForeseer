@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
 
@@ -14,19 +15,20 @@ internal static class PotionPrediction
 {
     public static IReadOnlyList<IHoverTip> GetHoverTips(PotionModel potion)
     {
-        if (potion.Owner is not { } owner)
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.PotionPredictionEnabled)
         {
             return [];
         }
 
-        if (owner.Creature.CombatState is not null)
+        if (potion.Owner.Creature.CombatState is not null)
         {
             return CombatPotionPrediction.GetHoverTips(potion);
         }
 
         try
         {
-            return GetOutOfCombatHoverTips(potion, owner);
+            return GetOutOfCombatHoverTips(potion, potion.Owner);
         }
         catch (Exception ex)
         {
@@ -45,8 +47,9 @@ internal static class PotionPrediction
     {
         List<IHoverTip> hoverTips = [];
 
-        if (RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnablePotionCardPrediction) &&
-            RandomForeseerSettings.IsFairPredictionAllowed(PredictionFairness.UnfairInAllModes))
+        var settings = ModData.Settings;
+
+        if (settings.PotionCardGenerationPredictionEnabled && settings.Allows(PredictionFairness.UnfairInAllModes))
         {
             var rng = target.RunState.Rng.CombatCardGeneration.Clone();
             if (CardGenerationPotionMirrors.Generate(potion, target, rng) is { } result)
@@ -55,8 +58,7 @@ internal static class PotionPrediction
             }
         }
 
-        if (RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnablePotionGenerationPrediction) &&
-            potion is EntropicBrew)
+        if (settings.PotionGenerationPredictionEnabled && potion is EntropicBrew)
         {
             var rng = target.RunState.Rng.CombatPotionGeneration.Clone();
             hoverTips.AddRange(EntropicBrewMirrors.Generate(target, rng).ToPredictionHoverTips());

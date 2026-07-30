@@ -4,6 +4,9 @@
 
 ### feat
 
+- 重构模组设置页面，将局外和局内预测分别整理到独立子页面，并按预测入口和效果类型分组；新增卡牌和药水预测入口总开关。<br>
+  Reorganized the mod settings into dedicated out-of-combat and in-combat subpages grouped by prediction trigger and effect type, with new master switches for card and potion prediction entry points.
+
 - 战斗抽牌预测现在支持群星荟萃，会显示目标队友将抽到的牌。<br>
   Combat card draw prediction now supports Constellation, showing the targeted teammate's card draw.
 

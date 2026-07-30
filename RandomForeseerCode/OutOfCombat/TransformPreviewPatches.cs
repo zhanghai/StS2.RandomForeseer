@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using RandomForeseer.RandomForeseerCode.Data;
 using STS2RitsuLib.Utils.HarmonyIl;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;

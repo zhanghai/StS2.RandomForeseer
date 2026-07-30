@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Events;
 
@@ -23,7 +24,8 @@ internal static class SlipperyBridgePrediction
         var skipped = slipperyBridge._skippedRemovals?.ToHashSet() ?? [];
         var cards = new List<CardModel>();
 
-        for (var i = 0; i < RandomForeseerSettings.SlipperyBridgeRerollPreviewCount; i++)
+        var previewCount = ModData.Settings.SlipperyBridgeRerollPreviewCount;
+        for (var i = 0; i < previewCount; i++)
         {
             if (current != null)
             {

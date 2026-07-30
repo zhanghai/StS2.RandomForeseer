@@ -1,6 +1,7 @@
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
 
@@ -11,8 +12,8 @@ internal static class CrystalSphereClairvoyancePatch
 
     private static void Postfix(NCrystalSphereMask __instance)
     {
-        if (!RandomForeseerSettings.IsPredictionFeatureEnabled(
-            RandomForeseerSettings.EnableCrystalSphereClairvoyance))
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.CrystalSphereClairvoyanceEnabled)
         {
             return;
         }

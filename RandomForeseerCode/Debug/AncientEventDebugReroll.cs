@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Events;
+using RandomForeseer.RandomForeseerCode.Data;
 
 namespace RandomForeseer.RandomForeseerCode.Debug;
 
@@ -21,7 +22,8 @@ internal static class AncientEventDebugRerollPatch
 
     private static void Postfix(NEventLayout __instance)
     {
-        if (!RandomForeseerSettings.EnableAncientEventDebugReroll ||
+        var settings = ModData.Settings;
+        if (!settings.DebugSettingsEnabled || !settings.AncientEventDebugRerollEnabled ||
             __instance._event is not AncientEventModel ancient ||
             ancient.IsFinished ||
             __instance.GetNodeOrNull<Button>(ButtonName) != null)

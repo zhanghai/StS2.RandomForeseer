@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
+using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.OutOfCombat.Nodes;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat;
@@ -55,8 +56,9 @@ internal static class NextActPrediction
 
     private static bool ShouldShow(bool isTerminal, IRunState runState)
     {
+        var settings = ModData.Settings;
         return isTerminal &&
-            RandomForeseerSettings.IsPredictionFeatureEnabled(RandomForeseerSettings.EnableNextActPrediction) &&
+            settings.IsPredictionEnabled && settings.NextActPredictionEnabled &&
             runState.CurrentActIndex + 1 < runState.Acts.Count &&
             runState.CurrentRoom?.RoomType == RoomType.Boss &&
             IsActEndingBoss(runState);

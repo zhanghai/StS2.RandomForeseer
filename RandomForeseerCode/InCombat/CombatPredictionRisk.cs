@@ -4,6 +4,7 @@ using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
+using RandomForeseer.RandomForeseerCode.Localization;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
 
@@ -63,12 +64,12 @@ internal sealed class CombatPredictionRisk(IReadOnlyList<CombatPredictionRiskEnt
 
         if (cardDrawLimitExceeded)
         {
-            lines.Add(PredictionLocalization.Text("drift_warning.card_draw_limit").GetFormattedText());
+            lines.Add(ModLocalization.Text("drift_warning.card_draw_limit").GetFormattedText());
         }
 
         if (orbChannelLimitExceeded)
         {
-            lines.Add(PredictionLocalization.Text("drift_warning.orb_channel_limit").GetFormattedText());
+            lines.Add(ModLocalization.Text("drift_warning.orb_channel_limit").GetFormattedText());
         }
 
         var tip = PredictionHoverTipFactory.Text("drift_warning", description =>
@@ -88,13 +89,13 @@ internal sealed class CombatPredictionRisk(IReadOnlyList<CombatPredictionRiskEnt
             .ToList();
         if (modelNames.Count == 0)
         {
-            lines.Add(PredictionLocalization.Text($"drift_warning.{localizationKey}_unknown").GetFormattedText());
+            lines.Add(ModLocalization.Text($"drift_warning.{localizationKey}_unknown").GetFormattedText());
             return;
         }
 
         var shownModelNames = modelNames.Take(MaxModelNamesPerLine).ToList();
         var keySuffix = hasUnknownModels || modelNames.Count > MaxModelNamesPerLine ? "_more" : string.Empty;
-        var line = PredictionLocalization.Text($"drift_warning.{localizationKey}{keySuffix}");
+        var line = ModLocalization.Text($"drift_warning.{localizationKey}{keySuffix}");
         line.Add("Models", shownModelNames);
         lines.Add(line.GetFormattedText());
     }
