@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -29,8 +28,8 @@ internal sealed record CombatPredictionProjection(
 /// Streams a completed combat prediction history into the enabled HoverTip, damage, highlight, causal, and risk views.
 /// </summary>
 /// <remarks>
-/// Projection follows history order until a disabled state-changing result, or the first nested action while chained
-/// prediction is disabled, truncates the remaining visible timeline.
+/// Feature gates are selected from the root action kind and applied independently to each entry. When chained
+/// prediction is disabled, the first history entry owned by a nested action truncates the remaining visible timeline.
 /// </remarks>
 internal sealed class CombatPredictionProjector
 {
@@ -46,7 +45,7 @@ internal sealed class CombatPredictionProjector
     private readonly List<CombatPredictionDamageReceivedEntry> _damageEntries = [];
     private readonly List<CombatPredictionHistoryEntry> _relevantEntries = [];
 
-    // Once a hidden result can affect later history, no later entry may contribute to the projection.
+    // Once an entry owned by a nested action triggers the chained-prediction gate, no later entry may contribute.
     private bool _projectionTruncated;
 
     private readonly CombatPredictionCausalTipBuilder _causalTips;
@@ -107,79 +106,72 @@ internal sealed class CombatPredictionProjector
     /// Declares the single projection rule for each supported semantic history entry type.
     /// </summary>
     /// <remarks>
-    /// A disabled result truncates later projection only when its entry-specific policy says the hidden outcome can
-    /// reveal downstream state. Choice options, fixed/contextual card generation, generated potions, orb results, and
-    /// damage results do not establish a general truncation boundary.
+    /// Card- and potion-specific settings are selected once from the root action kind, so nested actions inherit the
+    /// projection policy of the card or potion whose prediction the player requested.
     /// </remarks>
     private void RegisterRules()
     {
+        var isCardPlay = _rootFrame.Invocation.Action switch
+        {
+            PredictionActionKind.CardPlay => true,
+            PredictionActionKind.PotionUse => false,
+            var action => throw new UnreachableException($"Unexpected action kind {action}.")
+        };
         var settings = ModData.Settings;
 
         Register<CombatPredictionCardGeneratedEntry>(
             HandleCardGenerated,
-            cardSetting: settings.CombatCardGenerationPredictionEnabled,
-            potionSetting: settings.PotionCardGenerationPredictionEnabled,
-            shouldTruncateWhenDisabled: static entry => entry.ResultKind is CardGenerationResultKind.Random);
+            isCardPlay
+                ? settings.CombatCardGenerationPredictionEnabled
+                : settings.PotionCardGenerationPredictionEnabled);
 
         Register<CombatPredictionCardGenerationOptionsEntry>(
             HandleCardGenerationOptions,
-            cardSetting: settings.CombatCardGenerationPredictionEnabled,
-            potionSetting: settings.PotionCardGenerationPredictionEnabled);
+            isCardPlay
+                ? settings.CombatCardGenerationPredictionEnabled
+                : settings.PotionCardGenerationPredictionEnabled);
 
         Register<CombatPredictionPotionGeneratedEntry>(
             HandlePotionGenerated,
-            sharedSetting: settings.PotionGenerationPredictionEnabled);
+            settings.PotionGenerationPredictionEnabled);
 
         Register<CombatPredictionCardsSelectedEntry>(
             HandleCardsSelected,
-            sharedSetting: settings.CombatCardSelectionPredictionEnabled,
-            shouldTruncateWhenDisabled: static entry => entry.Cards.Count > 0);
+            settings.CombatCardSelectionPredictionEnabled);
 
         Register<CombatPredictionAutoPlayFromDrawPileEntry>(
             HandleDrawPileAutoPlay,
-            sharedSetting: settings.AutoPlayFromDrawPilePredictionEnabled,
-            shouldTruncateWhenDisabled: static _ => true);
+            settings.AutoPlayFromDrawPilePredictionEnabled);
 
         Register<CombatPredictionCardDrawnEntry>(
             HandleCardDrawn,
-            cardSetting: settings.CardDrawPredictionEnabled,
-            potionSetting: settings.PotionDrawPredictionEnabled,
-            shouldTruncateWhenDisabled: static _ => true);
+            isCardPlay
+                ? settings.CardDrawPredictionEnabled
+                : settings.PotionDrawPredictionEnabled);
 
         Register<CombatPredictionCardCostsRandomizedEntry>(
             HandleCardCostsRandomized,
-            cardSetting: settings.CardDrawPredictionEnabled,
-            potionSetting: settings.PotionDrawPredictionEnabled,
-            shouldTruncateWhenDisabled: static entry => entry.Cards.Count > 0);
+            isCardPlay
+                ? settings.CardDrawPredictionEnabled
+                : settings.PotionDrawPredictionEnabled);
 
         Register<CombatPredictionOrbChanneledEntry>(
             HandleOrbChanneled,
-            sharedSetting: settings.CombatOrbGenerationPredictionEnabled);
+            settings.CombatOrbGenerationPredictionEnabled);
 
         Register<CombatPredictionDamageReceivedEntry>(
             HandleDamage,
-            sharedSetting: settings.CombatDamagePredictionEnabled);
+            settings.CombatDamagePredictionEnabled);
     }
 
-    private void Register<TEntry>(
-        Func<TEntry, CombatPredictionHistoryEntry?> handler,
-        bool? cardSetting = null,
-        bool? potionSetting = null,
-        bool? sharedSetting = null,
-        Predicate<TEntry>? shouldTruncateWhenDisabled = null)
+    private void Register<TEntry>(Func<TEntry, CombatPredictionHistoryEntry?> handler, bool enabled)
         where TEntry : CombatPredictionHistoryEntry
     {
-        // A shared setting supplies both action gates; an explicit action setting overrides it. Any omitted gate is
-        // treated as enabled, so every registration must deliberately provide the gates relevant to its source kinds.
-        _rules.Add(typeof(TEntry), new EntryProjectionRule(
-            entry => handler((TEntry)entry),
-            cardSetting ?? sharedSetting ?? true,
-            potionSetting ?? sharedSetting ?? true,
-            entry => shouldTruncateWhenDisabled?.Invoke((TEntry)entry) ?? false));
+        _rules.Add(typeof(TEntry), new EntryProjectionRule(entry => handler((TEntry)entry), enabled));
     }
 
     /// <summary>
-    /// Applies the exact-type projection rule selected by the entry's nearest card-play or potion-use action.
+    /// Applies the root-action projection rule for the entry's exact semantic type.
     /// </summary>
     /// <remarks>
     /// Entries outside the supplied root trace are ignored. When chained prediction is disabled, the first entry owned
@@ -205,15 +197,8 @@ internal sealed class CombatPredictionProjector
             return;
         }
 
-        var setting = actionFrame.Invocation.Action switch
+        if (!rule.Enabled)
         {
-            PredictionActionKind.CardPlay => rule.CardSetting,
-            PredictionActionKind.PotionUse => rule.PotionSetting,
-            var action => throw new UnreachableException($"Unexpected action kind {action}.")
-        };
-        if (!setting)
-        {
-            _projectionTruncated |= rule.ShouldTruncateWhenDisabled(entry);
             return;
         }
 
@@ -356,17 +341,9 @@ internal sealed class CombatPredictionProjector
     private delegate CombatPredictionHistoryEntry? EntryHandler(CombatPredictionHistoryEntry entry);
 
     /// <summary>
-    /// Couples one exact history-entry handler with its root-action gates and hidden-result truncation policy.
+    /// Describes the projection rule for a single semantic history entry type.
     /// </summary>
     /// <param name="Handler">Projects an enabled entry and returns the history boundary consumed for shared risk.</param>
-    /// <param name="CardSetting">The feature setting used when the nearest action frame is a card play.</param>
-    /// <param name="PotionSetting">The feature setting used when the nearest action frame is a potion use.</param>
-    /// <param name="ShouldTruncateWhenDisabled">
-    /// Determines from the concrete entry whether hiding it also hides the remaining timeline.
-    /// </param>
-    private readonly record struct EntryProjectionRule(
-        EntryHandler Handler,
-        bool CardSetting,
-        bool PotionSetting,
-        Predicate<CombatPredictionHistoryEntry> ShouldTruncateWhenDisabled);
+    /// <param name="Enabled">Whether the entry type is enabled by the current settings.</param>
+    private readonly record struct EntryProjectionRule(EntryHandler Handler, bool Enabled);
 }
