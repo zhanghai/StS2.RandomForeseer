@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### feat
+
+- 回合结束效果预测现在会模拟支持的手牌回合结束伤害，包括灼伤、腐朽、悔恨等卡牌。<br>
+  End-turn effect prediction now simulates supported turn-end-in-hand damage, including cards such as Burn, Decay, and Regret.
+
 ## v0.12.0
 
 ### feat

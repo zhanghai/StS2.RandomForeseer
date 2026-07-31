@@ -11,16 +11,6 @@ internal sealed partial class CombatPredictionSimulator
 {
     private const int MaxSimulatedChanneledOrbs = 1000;
 
-    // Mirrors OrbQueue.BeforeTurnEnd without waits, real queue mutation, or async hook execution.
-    private void SimulateOrbQueueBeforeTurnEnd(Player player)
-    {
-        var orbQueue = State.GetPlayerCombatState(player).OrbQueue;
-        foreach (var orb in orbQueue.Orbs.ToList())
-        {
-            OrbMirrors.InvokeBeforeTurnEndOrbTrigger(this, orb);
-        }
-    }
-
     // Mirrors OrbModel.TriggerPassive without VFX/SFX, waits, or real model-stack updates.
     internal void TriggerOrbPassive(OrbModel orb, Creature? target)
     {

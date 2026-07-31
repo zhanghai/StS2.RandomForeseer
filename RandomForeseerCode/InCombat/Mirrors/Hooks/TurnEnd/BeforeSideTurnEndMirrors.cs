@@ -87,9 +87,9 @@ internal static class BeforeSideTurnEndMirrors
         registry.Register<StoneCalendar>(HandleStoneCalendar);
         registry.Register<TheBombPower>(HandleTheBombPower);
         registry.Register<DoomPower>(HandleDoomPower);
+        registry.Register<Regret>(HandleRegret);
         registry.Register<ChainsOfBindingPower>(HandleChainsOfBindingPower);
 
-        registry.RegisterIgnored<Regret>();
         registry.RegisterIgnored<PaelsTears>();
         registry.RegisterIgnored<SandpitPower>();
 
@@ -222,6 +222,23 @@ internal static class BeforeSideTurnEndMirrors
         {
             context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
         }
+    }
+
+    private static void HandleRegret(Regret card, BeforeSideTurnEndMirrorContext context)
+    {
+        if (!context.Participants.Contains(card.Owner.Creature))
+        {
+            return;
+        }
+
+        var ownerState = context.State.GetPlayerCombatState(card.Owner);
+        if (ownerState.Hand.Find(card) is not { } predictedCard)
+        {
+            return;
+        }
+
+        var previewCard = (Regret)predictedCard.MutablePreview;
+        previewCard.CardsInHand = ownerState.Hand.Cards.Count;
     }
 
     private static void HandleChainsOfBindingPower(

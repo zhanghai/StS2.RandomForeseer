@@ -17,14 +17,8 @@ internal static class EndTurnPrediction
             return null;
         }
 
-        var extraTurnPlayers = CombatManager.Instance.PlayersTakingExtraTurn;
-        var playersEndingTurn = extraTurnPlayers.Count > 0
-            ? extraTurnPlayers
-            : combatState.Players;
-
         var simulator = new CombatPredictionSimulator(combatState);
-        simulator.SimulateEndTurnEffects(playersEndingTurn);
-
+        simulator.SimulateEndPlayerTurn();
         return EndTurnPredictionResult.FromDamageHistory(simulator);
     }
 

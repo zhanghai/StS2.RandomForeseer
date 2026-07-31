@@ -53,7 +53,7 @@ Mirror files:
 | `StoneCalendar` | 历石 | On configured turn, damages all hittable enemies. | Implemented via `Damage`. |
 | `TheBombPower` | 炸弹 | At final countdown, damages all hittable enemies. | Implemented via `Damage`. |
 | `DoomPower` | 灾厄 | Kills the first doomed creature on the side. | Risk only. Kill/death/combat-structure simulation is incomplete. |
-| `Regret` | 悔恨 | Stores hand size so its turn-end-in-hand effect later deals unblockable self damage. | Currently ignored. This can affect HP/death and damage hooks; it should be risk or a mirror if end-turn-in-hand damage becomes part of prediction. |
+| `Regret` | 悔恨 | Stores hand size so its turn-end-in-hand effect later deals unblockable self damage. | Implemented by storing the shadow hand size on the card's mutable preview for the `CardModel.OnTurnEndInHand` mirror. |
 | `PaelsTears` | 佩尔之泪 | Gains energy. | Ignored. Energy does not affect current predictions. |
 | `ChainsOfBindingPower` | 魂缚锁链 | Clears Bound from all cards and resets internal flag. | Implemented for mirror pile state by clearing Bound on `PredictedCard` previews. Live internal flag reset is not mutated. |
 | `SandpitPower` | 沙坑 | Updates creature positions on enemy side turn end. | Ignored. Enemy-side positioning does not affect current player-turn predictions. |
@@ -64,8 +64,16 @@ Mirror files:
 - StS2 v0.109.0 removed `DiamondDiadem` from `BeforeSideTurnEnd` and deleted
   `DiamondDiademPower`. The relic now grants block and Blur at the first side-turn start, outside
   the current end-turn prediction surface, so it is no longer registered here.
-- The ignored `Regret` registration remains acceptable for the present scope because this hook
-  only records hand size; revisit it if end-turn-in-hand damage enters the prediction surface.
+- `Regret` records the shadow hand size on its mutable preview before ethereal cards are exhausted and before
+  turn-end-in-hand wrappers move cards to the play pile, matching vanilla timing without mutating the real card's
+  private counter.
+- The end-turn simulator follows the prediction-relevant ordering of StS2 v0.110.0
+  `CombatManager.EndPlayerTurnPhaseOneInternal`: auto-post-play hooks, `BeforeSideTurnEnd`, per-player orb triggers,
+  ethereal exhaust, then turn-end-in-hand wrappers. The win-condition boundary after `BeforeSideTurnEnd` and the
+  combat-ending check after each player's orb triggers are not yet mirrored; their call sites retain TODO markers for
+  the planned centralized combat-ending checks.
+- Vanilla next calls `BeforeFlush` for each ending player. Its only vanilla listener is `SlumberingEssence` (沉眠精华),
+  which is not used by the current version of the base game, so the simulator omits this hook.
 
 ## Mock model list
 

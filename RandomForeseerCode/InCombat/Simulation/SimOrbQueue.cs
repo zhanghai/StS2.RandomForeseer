@@ -1,11 +1,15 @@
+using MegaCrit.Sts2.Core.Entities.Orbs;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Orbs;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
+/// <summary>
+/// Mirrors <see cref="OrbQueue"/> without mutating real orb queue.
+/// </summary>
 internal sealed class SimOrbQueue(Player player)
 {
-    // Mirrors PlayerCombatState.OrbQueue without mutating real PlayerCombatState.
     // The simulator clones the real orb queue at the start of a prediction and mutates the clone
     // during simulation. Since the number of orbs is typically small, this is not likely to be a
     // performance concern.
@@ -67,5 +71,16 @@ internal sealed class SimOrbQueue(Player player)
         }
 
         _orbs.Insert(idx, orb);
+    }
+
+    /// <summary>
+    /// Mirrors the prediction-relevant orb snapshot and trigger order of <see cref="OrbQueue.BeforeTurnEnd"/>.
+    /// </summary>
+    public void BeforeTurnEnd(CombatPredictionSimulator simulator)
+    {
+        foreach (var orb in Orbs.ToList())
+        {
+            OrbMirrors.InvokeBeforeTurnEndOrbTrigger(simulator, orb);
+        }
     }
 }
