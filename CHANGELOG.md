@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.12.0
 
 ### feat
 
@@ -43,6 +43,11 @@
 
 - 优化预测期间的模型方法分发，减少不必要的追踪与内存分配。<br>
   Improved model method dispatch during prediction by reducing unnecessary tracing and allocations.
+
+### misc
+
+- 更新 RitsuLib 依赖到 0.5.0。<br>
+  Updated the RitsuLib dependency to 0.5.0.
 
 ## v0.11.0
 
