@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization;
@@ -14,6 +15,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Data;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 using RandomForeseer.RandomForeseerCode.Localization;
 using STS2RitsuLib.Utils.HarmonyIl;
@@ -24,7 +26,7 @@ internal static class CardPileUtils
 {
     public static bool TryGetDrawPileOwner(CardPile pile, [NotNullWhen(true)] out Player? player)
     {
-        player = CombatPredictionUtils.GetCurrentCombatState()?.Players
+        player = CombatManager.Instance.LiveCombatState?.Players
             .FirstOrDefault(candidate => candidate.PlayerCombatState?.DrawPile == pile);
         return player != null;
     }

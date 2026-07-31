@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Data;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -11,7 +12,7 @@ internal static class EndTurnPrediction
 {
     public static EndTurnPredictionResult? Predict()
     {
-        if (CombatPredictionUtils.GetCurrentCombatState() is not { } combatState)
+        if (CombatManager.Instance.LiveCombatState is not { } combatState)
         {
             return null;
         }
@@ -31,8 +32,7 @@ internal static class EndTurnPrediction
     {
         var settings = ModData.Settings;
         return settings.IsPredictionEnabled && settings.EndTurnPredictionEnabled &&
-            CombatPredictionUtils.GetCurrentCombatState()?.CurrentSide is CombatSide.Player &&
-            CombatManager.Instance.IsInProgress &&
+            CombatManager.Instance.LiveCombatState?.CurrentSide is CombatSide.Player &&
             RunManager.Instance.ActionQueueSynchronizer.CombatState is ActionSynchronizerCombatState.PlayPhase;
     }
 }
