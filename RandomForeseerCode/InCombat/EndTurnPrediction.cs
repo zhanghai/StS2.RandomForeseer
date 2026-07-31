@@ -11,7 +11,7 @@ internal static class EndTurnPrediction
 {
     public static EndTurnPredictionResult? Predict()
     {
-        if (CombatManager.Instance._state is not { } combatState)
+        if (CombatPredictionUtils.GetCurrentCombatState() is not { } combatState)
         {
             return null;
         }
@@ -31,7 +31,7 @@ internal static class EndTurnPrediction
     {
         var settings = ModData.Settings;
         return settings.IsPredictionEnabled && settings.EndTurnPredictionEnabled &&
-            CombatManager.Instance._state?.CurrentSide is CombatSide.Player &&
+            CombatPredictionUtils.GetCurrentCombatState()?.CurrentSide is CombatSide.Player &&
             CombatManager.Instance.IsInProgress &&
             RunManager.Instance.ActionQueueSynchronizer.CombatState is ActionSynchronizerCombatState.PlayPhase;
     }

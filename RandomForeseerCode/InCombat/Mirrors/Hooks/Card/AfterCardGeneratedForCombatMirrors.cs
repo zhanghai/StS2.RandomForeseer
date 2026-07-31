@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Combat.History.Entries;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
@@ -68,10 +66,19 @@ internal static class AfterCardGeneratedForCombatMirrors
 
     private static void HandleRegalite(Regalite relic, AfterCardGeneratedForCombatMirrorContext context)
     {
-        if (context.Creator == relic.Owner)
+        if (context.Creator != relic.Owner)
         {
-            context.Simulator.GainBlock(relic.Owner.Creature, relic.DynamicVars.Block);
+            return;
         }
+
+        var state = context.StateStore.Get(relic, () => new RegalitePredictionState(relic));
+        if (state.UsedThisTurn)
+        {
+            return;
+        }
+
+        state.UsedThisTurn = true;
+        context.Simulator.GainBlock(relic.Owner.Creature, relic.DynamicVars.Block);
     }
 
     private static void HandleSoulboundPower(SoulboundPower power, AfterCardGeneratedForCombatMirrorContext context)
@@ -107,15 +114,8 @@ internal static class AfterCardGeneratedForCombatMirrors
 
     private static void HandlePillarOfCreationPower(PillarOfCreationPower power, AfterCardGeneratedForCombatMirrorContext context)
     {
-        if (context.Creator?.Creature != power.Owner)
+        if (context.Creator?.Creature == power.Owner)
         {
-            return;
-        }
-
-        var state = context.StateStore.Get(power, () => new PillarOfCreationPredictionState(power));
-        if (!state.HasTriggeredThisTurn)
-        {
-            state.HasTriggeredThisTurn = true;
             context.Simulator.GainBlock(power.Owner, power.Amount, ValueProp.Unpowered);
         }
     }
@@ -151,7 +151,7 @@ internal static class AfterCardGeneratedForCombatMirrors
             context.PreviewCard.Owner == card.Owner &&
             context.PreviewCard.Type == CardType.Status)
         {
-            context.State.FindCard(card)?.MutablePreview.EnergyCost.SetUntilPlayed(0);
+            context.State.FindCard(card)?.MutablePreview.EnergyCost.AddUntilPlayed(-1);
         }
     }
 }
@@ -166,11 +166,7 @@ internal sealed class SoulboundPredictionState(SoulboundPower power)
     public bool IsAddingSoul { get; set; } = power._isAddingSoul;
 }
 
-internal sealed class PillarOfCreationPredictionState(PillarOfCreationPower power)
+internal sealed class RegalitePredictionState(Regalite relic)
 {
-    public bool HasTriggeredThisTurn { get; set; } = CombatManager.Instance.History.Entries
-        .OfType<CardGeneratedEntry>()
-        .Any(entry =>
-            entry.Creator?.Creature == power.Owner &&
-            entry.HappenedThisTurn(power.CombatState));
+    public bool UsedThisTurn { get; set; } = relic._usedThisTurn;
 }

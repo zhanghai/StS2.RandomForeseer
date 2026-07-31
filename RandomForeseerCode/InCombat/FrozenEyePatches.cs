@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Godot;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization;
@@ -25,7 +24,7 @@ internal static class CardPileUtils
 {
     public static bool TryGetDrawPileOwner(CardPile pile, [NotNullWhen(true)] out Player? player)
     {
-        player = CombatManager.Instance._state?.Players
+        player = CombatPredictionUtils.GetCurrentCombatState()?.Players
             .FirstOrDefault(candidate => candidate.PlayerCombatState?.DrawPile == pile);
         return player != null;
     }

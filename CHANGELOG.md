@@ -24,6 +24,9 @@
 
 ### fix
 
+- 适配《杀戮尖塔 2》0.110.0。<br>
+  Adapted to Slay the Spire 2 0.110.0.
+
 - 精简战斗预测偏移提示，分别汇总未完整模拟的结算、未纳入预测的玩家选择和达到模拟上限的效果。<br>
   Streamlined combat prediction drift warnings by separately summarizing incomplete simulation, unresolved player choices, and simulation limits.
 

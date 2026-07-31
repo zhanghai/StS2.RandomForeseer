@@ -14,7 +14,7 @@ internal static class CardGenerationCardMirrors
         var cards = card.Owner.GetUnlockedCharacterCards()
             .Where(candidate => candidate.Type == CardType.Power)
             .GetDistinctForCombat(card.Owner, 3, context.Rng.CombatCardGeneration)
-            .UpgradeIf(card.IsUpgraded)
+            .Select(candidate => candidate.Upgrade())
             .ToList();
 
         RecordOptions(context, cards);
