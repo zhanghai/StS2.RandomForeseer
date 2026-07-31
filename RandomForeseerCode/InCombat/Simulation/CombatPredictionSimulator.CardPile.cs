@@ -79,7 +79,6 @@ internal sealed partial class CombatPredictionSimulator
         // Mirrors CardPileCmd.Shuffle: merge discard cards with current draw-pile cards,
         // shuffle the combined list, then place all cards back into the draw pile.
         var state = State.GetPlayerCombatState(player);
-        var drawPileCards = state.DrawPile.Cards.ToHashSet();
         var shuffledCards = state.DiscardPile.Cards.ToList();
 
         // The original code adds draw-pile cards through ToHashSet(), relying on the current
@@ -90,22 +89,7 @@ internal sealed partial class CombatPredictionSimulator
 
         HookMirrors.ModifyShuffleOrder(this, player, shuffledCards, isInitialShuffle: false);
 
-        foreach (var card in drawPileCards)
-        {
-            state.DrawPile.Remove(card);
-        }
-
-        foreach (var card in shuffledCards)
-        {
-            if (drawPileCards.Contains(card))
-            {
-                state.DrawPile.Add(card);
-            }
-            else
-            {
-                AddToPile(card, state.DrawPile);
-            }
-        }
+        AddToPile(shuffledCards, state.DrawPile);
 
         HookMirrors.AfterShuffle(this, player);
     }
@@ -295,14 +279,14 @@ internal sealed partial class CombatPredictionSimulator
                 State.GetCreature(owner.Creature).IsDead ||
                 (oldPileType != PileType.None && !oldPileType.IsCombatPile()))
             {
-                results.Add(new SimCardPileAddResult(false, card, oldPileType));
+                results.Add(new SimCardPileAddResult(false, card, oldPileType, newPile.Type));
                 continue;
             }
 
             // Vanilla checks for card.UpgradePreviewType.IsPreview() here and throws if true.
             // The simulator does not currently support preview cards, so this is intentionally omitted.
 
-            results.Add(new SimCardPileAddResult(true, card, oldPileType));
+            results.Add(new SimCardPileAddResult(true, card, oldPileType, newPile.Type));
         }
 
         foreach (var result in results)
@@ -400,7 +384,11 @@ internal sealed partial class CombatPredictionSimulator
     }
 }
 
+/// <summary>
+/// Mirrors <see cref="CardPileAddResult"/>.
+/// </summary>
 internal readonly record struct SimCardPileAddResult(
     bool Success,
     PredictedCard CardAdded,
-    PileType OldPileType);
+    PileType OldPileType,
+    PileType TargetPileType);
