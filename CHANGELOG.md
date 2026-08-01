@@ -12,6 +12,9 @@
 
 ### fix
 
+- 战斗伤害预测变化时现在会同步刷新多人游戏左上角的玩家血条。<br>
+  Multiplayer player health bars in the top-left now refresh alongside combat damage prediction changes.
+
 - 修复战斗伤害预测指示器可能和玩家的充能球栏位重叠的问题。<br>
   Fixed combat damage prediction indicators potentially overlapping player orb slots.
 

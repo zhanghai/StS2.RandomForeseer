@@ -1,6 +1,8 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Combat;
+using MegaCrit.Sts2.Core.Nodes.Multiplayer;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using RandomForeseer.RandomForeseerCode.Data;
 using STS2RitsuLib.Combat.HealthBars;
@@ -69,17 +71,25 @@ internal static class DamagePredictionHealthBarForecast
 
     private static void RefreshHealthBars(IEnumerable<Creature> targets)
     {
-        if (NCombatRoom.Instance == null)
+        HashSet<Creature> targetsSet = [.. targets];
+
+        foreach (var creatureNode in NCombatRoom.Instance?.CreatureNodes ?? [])
         {
-            return;
+            if (targetsSet.Contains(creatureNode.Entity))
+            {
+                creatureNode.GetNodeOrNull<NCreatureStateDisplay>("%HealthBar")
+                    ?.GetNodeOrNull<NHealthBar>("%HealthBar")
+                    ?.RefreshValues();
+            }
         }
 
-        foreach (var target in targets.Distinct())
+        foreach (var childNode in NRun.Instance?.GlobalUi?.MultiplayerPlayerContainer?.GetChildren() ?? [])
         {
-            NCombatRoom.Instance
-                .GetCreatureNode(target)
-                ?.GetNodeOrNull<NCreatureStateDisplay>("%HealthBar")
-                ?.Call(NCreatureStateDisplay.MethodName.RefreshValues);
+            if (childNode is NMultiplayerPlayerState playerStateNode &&
+                targetsSet.Contains(playerStateNode.Player.Creature))
+            {
+                playerStateNode.GetNodeOrNull<NHealthBar>("%HealthBar")?.RefreshValues();
+            }
         }
     }
 }
