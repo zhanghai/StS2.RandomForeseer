@@ -18,8 +18,9 @@ offset_right = 40.0
 offset_bottom = 40.0
 pivot_offset = Vector2(20, 20)
 mouse_filter = 2
+texture_filter = 4
 expand_mode = 1
-stretch_mode = 4
+stretch_mode = 5
 
 [node name="AmountLabel" type="Label" parent="."]
 layout_mode = 0

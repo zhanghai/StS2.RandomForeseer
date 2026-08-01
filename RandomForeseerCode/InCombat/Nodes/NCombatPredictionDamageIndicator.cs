@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.addons.mega_text;
+using MegaCrit.Sts2.Core.Entities.Cards;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Nodes;
 
@@ -137,10 +138,38 @@ internal sealed partial class NCombatPredictionDamageIndicator : MarginContainer
     {
         return source switch
         {
+            CardModel card => GetCardIcon(card),
+            PotionModel potion => potion.Image,
+            EnchantmentModel enchantment => enchantment.Icon,
             OrbModel orb => orb.Icon,
             PowerModel power => power.Icon,
             RelicModel relic => relic.Icon,
             _ => ModelDb.Power<StrengthPower>().Icon
+        };
+    }
+
+    private static Texture2D GetCardIcon(CardModel card)
+    {
+        var portrait = card.Portrait;
+        var portraitSize = portrait.GetSize();
+        if (card.Rarity is not CardRarity.Ancient || portraitSize.Y <= portraitSize.X)
+        {
+            return portrait;
+        }
+
+        var (atlas, region) = portrait switch
+        {
+            AtlasTexture atlasPortrait => (atlasPortrait.Atlas, atlasPortrait.Region),
+            _ => (portrait, new Rect2(Vector2.Zero, portraitSize))
+        };
+
+        var cropOffset = new Vector2(region.Size.X * 28f / 299f, region.Size.Y * 47f / 421f);
+        var cropSize = new Vector2(region.Size.X * 250f / 299f, region.Size.Y * 190f / 421f);
+        return new AtlasTexture
+        {
+            Atlas = atlas,
+            Region = new Rect2(region.Position + cropOffset, cropSize),
+            FilterClip = true
         };
     }
 }
