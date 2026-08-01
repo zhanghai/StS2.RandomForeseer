@@ -121,7 +121,7 @@ internal static class GeneralCardMirrors
     /// <item><see cref="Rally"/> targets all allies.</item>
     /// <item>
     /// <see cref="IronWave"/> is a combined attack-and-block card that targets an enemy while its block effect targets
-    /// the owner.
+    /// the owner. <see cref="Defy"/> is a debuff Skill that targets an enemy while its block effect targets the owner.
     /// </item>
     /// </list>
     /// </remarks>
@@ -148,8 +148,7 @@ internal static class GeneralCardMirrors
         switch (card.TargetType)
         {
             case TargetType.Self:
-            case TargetType.AnyEnemy or TargetType.AllEnemies or TargetType.RandomEnemy
-                when card.Type is CardType.Attack:
+            case TargetType.AnyEnemy or TargetType.AllEnemies or TargetType.RandomEnemy:
                 blockAction(card.Owner.Creature);
                 break;
 
