@@ -47,20 +47,20 @@ internal sealed partial class CombatPredictionSimulator
 
     // Mirrors CardCmd.Discard(PlayerChoiceContext, CardModel).
     // Useful when discarding a single card and drawing no cards.
-    public void Discard(PredictedCard card, bool triggerSly = true)
+    public void Discard(PredictedCard card)
     {
-        DiscardAndDraw([card], 0, triggerSly);
+        DiscardAndDraw([card], 0);
     }
 
     // Mirrors CardCmd.Discard(PlayerChoiceContext, IEnumerable<CardModel>).
     // Useful when discarding multiple cards and drawing no cards.
-    public void Discard(IReadOnlyList<PredictedCard> cards, bool triggerSly = true)
+    public void Discard(IReadOnlyList<PredictedCard> cards)
     {
-        DiscardAndDraw(cards, 0, triggerSly);
+        DiscardAndDraw(cards, 0);
     }
 
     // Mirrors CardCmd.DiscardAndDraw.
-    public void DiscardAndDraw(IReadOnlyList<PredictedCard> cardsToDiscard, int cardsToDraw, bool triggerSly = true)
+    public void DiscardAndDraw(IReadOnlyList<PredictedCard> cardsToDiscard, int cardsToDraw)
     {
         if (cardsToDiscard.Count == 0 && cardsToDraw == 0)
         {
@@ -71,7 +71,7 @@ internal sealed partial class CombatPredictionSimulator
 
         foreach (var card in cardsToDiscard)
         {
-            if (triggerSly && card.Preview.IsSlyThisTurn)
+            if (card.Preview.IsSlyThisTurn)
             {
                 slyCards.Add(card);
             }
