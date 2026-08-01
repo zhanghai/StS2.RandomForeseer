@@ -2,11 +2,14 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.GameActions;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.Settings;
@@ -18,6 +21,8 @@ internal static class EndTurnPredictionController
 {
     private static bool _isSubscribed;
     private static bool _isActionDamageOverrideActive;
+    private static bool _isDeferredRefreshScheduled;
+    private static bool _refreshPending;
     private static NEndTurnButton? _focusedEndTurnButton;
 
     public static void Subscribe()
@@ -32,6 +37,7 @@ internal static class EndTurnPredictionController
         CombatManager.Instance.PlayerUnendedTurn += OnPlayerUnendedTurn;
         CombatManager.Instance.CombatEnded += OnCombatEnded;
         CombatManager.Instance.StateTracker.CombatStateChanged += OnCombatStateChanged;
+        RunManager.Instance.ActionExecutor.AfterActionExecuted += OnActionExecuted;
         ModSettingsBindingWriteEvents.ValueWritten += OnSettingsValueWritten;
 
         _isSubscribed = true;
@@ -50,6 +56,7 @@ internal static class EndTurnPredictionController
         CombatManager.Instance.PlayerUnendedTurn -= OnPlayerUnendedTurn;
         CombatManager.Instance.CombatEnded -= OnCombatEnded;
         CombatManager.Instance.StateTracker.CombatStateChanged -= OnCombatStateChanged;
+        RunManager.Instance.ActionExecutor.AfterActionExecuted -= OnActionExecuted;
         ModSettingsBindingWriteEvents.ValueWritten -= OnSettingsValueWritten;
 
         _isSubscribed = false;
@@ -83,8 +90,15 @@ internal static class EndTurnPredictionController
             return;
         }
 
-        EndTurnPredictionResult? prediction;
+        if (IsRefreshDeferred())
+        {
+            _refreshPending = true;
+            return;
+        }
 
+        _refreshPending = false;
+
+        EndTurnPredictionResult? prediction;
         try
         {
             prediction = EndTurnPrediction.Predict();
@@ -92,8 +106,7 @@ internal static class EndTurnPredictionController
         catch (Exception ex)
         {
             Entry.Logger.Warn($"End-turn prediction refresh failed: {ex}");
-            Clear();
-            return;
+            prediction = null;
         }
 
         if (prediction is not { DamagePrediction.HasTargets: true })
@@ -143,6 +156,7 @@ internal static class EndTurnPredictionController
 
     public static void Clear()
     {
+        _refreshPending = false;
         EndTurnPredictionCreatureHoverTips.Clear();
         CombatPredictionOverlay.Clear();
         DamagePredictionHealthBarForecast.Clear();
@@ -174,6 +188,34 @@ internal static class EndTurnPredictionController
             EndTurnPredictionDisplayMode.EndTurnButtonHover => _focusedEndTurnButton != null,
             _ => true
         };
+    }
+
+    private static bool IsRefreshDeferred()
+    {
+        var action = RunManager.Instance.ActionExecutor.CurrentlyRunningAction;
+        return action != null && ActionQueueSet.IsGameActionPlayerDriven(action);
+    }
+
+    private static void OnActionExecuted(GameAction _)
+    {
+        if (!_refreshPending || _isDeferredRefreshScheduled)
+        {
+            return;
+        }
+
+        // ActionExecutor raises AfterActionExecuted before clearing CurrentlyRunningAction. Recheck on the next
+        // process frame so the completed action no longer keeps the pending refresh deferred.
+        _isDeferredRefreshScheduled = true;
+        Callable.From(FlushPendingRefresh).CallDeferred();
+    }
+
+    private static void FlushPendingRefresh()
+    {
+        _isDeferredRefreshScheduled = false;
+        if (_isSubscribed && _refreshPending)
+        {
+            Refresh();
+        }
     }
 
     private static void OnAboutToSwitchToEnemyTurn(CombatState _)

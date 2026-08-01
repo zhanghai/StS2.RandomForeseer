@@ -15,6 +15,11 @@
 - 修复战斗伤害预测指示器可能和玩家的充能球栏位重叠的问题。<br>
   Fixed combat damage prediction indicators potentially overlapping player orb slots.
 
+### perf
+
+- 回合结束效果预测现在会等待玩家操作完整结算后再刷新，避免针对结算中间状态重复模拟。<br>
+  End-turn effect prediction now waits for player actions to finish before refreshing, avoiding repeated simulations of intermediate resolution states.
+
 ## v0.12.0
 
 ### feat
