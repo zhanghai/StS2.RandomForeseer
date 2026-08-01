@@ -3,6 +3,8 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Nodes.Combat;
+using MegaCrit.Sts2.Core.Nodes.Orbs;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Nodes;
@@ -12,6 +14,7 @@ namespace RandomForeseer.RandomForeseerCode.InCombat;
 internal static class CombatPredictionOverlay
 {
     private const float IntentGap = 6f;
+    private const float OrbAvoidanceGap = 8f;
 
     private static readonly Dictionary<Creature, NCombatPredictionDamageIndicator> Indicators = [];
 
@@ -73,11 +76,8 @@ internal static class CombatPredictionOverlay
                 continue;
             }
 
-            var intentRect = creatureNode.IntentContainer.GetGlobalRect();
             var indicatorSize = indicator.GetGlobalRect().Size;
-            indicator.GlobalPosition = new Vector2(
-                intentRect.GetCenter().X - indicatorSize.X / 2f,
-                intentRect.Position.Y - indicatorSize.Y - IntentGap);
+            indicator.GlobalPosition = GetIndicatorPosition(creatureNode, indicatorSize);
         }
     }
 
@@ -98,6 +98,31 @@ internal static class CombatPredictionOverlay
         parent.AddChildSafely(indicator);
         Indicators[target] = indicator;
         return indicator;
+    }
+
+    private static Vector2 GetIndicatorPosition(NCreature creatureNode, Vector2 indicatorSize)
+    {
+        var intentRect = creatureNode.IntentContainer.GetGlobalRect();
+        var position = new Vector2(
+            intentRect.GetCenter().X - indicatorSize.X / 2f,
+            intentRect.Position.Y - indicatorSize.Y - IntentGap);
+
+        if (creatureNode.OrbManager is { } orbManager)
+        {
+            var candidateRect = new Rect2(position, indicatorSize);
+            var orbNodes = orbManager.GetNode<Control>("%Orbs").GetChildren().OfType<NOrb>();
+
+            foreach (var orb in orbNodes)
+            {
+                var orbRect = orb.GetNode<Control>("%SelectionReticle").GetGlobalRect().Grow(OrbAvoidanceGap);
+                if (candidateRect.Intersects(orbRect))
+                {
+                    position.Y = Math.Min(position.Y, orbRect.Position.Y - indicatorSize.Y);
+                }
+            }
+        }
+
+        return position;
     }
 }
 

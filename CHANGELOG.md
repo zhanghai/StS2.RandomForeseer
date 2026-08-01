@@ -7,6 +7,14 @@
 - 回合结束效果预测现在会模拟支持的手牌回合结束伤害，包括灼伤、腐朽、悔恨等卡牌。<br>
   End-turn effect prediction now simulates supported turn-end-in-hand damage, including cards such as Burn, Decay, and Regret.
 
+- 战斗伤害预测指示器现在会使用卡牌插画、药水图标和附魔图标标识伤害来源。<br>
+  Combat damage prediction indicators now identify damage sources with card portraits, potion icons, and enchantment icons.
+
+### fix
+
+- 修复战斗伤害预测指示器可能和玩家的充能球栏位重叠的问题。<br>
+  Fixed combat damage prediction indicators potentially overlapping player orb slots.
+
 ## v0.12.0
 
 ### feat
