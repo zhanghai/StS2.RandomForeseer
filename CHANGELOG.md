@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.12.1
 
 ### feat
 
@@ -12,11 +12,17 @@
 
 ### fix
 
+- 修复实验性通用卡牌预测无法识别以敌人为目标的技能牌（如违逆）所提供格挡的问题。<br>
+  Fixed experimental general card prediction not recognizing block granted by enemy-targeting Skills such as Defy.
+
 - 战斗伤害预测变化时现在会同步刷新多人游戏左上角的玩家血条。<br>
   Multiplayer player health bars in the top-left now refresh alongside combat damage prediction changes.
 
 - 修复战斗伤害预测指示器可能和玩家的充能球栏位重叠的问题。<br>
   Fixed combat damage prediction indicators potentially overlapping player orb slots.
+
+- 模组设置页现在会在关闭事件选项预测时同步禁用“滑脚木桥重掷预览次数”，并将该设置移到对应总开关之后。<br>
+  The mod settings page now disables Slippery Bridge reroll previews when event option prediction is off and places that setting after its corresponding master switch.
 
 ### perf
 
