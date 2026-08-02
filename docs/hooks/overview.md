@@ -17,8 +17,9 @@
 - `IPredictionMirrorContext<TBase>` is a dispatcher-only contract. Combat contexts explicitly map ordinary listeners to the listener, orb receivers to the shadow orb, and `CardModel.OnPlay` / `CardModel.OnTurnEndInHand` receivers to the original card rather than an optional detached preview. Typed handlers use the context's `History` alias for explicit risk reasons.
 - `HookMirrors` facades own hook-level control flow, including context construction, listener enumeration, phase refresh, short-circuiting, result chaining, and only-modifier dispatch. The registry only dispatches one listener at a time.
 - Hook-level listener enumeration follows each vanilla facade rather than assuming every hook uses
-  the guarded iterator. In particular, StS2 v0.109.0 `AfterBlockBroken` directly iterates the combat
-  state so a block-breaking killing hit still dispatches its listeners.
+  the guarded iterator. In particular, `AfterBlockBroken` and the two passes inside `AfterCardPlayed`
+  directly iterate the combat state so a killing hit/card can still finish its listeners. The paired
+  `BeforeCardPlayed` hook uses the guarded iterator.
 - Hook mirrors are grouped first by domain and then by hook name under `Mirrors/Hooks/`. Each hook-name file owns its method specification, registry, context, handlers, and hook-local state; state or behavior shared by multiple hooks may use a separate model-centric file.
 - Combat and out-of-combat code have independent `HookMirrors` facades but share the registry infrastructure. Mirrored model behavior that is not a hook, such as orb virtual methods, `CardModel.OnPlay`, `CardModel.OnTurnEndInHand` and `PotionModel.OnUse`, lives in its model domain under `Mirrors/` and follows the same facade/registry split.
 - `CombatPredictionHistory` stores semantic events, resolved events, and explicit risk events in one ordered timeline. Entries recorded within a prediction source scope capture its current immutable trace frame; source-less operations may record entries with no trace. Deferred card draws and individual generated cards append separate original and resolved entries; consumers use original order, resolved snapshots, and the maximum resolved timeline position. A reference-identity completion index rejects unresolved, duplicate, and cross-history completion. History also maintains exact entry-type counts so simulator safety limits can be checked without repeatedly scanning the full history.
@@ -43,3 +44,4 @@
 - `orb-hooks.md`
 - `shuffle-hooks.md`
 - `card-reward-hooks.md`
+- `card-play-hooks.md`
