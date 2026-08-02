@@ -22,13 +22,12 @@ internal sealed class ModSettings
     public bool DeckTransformPredictionEnabled { get; set; } = true;
     public bool RelicPickupPredictionEnabled { get; set; } = true;
     public bool EventOptionPredictionEnabled { get; set; } = true;
-    public bool CrystalSphereClairvoyanceEnabled { get; set; } = true;
     public int SlipperyBridgeRerollPreviewCount
     {
         get => Math.Clamp(field, 1, 10);
         set => field = Math.Clamp(value, 1, 10);
     } = 5;
-
+    public bool CrystalSphereClairvoyanceEnabled { get; set; } = true;
     public bool DriftwoodRerollPredictionEnabled { get; set; } = true;
     public bool PaelsWingSacrificePredictionEnabled { get; set; } = true;
     public bool RestSitePredictionEnabled { get; set; } = true;

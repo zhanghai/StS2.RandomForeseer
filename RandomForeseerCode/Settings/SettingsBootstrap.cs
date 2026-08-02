@@ -47,7 +47,6 @@ internal static class SettingsBootstrap
                 .AddToggle("deck_transform_prediction_enabled", SettingsUiBindings.DeckTransformPredictionEnabled)
                 .AddToggle("relic_pickup_prediction_enabled", SettingsUiBindings.RelicPickupPredictionEnabled)
                 .AddToggle("event_option_prediction_enabled", SettingsUiBindings.EventOptionPredictionEnabled)
-                .AddToggle("crystal_sphere_clairvoyance_enabled", SettingsUiBindings.CrystalSphereClairvoyanceEnabled)
                 .AddIntSlider(
                     "slippery_bridge_reroll_preview_count",
                     T("slider.slippery_bridge_reroll_preview_count.label"),
@@ -55,6 +54,10 @@ internal static class SettingsBootstrap
                     minValue: 1,
                     maxValue: 10,
                     description: T("slider.slippery_bridge_reroll_preview_count.description"))
+                .WithEntryEnabledWhen(
+                    "slippery_bridge_reroll_preview_count",
+                    () => SettingsUiBindings.EventOptionPredictionEnabled.Read())
+                .AddToggle("crystal_sphere_clairvoyance_enabled", SettingsUiBindings.CrystalSphereClairvoyanceEnabled)
                 .AddToggle("driftwood_reroll_prediction_enabled", SettingsUiBindings.DriftwoodRerollPredictionEnabled)
                 .AddToggle("paels_wing_sacrifice_prediction_enabled", SettingsUiBindings.PaelsWingSacrificePredictionEnabled)
                 .AddToggle("rest_site_prediction_enabled", SettingsUiBindings.RestSitePredictionEnabled)

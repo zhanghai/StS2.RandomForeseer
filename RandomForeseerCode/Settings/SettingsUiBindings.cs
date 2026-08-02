@@ -28,11 +28,11 @@ internal static class SettingsUiBindings
     public static IModSettingsValueBinding<bool> EventOptionPredictionEnabled { get; } =
         Binding(s => s.EventOptionPredictionEnabled, (s, v) => s.EventOptionPredictionEnabled = v);
 
-    public static IModSettingsValueBinding<bool> CrystalSphereClairvoyanceEnabled { get; } =
-        Binding(s => s.CrystalSphereClairvoyanceEnabled, (s, v) => s.CrystalSphereClairvoyanceEnabled = v);
-
     public static IModSettingsValueBinding<int> SlipperyBridgeRerollPreviewCount { get; } =
         Binding(s => s.SlipperyBridgeRerollPreviewCount, (s, v) => s.SlipperyBridgeRerollPreviewCount = v);
+
+    public static IModSettingsValueBinding<bool> CrystalSphereClairvoyanceEnabled { get; } =
+        Binding(s => s.CrystalSphereClairvoyanceEnabled, (s, v) => s.CrystalSphereClairvoyanceEnabled = v);
 
     public static IModSettingsValueBinding<bool> DriftwoodRerollPredictionEnabled { get; } =
         Binding(s => s.DriftwoodRerollPredictionEnabled, (s, v) => s.DriftwoodRerollPredictionEnabled = v);
