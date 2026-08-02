@@ -43,6 +43,7 @@ public partial class Entry
         ModData.Register();
         ModLocalization.Register();
         SettingsBootstrap.Register();
+        ModSettingsLoggingController.Register();
         CombatCardPredictionSettingsController.Register();
         RitsuLibFramework.RegisterHealthBarForecast<DamagePredictionHealthBarForecastSource>(ModId);
 
