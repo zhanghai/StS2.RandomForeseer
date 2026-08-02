@@ -254,8 +254,8 @@ internal sealed partial class CombatPredictionSimulator
                 PlayCount = playCount
             };
 
-            // TODO: Dispatch BeforeCardPlayed hooks
-            // TODO: Record CardPlayStarted history
+            HookMirrors.BeforeCardPlayed(this, card, cardPlay);
+            History.CardPlayStarted(card, cardPlay);
 
             CardOnPlayMirrors.Invoke(this, card, cardPlay);
 
@@ -278,7 +278,7 @@ internal sealed partial class CombatPredictionSimulator
                 card,
                 cardPlay,
                 card.GetKeywords(State).Contains(CardKeyword.Ethereal));
-            // TODO: Dispatch AfterCardPlayed hooks
+            HookMirrors.AfterCardPlayed(this, card, cardPlay);
 
             if (ownerCreature.IsDead)
             {

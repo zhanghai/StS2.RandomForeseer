@@ -103,6 +103,15 @@ internal sealed class CombatPredictionHistory(PredictionTrace trace)
         Record(new CombatPredictionCardsSelectedEntry { Cards = SnapshotCards(cards) });
     }
 
+    public void CardPlayStarted(PredictedCard card, CardPlay cardPlay)
+    {
+        Record(new CombatPredictionCardPlayStartedEntry
+        {
+            Card = card,
+            CardPlay = cardPlay
+        });
+    }
+
     public void CardPlayFinished(PredictedCard card, CardPlay cardPlay, bool wasEthereal)
     {
         Record(new CombatPredictionCardPlayFinishedEntry

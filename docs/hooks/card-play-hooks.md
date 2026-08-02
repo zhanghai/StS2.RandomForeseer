@@ -2,9 +2,16 @@
 
 Research baseline: StS2 v0.110.1 (`a421e19`).
 
-There are no mirror files for this family yet. The current integration points are the two TODOs in
-`InCombat/Simulation/CombatPredictionSimulator.Card.cs`, immediately before `CardOnPlayMirrors.Invoke` and
-immediately after `CombatPredictionHistory.CardPlayFinished`.
+Mirror files: `InCombat/Mirrors/HookMirrors.cs`,
+`InCombat/Mirrors/Hooks/Card/BeforeCardPlayedMirrors.cs`,
+`InCombat/Mirrors/Hooks/Card/AfterCardPlayedMirrors.cs`,
+`InCombat/Simulation/CombatPredictionHistory.cs`, and
+`InCombat/Simulation/CombatPredictionSimulator.Card.cs`.
+
+The simulator now dispatches the paired hook lifecycle in vanilla order and records both shadow
+`CardPlayStarted` and `CardPlayFinished` entries. Exact gameplay listener coverage is being added in the
+implementation slices below; reviewed achievement/VFX/later-turn-only listeners are already registered ignored,
+while every other unregistered override remains an explicit unsupported risk rather than a silent no-op.
 
 ## Hook specs
 
@@ -33,9 +40,9 @@ The before hook is suppressed when combat is already over or ending at dispatch 
 bypasses that guard so listeners can finish resolving the card that caused a kill. It pushes each listener into the
 `PlayerChoiceContext`; the before hook does not use a choice context.
 
-The simulator currently records only shadow `CardPlayFinished`, not shadow `CardPlayStarted`, and dispatches neither
-hook. Any implementation must preserve one before/ordinary-after/late-after cycle per play index, including replayed
-cards, and must run the ordinary phase for every listener before the late phase begins.
+The simulator preserves one before/ordinary-after/late-after cycle per play index, including replayed cards, and runs
+the ordinary phase for every listener before beginning the fresh late pass. The guarded before phase also suppresses
+dispatch after the shadow combat has ended; both after passes use direct listener iteration.
 
 ## Feasibility labels
 

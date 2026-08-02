@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands.Builders;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
@@ -219,6 +220,57 @@ internal static class HookMirrors
         foreach (var listener in context.State.IterateHookListeners())
         {
             AfterCardGeneratedForCombatMirrors.Invoke(listener, context);
+        }
+    }
+
+    // Mirrors Hook.BeforeCardPlayed. Unlike the two after phases, vanilla suppresses this
+    // guarded dispatch when combat was already over or ending at dispatch start.
+    public static void BeforeCardPlayed(
+        CombatPredictionSimulator simulator,
+        PredictedCard card,
+        CardPlay cardPlay)
+    {
+        if (simulator.State.Enemies.Count == 0 ||
+            simulator.State.PlayerCreatures.All(creature => simulator.State.GetCreature(creature).IsDead))
+        {
+            return;
+        }
+
+        var context = new BeforeCardPlayedMirrorContext
+        {
+            Simulator = simulator,
+            Card = card,
+            CardPlay = cardPlay
+        };
+
+        foreach (var listener in context.State.IterateHookListeners())
+        {
+            BeforeCardPlayedMirrors.Invoke(listener, context);
+        }
+    }
+
+    // Mirrors Hook.AfterCardPlayed's ordinary pass followed by a fresh full late pass. Vanilla
+    // deliberately iterates the combat state directly so a killing card can finish resolving.
+    public static void AfterCardPlayed(
+        CombatPredictionSimulator simulator,
+        PredictedCard card,
+        CardPlay cardPlay)
+    {
+        var context = new AfterCardPlayedMirrorContext
+        {
+            Simulator = simulator,
+            Card = card,
+            CardPlay = cardPlay
+        };
+
+        foreach (var listener in context.State.IterateHookListeners())
+        {
+            AfterCardPlayedMirrors.Invoke(listener, context);
+        }
+
+        foreach (var listener in context.State.IterateHookListeners())
+        {
+            AfterCardPlayedMirrors.InvokeLate(listener, context);
         }
     }
 

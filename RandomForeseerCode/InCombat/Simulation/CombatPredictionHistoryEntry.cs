@@ -36,6 +36,15 @@ internal sealed class CombatPredictionRiskEntry : CombatPredictionHistoryEntry
 }
 
 /// <summary>
+/// Mirrors <see cref="CardPlayStartedEntry"/>.
+/// </summary>
+internal sealed class CombatPredictionCardPlayStartedEntry : CombatPredictionHistoryEntry
+{
+    public required PredictedCard Card { get; init; }
+    public required CardPlay CardPlay { get; init; }
+}
+
+/// <summary>
 /// Mirrors <see cref="CardPlayFinishedEntry"/>.
 /// </summary>
 internal sealed class CombatPredictionCardPlayFinishedEntry : CombatPredictionHistoryEntry
