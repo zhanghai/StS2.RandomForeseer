@@ -13,6 +13,15 @@ The simulator now dispatches the paired hook lifecycle in vanilla order and reco
 implementation slices below; reviewed achievement/VFX/later-turn-only listeners are already registered ignored,
 while every other unregistered override remains an explicit unsupported risk rather than a silent no-op.
 
+Current implementation progress:
+
+- all 50 **Local feasible** override occurrences are mirrored;
+- all 11 **Ignorable** occurrences are registered as explicit no-ops;
+- prediction-local generation of `Stomp`, `BansheesCry`, `Pinpoint`, `MakeItSo`, or `RightHandHand` records
+  incomplete risk because generated cards are not yet part of later listener enumeration;
+- the 15 cross-hook occurrences and trigger-conditional handling for the 19 partial/blocked occurrences remain in
+  the next implementation slices.
+
 ## Hook specs
 
 - `AbstractModel.BeforeCardPlayed(CardPlay)`
@@ -71,7 +80,7 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `FreeSkillPower` | 免费技能 | Consumes one stack when owner plays a Skill from hand/play. | **Cross-hook feasible.** Same targeted shadow-cost requirement as `FreeAttackPower`. |
 | `GravityPower` | 引力 | Snapshots the power amount for each owner card so the matching after hook damages all hittable enemies. | **Local feasible.** Pair state plus simulator `Damage`. |
 | `ImitationLearningPower` | 模仿学习 | On the first play in a series of the selected ally's Power, creates an owner-swapped clone for later auto-play. | **Partial.** Detached clone creation and generic `AutoPlay` are available, but the clone's Power `OnPlay` may still be unsupported and Apply Power remains outside simulator state. |
-| `JugglingPower` | 杂耍 | Counts owner Attacks; on the third, adds `Amount` clones of that Attack to hand. | **Local feasible.** Use `StateStore`, `PredictedCard.CreateClone`, `Fixed` generation classification, and normal generation hooks. |
+| `JugglingPower` | 杂耍 | Counts owner Attacks; on the third, adds `Amount` clones of that Attack to hand. | **Local feasible.** Use `StateStore`, `PredictedCard.CreateClone`, `Contextual` generation classification, and normal generation hooks. |
 | `MonologuePower` | 独白 | Snapshots the configured Strength amount for each owner card; the after hook applies it to the monster. | **Blocked.** Apply Power is unsupported. Register risk on the matching trigger. |
 | `OblivionPower` | 湮灭 | Snapshots amount for each applier card; the after hook applies Doom to the owner. | **Blocked.** Apply Power/death consequences are unsupported. |
 | `RupturePower` | 撕裂 | Opens a per-card accumulator so HP loss caused during that card is converted to Strength after the play. | **Blocked.** Pairing with the existing damage listener is possible, but the resulting Strength application is unsupported. Preserve the current explicit risk. |
@@ -86,7 +95,7 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `VeilpiercerPower` | 刺破帷幕 | Consumes one stack when owner plays an Ethereal card from hand/play. | **Cross-hook feasible.** Shadow amount must also feed its zero-cost modifier. |
 | `ChemicalX` | 化学物X | Flashes when owner plays an energy-X or star-X card. | **Ignorable.** The actual X increase is the separate read-only `ModifyXValue` hook. |
 | `IntimidatingHelmet` | 骇人头盔 | If owner spends at least the configured energy, grants block before the card effect. | **Local feasible.** `CardPlay.Resources` and simulator `GainBlock` are sufficient. |
-| `MusicBox` | 音乐盒 | Remembers the first owner Attack this turn so the matching after hook can clone it with Ethereal. | **Local feasible.** Pair state, preview cloning, keyword mutation, and `Fixed` generated-card flow are available. |
+| `MusicBox` | 音乐盒 | Remembers the first owner Attack this turn so the matching after hook can clone it with Ethereal. | **Local feasible.** Pair state, preview cloning, keyword mutation, and `Contextual` generated-card flow are available. |
 | `PaelsEye` | 佩尔之眼 | Changes relic display status when owner manually plays a card before the relic has triggered. | **Ignorable.** Gameplay uses combat history/extra-turn hooks, not this status mutation. |
 | `PenNib` | 钢笔尖 | Advances the Attack counter and marks every tenth owner Attack as the card whose damage is doubled. | **Cross-hook feasible and high priority.** The current original damage modifier reads live fields, so it needs shadow counter/card identity and a prediction-aware multiplier path. |
 
@@ -114,7 +123,7 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `Permafrost` | 永冻冰晶 | The first owner Power each combat grants block and consumes the trigger. | **Local feasible.** State-store once/combat flag plus simulator `GainBlock`. |
 | `Pocketwatch` | 怀表 | Counts owner cards for next-turn hand draw. | **Ignorable.** Only a later turn is affected. |
 | `RainbowRing` | 彩虹戒指 | After owner has played Attack, Skill, and Power this turn, applies Strength and Dexterity once. | **Blocked.** Counters are easy; both Apply Power results are unsupported. |
-| `RazorTooth` | 剃刀牙 | Upgrades an upgradable owner Skill or Power after it is played. | **Local feasible.** Upgrade only the detached predicted card; never mutate the live/deck card. |
+| `RazorTooth` | 剃刀牙 | Upgrades an upgradable owner Attack or Skill after it is played. | **Local feasible.** Upgrade only the detached predicted card; never mutate the live/deck card. |
 | `RippleBasin` | 波纹水盆 | Changes display status after an owner Attack. | **Ignorable.** End-turn gameplay checks card-play history directly; the status is cosmetic. |
 | `Shuriken` | 手里剑 | Every configured number of owner Attacks applies Strength. | **Blocked.** Counter tracking is easy, but Apply Power is unsupported. |
 | `TuningFork` | 音叉 | Counts owner Skills persistently and grants block at each threshold. | **Local feasible.** Initialize the shadow counter from `SkillsPlayed`; use simulator `GainBlock`. |
@@ -200,8 +209,9 @@ All rows below are currently unmirrored. The disposition is an implementation re
 - Direct original value/predicate hook calls read live models. `PredictionStateStore` fixes pair/counter mutation only
   when the corresponding value hook is also routed through a prediction-aware adapter.
 - Hook listeners are currently enumerated from the live `CombatState`. Prediction-generated cards are not added as
-  listeners, so generated copies of `Stomp`, `BansheesCry`, `Pinpoint`, `MakeItSo`, or `RightHandHand` would remain a
-  parity gap until hook iteration can include shadow generated cards in vanilla order.
+  listeners, so generated copies of `Stomp`, `BansheesCry`, `Pinpoint`, `MakeItSo`, or `RightHandHand` remain a parity
+  gap until hook iteration can include shadow generated cards in vanilla order. Their generation now records
+  `MethodMirrorIncomplete` rather than silently omitting that future listener behavior.
 - Multi-play cards run both hook phases once per play index. Pair state should use `CardPlay` occurrence identity or
   an equivalent stack-safe key, not only card identity; nested play can interleave another card before the outer after
   phase.
