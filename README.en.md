@@ -23,6 +23,7 @@ The Workshop package automatically loads the newest compatible Mod version for t
 - **Draw-pile autoplay prediction**: shows the cards that Havoc, Cascade, and Distilled Chaos will play from the draw pile.
 - **Potion draw prediction**: shows the cards that supported draw potions will draw, including cards after shuffle.
 - **Card draw prediction**: shows cards drawn by supported card-play effects, including cards after shuffle.
+- **Card-play trigger prediction**: simulates supported vanilla before/after-play effects, including downstream block, damage, draw, cost, and generated-card changes from relics and powers such as After Image, Calamity, Pen Nib, Mummified Hand, and Slow; relevant unsupported triggers show drift warnings.
 - **Combat transform prediction**: shows the cards that Entropy will transform selected hand cards into during combat.
 - **Driftwood reroll prediction**: shows the cards that a card reward reroll will offer when hovering the Reroll button.
 - **Pael's Wing sacrifice prediction**: shows the relic awarded by an activating Sacrifice button.

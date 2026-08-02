@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
+using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
@@ -43,7 +44,11 @@ internal static class BeforeCardPlayedMirrors
         registry.Register<FreePowerPower>(HandleFreePowerPower);
         registry.Register<FreeSkillPower>(HandleFreeSkillPower);
         registry.Register<GravityPower>(HandleGravityPower);
+        registry.Register<ImitationLearningPower>(HandleImitationLearningPower);
         registry.Register<JugglingPower>(HandleJugglingPower);
+        registry.Register<MonologuePower>(HandleMonologuePower);
+        registry.Register<OblivionPower>(HandleOblivionPower);
+        registry.Register<RupturePower>(HandleRupturePower);
         registry.Register<SerpentFormPower>(HandleSerpentFormPower);
         registry.Register<SlothPower>(HandleSlothPower);
         registry.Register<SpiritOfAshPower>(HandleSpiritOfAshPower);
@@ -150,6 +155,44 @@ internal static class BeforeCardPlayedMirrors
                 power.Owner.Player,
                 resultKind: CardGenerationResultKind.Contextual);
         }
+    }
+
+    private static void HandleImitationLearningPower(
+        ImitationLearningPower power,
+        BeforeCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard.Owner != power.PlayerTarget ||
+            context.PreviewCard.Type != CardType.Power ||
+            !context.CardPlay.IsFirstInSeries ||
+            power.Owner.Player is not { } owner)
+        {
+            return;
+        }
+
+        var state = context.StateStore.Get(power, () => new ImitationLearningPredictionState(power));
+        if (state.Amount > 0)
+        {
+            state.CardAndClones.Add((context.Card, context.Card.CreateCloneForPlayer(owner)));
+        }
+    }
+
+    private static void HandleMonologuePower(MonologuePower power, BeforeCardPlayedMirrorContext context)
+    {
+        SnapshotOwnerCard(power, context, power.DynamicVars.Strength.IntValue);
+    }
+
+    private static void HandleOblivionPower(OblivionPower power, BeforeCardPlayedMirrorContext context)
+    {
+        if (power.Applier?.Player == context.PreviewCard.Owner)
+        {
+            GetPairState(power, context).Amounts.Add(context.CardPlay, power.Amount);
+        }
+    }
+
+    private static void HandleRupturePower(RupturePower power, BeforeCardPlayedMirrorContext context)
+    {
+        // AfterDamageReceived records risk only if HP is actually lost during the relevant turn.
+        // The paired Strength application itself therefore needs no unconditional before-hook risk.
     }
 
     private static void HandleSerpentFormPower(SerpentFormPower power, BeforeCardPlayedMirrorContext context)
@@ -334,4 +377,11 @@ internal sealed class MusicBoxPredictionState(MusicBox relic)
     public bool WasUsedThisTurn { get; set; } = relic._wasUsedThisTurn;
 
     public CardModel? CardBeingPlayed { get; set; }
+}
+
+internal sealed class ImitationLearningPredictionState(ImitationLearningPower power)
+{
+    public List<(PredictedCard Card, PredictedCard Clone)> CardAndClones = [];
+
+    public int Amount { get; set; } = power.Amount;
 }

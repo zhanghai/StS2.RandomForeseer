@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
@@ -109,9 +110,15 @@ internal static class AfterDamageReceivedMirrors
 
     private static void HandleCurlUpPower(CurlUpPower power, AfterDamageReceivedMirrorContext context)
     {
-        if (context.Target == power.Owner && context.Props.IsPoweredAttack() && context.Source is not null)
+        if (context.Target != power.Owner || !context.Props.IsPoweredAttack() || context.Source is null)
         {
-            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+            return;
+        }
+
+        var state = context.StateStore.Get<CurlUpPredictionState>(power);
+        if (state is { Consumed: false, PlayedCard: null })
+        {
+            state.PlayedCard = context.Source.Original;
         }
     }
 

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### feat
+
+- 战斗卡牌预测现在会按原版顺序模拟卡牌打出前后的支持钩子效果。<br>
+  Combat card prediction now simulates supported before/after-play hook effects in vanilla order.
+
 ### fix
 
 - 模组设置页现在会根据卡牌、药水和回合结束预测入口正确启用战斗伤害及实验性通用卡牌预测设置。<br>

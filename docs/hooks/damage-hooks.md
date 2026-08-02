@@ -65,7 +65,7 @@ Damage hooks use the current player-turn prediction scope from `overview.md`: on
 | --- | --- | --- | --- |
 | `LagavulinMatriarch` | 乐加维林族母 | Wakes/stops sleep visuals on damage. | Ignorable for current predictions except monster state; not currently modeled. |
 | `AsleepPower` | 沉睡 | On HP loss, removes Plating, stuns/wakes monster, removes self. | Ignored by current-turn scope: wake/stun changes affect enemy behavior later; Plating removal affects later block generation, not current player-turn damage predictions. |
-| `CurlUpPower` | 蜷身 | Records the powered attack card, then grants block/removes self later in `AfterCardPlayed`. | Marked risky when its trigger condition occurs. Directly granting block in `AfterDamageReceived` would be too early. |
+| `CurlUpPower` | 蜷身 | Records the powered attack card, then grants block/removes self later in `AfterCardPlayed`. | Records the exact shadow source here; the card-play hook later grants block and consumes the shadow listener in vanilla order. Curled state only affects later monster moves. |
 | `SelfFormingClay` | 自成型黏土 | On owner HP loss, applies next-turn block power. | Ignored by current-turn scope: the block is gained next turn. |
 | `FlameBarrierPower` | 火焰屏障 | When owner is attacked, damages dealer. | Implemented with simulator `Damage`. |
 | `FlutterPower` | 振翅 | On powered HP loss, decrements/removes mitigation power. | Marked risky when powered owner HP loss occurs. Power mutation/removal and stun unsupported. |

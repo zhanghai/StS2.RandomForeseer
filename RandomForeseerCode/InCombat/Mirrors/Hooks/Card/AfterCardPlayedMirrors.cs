@@ -57,20 +57,28 @@ internal static class AfterCardPlayedMirrors
         registry.Register<BansheesCry>(HandleBansheesCry);
         registry.Register<Pinpoint>(HandlePinpoint);
 
+        registry.Register<Glam>(HandleGlam);
         registry.Register<Goopy>(HandleGoopy);
         registry.Register<Vigorous>(HandleVigorous);
 
         registry.Register<AfterimagePower>(HandleAfterimagePower);
         registry.Register<BlackHolePower>(HandleBlackHolePower);
         registry.Register<CalamityPower>(HandleCalamityPower);
+        registry.Register<CurlUpPower>(HandleCurlUpPower);
+        registry.Register<DevourLifePower>(HandleDevourLifePower);
         registry.RegisterIgnored<EchoFormPower>();
+        registry.RegisterIgnored<EnragePower>();
         registry.Register<GalvanicPower>(HandleGalvanicPower);
         registry.Register<GravityPower>(HandleGravityPower);
         registry.Register<HauntPower>(HandleHauntPower);
+        registry.Register<ImitationLearningPower>(HandleImitationLearningPower);
         registry.Register<MasterPlannerPower>(HandleMasterPlannerPower);
+        registry.Register<MonologuePower>(HandleMonologuePower);
+        registry.Register<OblivionPower>(HandleOblivionPower);
         registry.RegisterIgnored<PaleBlueDotPower>();
         registry.Register<PanachePower>(HandlePanachePower);
         registry.Register<RagePower>(HandleRagePower);
+        registry.Register<RupturePower>(HandleRupturePower);
         registry.Register<SerpentFormPower>(HandleSerpentFormPower);
         registry.Register<SlowPower>(HandleSlowPower);
         registry.Register<SmoggyPower>(HandleSmoggyPower);
@@ -78,6 +86,8 @@ internal static class AfterCardPlayedMirrors
         registry.Register<StormPower>(HandleStormPower);
         registry.Register<StranglePower>(HandleStranglePower);
         registry.Register<SubroutinePower>(HandleSubroutinePower);
+        registry.Register<TenderPower>(HandleTenderPower);
+        registry.Register<VitalSparkPower>(HandleVitalSparkPower);
         registry.Register<VoidFormPower>(HandleVoidFormPower);
         registry.Register<WitheringPresencePower>(HandleWitheringPresencePower);
 
@@ -85,8 +95,10 @@ internal static class AfterCardPlayedMirrors
         registry.Register<BrilliantScarf>(HandleBrilliantScarf);
         registry.Register<DaughterOfTheWind>(HandleDaughterOfTheWind);
         registry.Register<GamePiece>(HandleGamePiece);
+        registry.Register<HelicalDart>(HandleHelicalDart);
         registry.Register<IronClub>(HandleIronClub);
         registry.Register<IvoryTile>(HandleIvoryTile);
+        registry.Register<Kunai>(HandleKunai);
         registry.Register<Kusarigama>(HandleKusarigama);
         registry.Register<LetterOpener>(HandleLetterOpener);
         registry.Register<LostWisp>(HandleLostWisp);
@@ -98,9 +110,12 @@ internal static class AfterCardPlayedMirrors
         registry.Register<PenNib>(HandlePenNib);
         registry.Register<Permafrost>(HandlePermafrost);
         registry.RegisterIgnored<Pocketwatch>();
+        registry.Register<RainbowRing>(HandleRainbowRing);
         registry.Register<RazorTooth>(HandleRazorTooth);
         registry.RegisterIgnored<RippleBasin>();
+        registry.Register<Shuriken>(HandleShuriken);
         registry.Register<TuningFork>(HandleTuningFork);
+        registry.Register<UnsettlingLamp>(HandleUnsettlingLamp);
         registry.Register<Vambrace>(HandleVambrace);
         registry.Register<VelvetChoker>(HandleVelvetChoker);
 
@@ -139,6 +154,14 @@ internal static class AfterCardPlayedMirrors
         if (context.PreviewCard.Owner == relic.Owner && context.PreviewCard.Type == CardType.Power)
         {
             context.Simulator.Draw(relic.Owner, relic.DynamicVars.Cards.BaseValue);
+        }
+    }
+
+    private static void HandleHelicalDart(HelicalDart relic, AfterCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard.Owner == relic.Owner && context.PreviewCard.Tags.Contains(CardTag.Shiv))
+        {
+            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
         }
     }
 
@@ -184,6 +207,14 @@ internal static class AfterCardPlayedMirrors
         if (IncrementCounter(relic, relic._skillsPlayedThisTurn, CardType.Skill, context))
         {
             context.Simulator.Damage(context.State.HittableEnemies, relic.DynamicVars.Damage, relic.Owner.Creature);
+        }
+    }
+
+    private static void HandleKunai(Kunai relic, AfterCardPlayedMirrorContext context)
+    {
+        if (IncrementCounter(relic, relic._attacksPlayedThisTurn, CardType.Attack, context))
+        {
+            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
         }
     }
 
@@ -303,6 +334,29 @@ internal static class AfterCardPlayedMirrors
         }
     }
 
+    private static void HandleRainbowRing(RainbowRing relic, AfterCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard.Owner != relic.Owner)
+        {
+            return;
+        }
+
+        var state = context.StateStore.Get(relic, () => new RainbowRingPredictionState(relic));
+        if (state.ActivationCountThisTurn >= 1)
+        {
+            return;
+        }
+
+        state.AttacksPlayedThisTurn += context.PreviewCard.Type == CardType.Attack ? 1 : 0;
+        state.SkillsPlayedThisTurn += context.PreviewCard.Type == CardType.Skill ? 1 : 0;
+        state.PowersPlayedThisTurn += context.PreviewCard.Type == CardType.Power ? 1 : 0;
+        if (state.AttacksPlayedThisTurn > 0 && state.SkillsPlayedThisTurn > 0 && state.PowersPlayedThisTurn > 0)
+        {
+            state.ActivationCountThisTurn++;
+            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+        }
+    }
+
     private static void HandleTuningFork(TuningFork relic, AfterCardPlayedMirrorContext context)
     {
         if (context.PreviewCard.Owner != relic.Owner || context.PreviewCard.Type != CardType.Skill)
@@ -329,12 +383,25 @@ internal static class AfterCardPlayedMirrors
         }
     }
 
+    private static void HandleUnsettlingLamp(UnsettlingLamp relic, AfterCardPlayedMirrorContext context)
+    {
+        // Depends on Power hooks; mirror not available for now.
+    }
+
     private static void HandleVelvetChoker(VelvetChoker relic, AfterCardPlayedMirrorContext context)
     {
         if (context.PreviewCard.Owner == relic.Owner)
         {
             var state = context.StateStore.Get(relic, () => new CounterPredictionState(relic._cardsPlayedThisTurn));
             state.Value++;
+        }
+    }
+
+    private static void HandleShuriken(Shuriken relic, AfterCardPlayedMirrorContext context)
+    {
+        if (IncrementCounter(relic, relic._attacksPlayedThisTurn, CardType.Attack, context))
+        {
+            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
         }
     }
 
@@ -368,6 +435,29 @@ internal static class AfterCardPlayedMirrors
             .GetForCombat(player, power.Amount, context.Rng.CombatCardGeneration)
             .ToList();
         context.Simulator.AddGeneratedCardsToCombat(cards, PileType.Hand, player);
+    }
+
+    private static void HandleCurlUpPower(CurlUpPower power, AfterCardPlayedMirrorContext context)
+    {
+        var state = context.StateStore.Get<CurlUpPredictionState>(power);
+        if (state.Consumed || state.PlayedCard != context.Card.Original)
+        {
+            return;
+        }
+
+        state.PlayedCard = null;
+        context.Simulator.GainBlock(power.Owner, power.Amount, ValueProp.Unpowered);
+        state.Consumed = true;
+        // Shadow consumption replaces prediction-relevant power removal. LouseProgenitor.Curled
+        // is read only by later monster moves, outside the current-player-turn prediction scope.
+    }
+
+    private static void HandleDevourLifePower(DevourLifePower power, AfterCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard is Soul && context.PreviewCard.Owner.Creature == power.Owner)
+        {
+            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+        }
     }
 
     private static void HandleGalvanicPower(GalvanicPower power, AfterCardPlayedMirrorContext context)
@@ -410,6 +500,39 @@ internal static class AfterCardPlayedMirrors
         }
     }
 
+    private static void HandleImitationLearningPower(
+        ImitationLearningPower power,
+        AfterCardPlayedMirrorContext context)
+    {
+        var state = context.StateStore.Get(power, () => new ImitationLearningPredictionState(power));
+        if (state.Amount <= 0)
+        {
+            return;
+        }
+
+        var index = state.CardAndClones.FindIndex(pair => pair.Card == context.Card);
+        if (index < 0)
+        {
+            return;
+        }
+
+        var clone = state.CardAndClones[index].Clone;
+        state.CardAndClones.RemoveAt(index);
+
+        state.Amount--;
+        context.Simulator.AutoPlay(clone);
+    }
+
+    private static void HandleMonologuePower(MonologuePower power, AfterCardPlayedMirrorContext context)
+    {
+        RecordRiskIfPaired(power, context);
+    }
+
+    private static void HandleOblivionPower(OblivionPower power, AfterCardPlayedMirrorContext context)
+    {
+        RecordRiskIfPaired(power, context);
+    }
+
     private static void HandlePanachePower(PanachePower power, AfterCardPlayedMirrorContext context)
     {
         if (context.PreviewCard.Owner != power.Owner.Player)
@@ -444,6 +567,11 @@ internal static class AfterCardPlayedMirrors
                 context.Simulator.Damage(target, amount, ValueProp.Unpowered, power.Owner);
             }
         }
+    }
+
+    private static void HandleRupturePower(RupturePower power, AfterCardPlayedMirrorContext context)
+    {
+        // The damage hook records incomplete risk only when owner HP loss actually occurs.
     }
 
     private static void HandleSmoggyPower(SmoggyPower power, AfterCardPlayedMirrorContext context)
@@ -511,6 +639,19 @@ internal static class AfterCardPlayedMirrors
         }
     }
 
+    private static void HandleTenderPower(TenderPower power, AfterCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard.Owner == power.Owner.Player)
+        {
+            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+        }
+    }
+
+    private static void HandleVitalSparkPower(VitalSparkPower power, AfterCardPlayedMirrorContext context)
+    {
+        // Ignored for now; does not affect prediction-relevant state.
+    }
+
     private static void HandleWitheringPresencePower(WitheringPresencePower power, AfterCardPlayedMirrorContext context)
     {
         if (context.PreviewCard.Owner != power.Target?.Player)
@@ -556,6 +697,15 @@ internal static class AfterCardPlayedMirrors
         if (context.Card.References(enchantment.Card) && context.MutablePreviewCard.Enchantment is Goopy preview)
         {
             preview._amount++;
+        }
+    }
+
+    private static void HandleGlam(Glam enchantment, AfterCardPlayedMirrorContext context)
+    {
+        if (context.Card.References(enchantment.Card) && context.MutablePreviewCard.Enchantment is Glam preview)
+        {
+            preview._usedThisCombat = true;
+            preview._status = EnchantmentStatus.Disabled;
         }
     }
 
@@ -620,6 +770,14 @@ internal static class AfterCardPlayedMirrors
         var state = context.StateStore.Get<CardPlayPairPredictionState>(model);
         return state.Amounts.Remove(context.CardPlay, out var amount) ? amount : null;
     }
+
+    private static void RecordRiskIfPaired(AbstractModel model, AfterCardPlayedMirrorContext context)
+    {
+        if (TakePairAmount(model, context) is not null)
+        {
+            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+        }
+    }
 }
 
 internal sealed class AfterCardPlayedMirrorContext : CombatPredictionCardMirrorContext
@@ -637,4 +795,22 @@ internal sealed class PanachePredictionState(PanachePower power)
     public bool AlreadyApplied { get; set; } = power.GetInternalData<PanachePower.Data>().alreadyApplied;
 
     public int CardsLeft { get; set; } = power.DynamicVars["CardsLeft"].IntValue;
+}
+
+internal sealed class RainbowRingPredictionState(RainbowRing relic)
+{
+    public int AttacksPlayedThisTurn { get; set; } = relic._attacksPlayedThisTurn;
+
+    public int SkillsPlayedThisTurn { get; set; } = relic._skillsPlayedThisTurn;
+
+    public int PowersPlayedThisTurn { get; set; } = relic._powersPlayedThisTurn;
+
+    public int ActivationCountThisTurn { get; set; } = relic._activationCountThisTurn;
+}
+
+internal sealed class CurlUpPredictionState
+{
+    public CardModel? PlayedCard { get; set; }
+
+    public bool Consumed { get; set; }
 }

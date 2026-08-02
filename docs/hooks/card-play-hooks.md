@@ -12,20 +12,24 @@ Mirror files: `InCombat/Mirrors/HookMirrors.cs`,
 `InCombat/Simulation/CombatPredictionHistory.cs`, and
 `InCombat/Simulation/CombatPredictionSimulator.Card.cs`.
 
-The simulator now dispatches the paired hook lifecycle in vanilla order and records both shadow
-`CardPlayStarted` and `CardPlayFinished` entries. Exact gameplay listener coverage is being added in the
-implementation slices below; reviewed achievement/VFX/later-turn-only listeners are already registered ignored,
-while every other unregistered override remains an explicit unsupported risk rather than a silent no-op.
+The simulator dispatches the paired hook lifecycle in vanilla order and records both shadow `CardPlayStarted` and
+`CardPlayFinished` entries. Every reviewed non-Mock vanilla override has an exact handled or ignored registration;
+unsupported prediction-relevant portions record risk from their exact trigger instead of relying on the registry's
+unconditional unsupported fallback.
 
-Current implementation progress:
+Current implementation coverage (excluding the Mock listener):
 
-- all 50 **Local feasible** override occurrences are mirrored;
-- all 11 **Ignorable** occurrences are registered as explicit no-ops;
+- 54 override occurrences are fully mirrored with current simulator primitives (`Glam`, both
+  `ImitationLearningPower` phases, and the current-turn portion of `CurlUpPower` proved feasible with detached
+  enchantment/card/listener-consumption state);
+- all 13 **Ignorable** occurrences are registered as explicit no-ops or exact no-risk handlers;
 - prediction-local generation of `Stomp`, `BansheesCry`, `Pinpoint`, `MakeItSo`, or `RightHandHand` records
   incomplete risk because generated cards are not yet part of later listener enumeration;
 - all 15 **Cross-hook feasible** occurrences are mirrored through shared shadow state and selective cost,
   `ShouldPlay`, damage, and block hook mirrors;
-- trigger-conditional handling for the 19 partial/blocked occurrences remains in the final implementation slice.
+- the remaining 13 partial/blocked occurrences have exact handlers: safe portions run where available, and
+  `MethodMirrorIncomplete` is recorded only when an unsupported prediction-relevant trigger actually occurs. A
+  listener that only commits state for an already-unsupported power application does not add a duplicate warning.
 
 ## Hook specs
 
@@ -72,11 +76,11 @@ dispatch after the shadow combat has ended; both after passes use direct listene
   independently missing model mirror.
 - **Ignorable**: no state relevant to the current-player-turn prediction surface; use an explicit no-op registration.
 
-All rows below are currently unmirrored. The disposition is an implementation recommendation, not current coverage.
+The labels remain useful for architecture, while each row now records its implemented status or trigger-risk policy.
 
 ## BeforeCardPlayed listeners
 
-| Model | 中文名 | Original effect | Research disposition |
+| Model | 中文名 | Original effect | Prediction status |
 | --- | --- | --- | --- |
 | `SkillSilent1Achievement` | 成就模型 | Remembers the first local card on the current play stack for achievement bookkeeping. | **Ignorable.** Achievement state has no prediction effect. |
 | `Stomp` | 踩踏 | Whenever owner plays an Attack, reduces this card's this-turn cost by 1. | **Local feasible.** Find the predicted listener card and mutate only its preview cost. Live plus shadow card-play history is already an established pattern. |
@@ -88,11 +92,11 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `FreePowerPower` | 免费能力 | Consumes one stack when owner plays a Power from hand/play. | **Implemented cross-hook.** Same targeted shadow-cost path as `FreeAttackPower`. |
 | `FreeSkillPower` | 免费技能 | Consumes one stack when owner plays a Skill from hand/play. | **Implemented cross-hook.** Same targeted shadow-cost path as `FreeAttackPower`. |
 | `GravityPower` | 引力 | Snapshots the power amount for each owner card so the matching after hook damages all hittable enemies. | **Local feasible.** Pair state plus simulator `Damage`. |
-| `ImitationLearningPower` | 模仿学习 | On the first play in a series of the selected ally's Power, creates an owner-swapped clone for later auto-play. | **Partial.** Detached clone creation and generic `AutoPlay` are available, but the clone's Power `OnPlay` may still be unsupported and Apply Power remains outside simulator state. |
+| `ImitationLearningPower` | 模仿学习 | On the first play in a series of the selected ally's Power, creates an owner-swapped clone for later auto-play. | **Implemented.** Creates a detached owner-swapped clone and pairs it by exact predicted-card occurrence; the after phase consumes that pair. |
 | `JugglingPower` | 杂耍 | Counts owner Attacks; on the third, adds `Amount` clones of that Attack to hand. | **Local feasible.** Use `StateStore`, `PredictedCard.CreateClone`, `Contextual` generation classification, and normal generation hooks. |
-| `MonologuePower` | 独白 | Snapshots the configured Strength amount for each owner card; the after hook applies it to the monster. | **Blocked.** Apply Power is unsupported. Register risk on the matching trigger. |
-| `OblivionPower` | 湮灭 | Snapshots amount for each applier card; the after hook applies Doom to the owner. | **Blocked.** Apply Power/death consequences are unsupported. |
-| `RupturePower` | 撕裂 | Opens a per-card accumulator so HP loss caused during that card is converted to Strength after the play. | **Blocked.** Pairing with the existing damage listener is possible, but the resulting Strength application is unsupported. Preserve the current explicit risk. |
+| `MonologuePower` | 独白 | Snapshots the configured Strength amount for each owner card; the after hook applies it to the power owner. | **Risk on trigger.** Exact occurrence pairing is mirrored; matching unsupported Strength application records incomplete risk. |
+| `OblivionPower` | 湮灭 | Snapshots amount for each applier card; the after hook applies Doom to the owner. | **Risk on trigger.** Exact occurrence pairing is mirrored; matching unsupported Doom application records incomplete risk. |
+| `RupturePower` | 撕裂 | Opens a per-card accumulator so HP loss caused during that card is converted to Strength after the play. | **Risk on trigger.** The damage hook records risk only when owner HP loss would apply Strength. |
 | `SerpentFormPower` | 群蛇形态 | Snapshots amount for each owner card; the after hook damages one random hittable enemy. | **Local feasible.** Pair state, cloned `CombatTargets`, and simulator `Damage` cover it. |
 | `SlothPower` | 懒惰 | Increments the owner's cards-played counter before the card effect; `ShouldPlay` enforces the cap. | **Implemented cross-hook.** Nested auto-play gating reads the shadow counter. |
 | `SpiritOfAshPower` | 灰烬之灵 | Owner gains block before playing an Ethereal card. | **Local feasible.** Use predicted keywords and simulator `GainBlock`. |
@@ -110,16 +114,16 @@ All rows below are currently unmirrored. The disposition is an implementation re
 
 ## AfterCardPlayed listeners: relics
 
-| Model | 中文名 | Original effect | Research disposition |
+| Model | 中文名 | Original effect | Prediction status |
 | --- | --- | --- | --- |
 | `ArtOfWar` | 孙子兵法 | Records that owner played an Attack, affecting next-turn energy. | **Ignorable.** Only a later turn is affected. |
 | `BrilliantScarf` | 艳丽围巾 | Counts manual owner cards so the fifth card's energy and star costs are zero. | **Implemented cross-hook.** Energy and star cost helpers read the shadow counter. |
 | `DaughterOfTheWind` | 风的女儿 | Grants block after every owner Attack. | **Local feasible.** Use simulator `GainBlock`. |
 | `GamePiece` | 棋子 | Draws cards after owner plays a Power. | **Local feasible.** Use simulator `Draw`. |
-| `HelicalDart` | 螺线飞镖 | Playing an owner Shiv applies Dexterity. | **Blocked.** Apply Power is unsupported and can affect later block in the same turn. |
+| `HelicalDart` | 螺线飞镖 | Playing an owner Shiv applies Dexterity. | **Risk on trigger.** Owner Shiv plays record incomplete risk for unsupported Dexterity application. |
 | `IronClub` | 铁棒 | Counts owner cards and draws one every configured interval. | **Local feasible.** Initialize a `StateStore` counter from live state and use simulator `Draw`. |
 | `IvoryTile` | 象牙麻将牌 | If the card spent enough energy, grants energy. | **Local feasible.** `CardPlay.Resources` and simulator `GainEnergy` are sufficient. |
-| `Kunai` | 苦无 | Every configured number of owner Attacks applies Dexterity. | **Blocked.** Counter tracking is easy, but Apply Power is unsupported. |
+| `Kunai` | 苦无 | Every configured number of owner Attacks applies Dexterity. | **Risk on trigger.** Shadow counter is maintained; only threshold hits record risk. |
 | `Kusarigama` | 锁镰 | Every configured number of owner Attacks damages one random hittable enemy. | **Local feasible.** Use shadow counter, cloned `CombatTargets`, and simulator `Damage`. |
 | `LetterOpener` | 开信刀 | Every configured number of owner Skills damages all hittable enemies. | **Local feasible.** Use shadow counter and simulator `Damage`. |
 | `LostWisp` | 迷失鬼火 | Owner Power cards damage all hittable enemies. | **Local feasible.** Use simulator `Damage`. |
@@ -131,37 +135,37 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `PenNib` | 钢笔尖 | Clears the current doubled-Attack marker after that card resolves. | **Implemented cross-hook.** Clears the exact occurrence used by the damage multiplier. |
 | `Permafrost` | 永冻冰晶 | The first owner Power each combat grants block and consumes the trigger. | **Local feasible.** State-store once/combat flag plus simulator `GainBlock`. |
 | `Pocketwatch` | 怀表 | Counts owner cards for next-turn hand draw. | **Ignorable.** Only a later turn is affected. |
-| `RainbowRing` | 彩虹戒指 | After owner has played Attack, Skill, and Power this turn, applies Strength and Dexterity once. | **Blocked.** Counters are easy; both Apply Power results are unsupported. |
+| `RainbowRing` | 彩虹戒指 | After owner has played Attack, Skill, and Power this turn, applies Strength and Dexterity once. | **Risk on trigger.** Shadow counters and once-per-turn consumption are maintained; completion records risk. |
 | `RazorTooth` | 剃刀牙 | Upgrades an upgradable owner Attack or Skill after it is played. | **Local feasible.** Upgrade only the detached predicted card; never mutate the live/deck card. |
 | `RippleBasin` | 波纹水盆 | Changes display status after an owner Attack. | **Ignorable.** End-turn gameplay checks card-play history directly; the status is cosmetic. |
-| `Shuriken` | 手里剑 | Every configured number of owner Attacks applies Strength. | **Blocked.** Counter tracking is easy, but Apply Power is unsupported. |
+| `Shuriken` | 手里剑 | Every configured number of owner Attacks applies Strength. | **Risk on trigger.** Shadow counter is maintained; only threshold hits record risk. |
 | `TuningFork` | 音叉 | Counts owner Skills persistently and grants block at each threshold. | **Local feasible.** Initialize the shadow counter from `SkillsPlayed`; use simulator `GainBlock`. |
-| `UnsettlingLamp` | 不安油灯 | Marks its one-combat debuff-doubling trigger finished after the triggering card. | **Partial / defer.** The state commit is feasible, but it only matters with power-application hooks, which are unsupported. |
+| `UnsettlingLamp` | 不安油灯 | Marks its one-combat debuff-doubling trigger finished after the triggering card. | **Deferred without additional risk.** This state commit only matters after an unsupported power application; that source already records risk, so the after hook uses an exact no-op handler to avoid a duplicate warning. |
 | `Vambrace` | 臂甲 | After the card whose block was doubled finishes, consumes the once-per-combat doubling. | **Implemented cross-hook.** Shadow block multiplier and exact play commit cover chained block gains. |
 | `VelvetChoker` | 天鹅绒颈圈 | Increments the owner's cards-played counter used by `ShouldPlay`. | **Implemented cross-hook.** Nested auto-play gating reads the shadow counter. |
 
 ## AfterCardPlayed listeners: powers
 
-| Model | 中文名 | Original effect | Research disposition |
+| Model | 中文名 | Original effect | Prediction status |
 | --- | --- | --- | --- |
 | `AfterimagePower` | 余像 | Consumes the paired snapshot and grants owner block. | **Local feasible.** Complete the before/after pair with simulator `GainBlock`. |
 | `BlackHolePower` | 黑洞 | On the last play in a series, a card that spent stars damages all enemies. | **Local feasible.** `CardPlay.Resources`, series metadata, and simulator `Damage` are available. |
 | `CalamityPower` | 劫难 | Consumes the paired snapshot and generates random Attack cards into hand. | **Local feasible.** Existing safe `GetForCombat` prediction helpers reproduce the pool and cloned RNG without adding cards to live state. |
-| `CurlUpPower` | 蜷身 | After the damaging card finishes, grants block, marks the louse curled, and removes this power. | **Partial.** Block is directly simulatable; monster state and Remove Power are unsupported, so record risk for the remainder. |
-| `DevourLifePower` | 吞噬生命 | Playing an owner Soul summons Osty. | **Blocked.** Summon/pet state is unsupported. |
+| `CurlUpPower` | 蜷身 | After the damaging card finishes, grants block, marks the louse curled, and removes this power. | **Implemented for current scope.** Tracks the exact damaging card, grants block in after-play order, and consumes the shadow listener; curled state is read only by later monster moves. |
+| `DevourLifePower` | 吞噬生命 | Playing an owner Soul summons Osty. | **Risk on trigger.** Matching Soul plays record incomplete summon risk. |
 | `EchoFormPower` | 回响形态 | Updates VFX after card-play-started history reaches the replay limit. | **Ignorable.** Replay count is handled by separate play-count hooks; this body is visual only. |
-| `EnragePower` | 激怒 | Whenever a Skill is played, applies Strength to the power owner. | **Blocked.** Apply Power is unsupported. |
+| `EnragePower` | 激怒 | Whenever a Skill is played, applies Strength to the power owner. | **Ignorable for current scope.** Vanilla applies it to Test Subject, so it only changes later enemy-turn attacks. |
 | `GalvanicPower` | 流电 | A Galvanized card deals move damage to its owner after play. | **Local feasible.** Read predicted affliction and use simulator `Damage`. |
 | `GravityPower` | 引力 | Consumes the paired snapshot and damages all hittable enemies. | **Local feasible.** Use simulator `Damage`. |
 | `HauntPower` | 纠缠 | An owner Soul damages one random hittable enemy. | **Local feasible.** Cloned `CombatTargets` plus simulator `Damage`. |
-| `ImitationLearningPower` | 模仿学习 | Consumes the paired clone, decrements the power, and auto-plays the cloned ally Power. | **Partial.** Generic auto-play is available, but power decrement and the cloned Power's `OnPlay`/Apply Power may remain unsupported. |
+| `ImitationLearningPower` | 模仿学习 | Consumes the paired clone, decrements the power, and auto-plays the cloned ally Power. | **Implemented.** Decrements the shadow amount and auto-plays the detached clone through the normal simulator path; the cloned card's `OnPlay` mirror independently reports its own support or risk. |
 | `MasterPlannerPower` | 谋划专家 | Adds Sly to every owner Skill after it resolves. | **Local feasible.** Mutate only predicted keywords so later shadow plays see it. |
-| `MonologuePower` | 独白 | Applies the paired Strength amount to the monster and updates its accumulator. | **Blocked.** Apply Power is unsupported. |
-| `OblivionPower` | 湮灭 | Applies the paired Doom amount to the owner. | **Blocked.** Apply Power/death state is unsupported. |
+| `MonologuePower` | 独白 | Applies the paired Strength amount to the power owner and updates its accumulator. | **Risk on trigger.** Only a matching paired occurrence records risk. |
+| `OblivionPower` | 湮灭 | Applies the paired Doom amount to the owner. | **Risk on trigger.** Only a matching paired occurrence records risk. |
 | `PaleBlueDotPower` | 暗淡蓝点 | On the fifth owner card this turn, applies next-turn draw once. | **Ignorable for current scope.** The result cannot affect the current player turn. |
 | `PanachePower` | 神气制胜 | Counts owner cards and damages all enemies every five cards. | **Local feasible.** State-store counter plus simulator `Damage`. |
 | `RagePower` | 狂怒 | Grants block after every owner Attack. | **Local feasible.** Use simulator `GainBlock`. |
-| `RupturePower` | 撕裂 | Converts the paired during-card HP-loss accumulator into Strength. | **Blocked.** Apply Power is unsupported; retain explicit risk from the damage mirror. |
+| `RupturePower` | 撕裂 | Converts the paired during-card HP-loss accumulator into Strength. | **Risk on trigger.** Relies on the damage mirror's HP-loss-conditional risk without adding an unconditional warning. |
 | `SerpentFormPower` | 群蛇形态 | Consumes the paired snapshot and damages one random hittable enemy. | **Local feasible.** Cloned `CombatTargets` plus simulator `Damage`. |
 | `SlowPower` | 缓慢 | Increments the damage multiplier by 10 percentage points after every card. | **Implemented cross-hook.** The multiplicative damage pass reads the shadow amount. |
 | `SmoggyPower` | 烟雾弥漫 | After owner plays a Skill, afflicts every unafflicted owner Skill with Smog. | **Local feasible.** Iterate shadow piles and use simulator `Afflict`; do not call live card APIs. |
@@ -169,18 +173,18 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `StormPower` | 雷暴 | Consumes the paired snapshot and channels Lightning orbs. | **Local feasible.** Use simulator `OrbChannel`. |
 | `StranglePower` | 紧勒 | Consumes the paired snapshot and deals unblockable damage to the power owner. | **Local feasible.** Use simulator `Damage`. |
 | `SubroutinePower` | 子程序 | Consumes the paired snapshot and grants owner energy. | **Local feasible.** Use simulator `GainEnergy`. |
-| `TenderPower` | 柔嫩 | After every owner card, applies negative Strength and Dexterity to owner. | **Blocked.** Apply Power and shadow power amounts are unsupported. |
-| `VitalSparkPower` | 活力火花 | A Tainted card applies TaintedPower to its owner after play. | **Blocked.** Apply Power is unsupported. |
+| `TenderPower` | 柔嫩 | After every owner card, applies negative Strength and Dexterity to owner. | **Risk on trigger.** Owner card plays record incomplete risk. |
+| `VitalSparkPower` | 活力火花 | A Tainted card applies TaintedPower to its owner after play. | **Ignorable for current scope.** `TaintedPower` only changes later powered attack damage received and does not affect the current-player-turn prediction surface. |
 | `VoidFormPower` | 虚空形态 | Counts non-auto owner cards on the last play in a series; later cards stop being free at the power amount. | **Implemented cross-hook.** Shadow count feeds both energy- and star-cost helpers. |
 | `WitheringPresencePower` | 凋萎存在 | Counts target-player cards and adds a Wither to hand every six. | **Local feasible.** State-store counter plus fixed generated-card flow. |
 
 ## AfterCardPlayed listeners: cards, enchantments, and bookkeeping
 
-| Model | 中文名 | Original effect | Research disposition |
+| Model | 中文名 | Original effect | Prediction status |
 | --- | --- | --- | --- |
 | `BansheesCry` | 女妖之嚎 | Whenever owner plays an Ethereal card, reduces this listener card's this-combat cost. | **Local feasible.** Find the predicted listener card and mutate only its preview cost. |
 | `Pinpoint` | 精密瞄准 | Whenever owner plays a Skill, reduces this listener card's this-turn cost. | **Local feasible.** Find the predicted listener card and mutate only its preview cost. |
-| `Glam` | 华彩 | Disables Replay on its card after the first play this combat. | **Partial / defer.** Shadow enchantment status is feasible, but enchantment `OnPlay`/play-count simulation is independently missing. |
+| `Glam` | 华彩 | Disables Replay on its card after the first play this combat. | **Implemented.** Mutates only detached enchantment used/status; the shadow play-count helper consumes it on later plays. |
 | `Goopy` | 黏糊 | Increments its enchantment amount, permanently increasing the card's block bonus. | **Local feasible for prediction.** Mutate only the detached enchantment/card preview; never touch `DeckVersion`. |
 | `Vigorous` | 活力 | Disables its damage bonus after its card is played. | **Local feasible.** Store disabled status on the detached predicted enchantment for later shadow plays. |
 | `Play20CardsSingleTurnAchievement` | 成就模型 | Counts local cards and unlocks an achievement at 20. | **Ignorable.** |
@@ -194,7 +198,7 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `MakeItSo` | 如此甚好 | If outside hand, returns itself to hand after every configured owner Skill, using finished-card history that already includes the current play. | **Local feasible.** Combine live and shadow finished history, then move the predicted listener card from its shadow pile. |
 | `RightHandHand` | 得力助手 | If in discard, returns itself to hand after owner plays a card that spent at least the configured energy. | **Local feasible.** Use `CardPlay.Resources` and shadow pile movement. |
 
-## Recommended implementation slices
+## Implemented slices
 
 1. Add hook contexts/registries and exact vanilla dispatch order. Add shadow `CardPlayStarted` before `OnPlay`; keep
    `CardPlayFinished` before both after phases. Preserve the before guarded / after unguarded distinction against
@@ -213,8 +217,8 @@ All rows below are currently unmirrored. The disposition is an implementation re
 
 ## Parity and risk notes
 
-- The two TODOs are lifecycle gaps, not merely missing visible bonus effects. Until they are filled, chained
-  simulations also retain stale counters for cost, `ShouldPlay`, block, and damage value hooks.
+- The former simulator TODOs were lifecycle gaps rather than merely missing visible bonus effects. The completed
+  lifecycle and hook mirrors now advance shadow cost, `ShouldPlay`, block, and damage state through chained plays.
 - Selective hook mirrors preserve original listener order while replacing only exact listeners that consume card-play
   shadow state. Other cost, predicate, damage, and block value listeners continue to call their original read-only
   methods; those selective registry misses bypass unsupported lookup and do not record mirror risk. Side-effect hooks
@@ -236,11 +240,12 @@ All rows below are currently unmirrored. The disposition is an implementation re
 StS2 v0.110.1 has 29 `BeforeCardPlayed`, 65 `AfterCardPlayed`, and 2 `AfterCardPlayedLate` overrides. Excluding the
 single Mock listener gives 95 override occurrences:
 
-- 50 are locally feasible with current simulator primitives;
-- 15 are feasible after a targeted value/predicate hook also reads shadow state;
-- 11 are ignorable under the current-player-turn scope;
-- 19 are partial or blocked by Apply/Remove Power, summon/monster state, or an independently missing
-  enchantment/nested-`OnPlay` mirror.
+- 54 are fully mirrored with current simulator primitives (including both `ImitationLearningPower` phases, `Glam`,
+  and current-scope `CurlUpPower`);
+- 15 are mirrored through targeted value/predicate hooks that also read shadow state;
+- 13 are ignorable under the current-player-turn scope;
+- 13 retain trigger-conditional partial/blocked coverage for Apply/Remove Power, summon, or monster state gaps; when
+  a hook only commits state for an already-unsupported source, its exact handler avoids adding a duplicate warning.
 
 These counts classify override occurrences, so a paired model such as `AfterimagePower` appears once in each relevant
 phase.

@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
@@ -30,6 +31,16 @@ internal static class CombatPredictedCardExtensions
         clonedCard._cloneOf = card.Original;
         clonedCard.ExhaustOnNextPlay = false;
         return PredictedCard.FromGenerated(clonedCard);
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="CardModel.CreateCloneForPlayer"/>.
+    /// </summary>
+    public static PredictedCard CreateCloneForPlayer(this PredictedCard card, Player player)
+    {
+        var clone = card.CreateClone();
+        clone.MutablePreview._owner = player;
+        return clone;
     }
 
     // Mirrors CardModel.AfflictInternal without firing live-model side effects. Preview cards still
