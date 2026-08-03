@@ -120,6 +120,10 @@ internal static class SettingsBootstrap
             .AddSection("damage_prediction", section => section
                 .WithTitle(T("section.damage_prediction.title"))
                 .WithDescription(T("section.damage_prediction.description"))
+                .WithEnabledWhen(() =>
+                    SettingsUiBindings.CardPlayPredictionEnabled.Read() ||
+                    SettingsUiBindings.PotionPredictionEnabled.Read() ||
+                    SettingsUiBindings.EndTurnPredictionEnabled.Read())
                 .AddToggle("combat_damage_prediction_enabled", SettingsUiBindings.CombatDamagePredictionEnabled)
                 .AddToggle("orb_damage_prediction_enabled", SettingsUiBindings.OrbDamagePredictionEnabled)
                 .AddToggle("random_target_attack_prediction_enabled", SettingsUiBindings.RandomTargetAttackPredictionEnabled)
@@ -151,7 +155,10 @@ internal static class SettingsBootstrap
                     SettingsUiBindings.ExperimentalChainedCardEffectPredictionEnabled)
                 .WithEntryEnabledWhen(
                     "experimental_best_effort_card_play_prediction_enabled",
-                    () => SettingsUiBindings.CardPlayPredictionEnabled.Read())
+                    () =>
+                        SettingsUiBindings.CardPlayPredictionEnabled.Read() ||
+                        SettingsUiBindings.PotionPredictionEnabled.Read() ||
+                        SettingsUiBindings.EndTurnPredictionEnabled.Read())
                 .WithEntryEnabledWhen(
                     "experimental_chained_card_effect_prediction_enabled",
                     () =>

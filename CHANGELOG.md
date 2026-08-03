@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### fix
+
+- 模组设置页现在会根据卡牌、药水和回合结束预测入口正确启用战斗伤害及实验性通用卡牌预测设置。<br>
+  The mod settings page now correctly enables combat damage and experimental best-effort card prediction settings based on the card, potion, and end-turn prediction entry points.
+
 ## v0.12.1
 
 ### feat
