@@ -1,7 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Achievements;
+using MegaCrit.Sts2.Core.Models.Afflictions;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
@@ -37,20 +37,28 @@ internal static class BeforeCardPlayedMirrors
 
         registry.Register<AfterimagePower>(HandleAfterimagePower);
         registry.Register<CalamityPower>(HandleCalamityPower);
+        registry.Register<ChainsOfBindingPower>(HandleChainsOfBindingPower);
         registry.Register<DanseMacabrePower>(HandleDanseMacabrePower);
+        registry.Register<FreeAttackPower>(HandleFreeAttackPower);
+        registry.Register<FreePowerPower>(HandleFreePowerPower);
+        registry.Register<FreeSkillPower>(HandleFreeSkillPower);
         registry.Register<GravityPower>(HandleGravityPower);
         registry.Register<JugglingPower>(HandleJugglingPower);
         registry.Register<SerpentFormPower>(HandleSerpentFormPower);
+        registry.Register<SlothPower>(HandleSlothPower);
         registry.Register<SpiritOfAshPower>(HandleSpiritOfAshPower);
         registry.Register<StormPower>(HandleStormPower);
         registry.Register<StranglePower>(HandleStranglePower);
         registry.Register<SubroutinePower>(HandleSubroutinePower);
+        registry.Register<SurroundedPower>(HandleSurroundedPower);
         registry.Register<TheSealedThronePower>(HandleTheSealedThronePower);
+        registry.Register<VeilpiercerPower>(HandleVeilpiercerPower);
 
         registry.RegisterIgnored<ChemicalX>();
         registry.Register<IntimidatingHelmet>(HandleIntimidatingHelmet);
         registry.Register<MusicBox>(HandleMusicBox);
         registry.RegisterIgnored<PaelsEye>();
+        registry.Register<PenNib>(HandlePenNib);
 
         return registry;
     }
@@ -87,6 +95,34 @@ internal static class BeforeCardPlayedMirrors
         }
     }
 
+    private static void HandleChainsOfBindingPower(
+        ChainsOfBindingPower power,
+        BeforeCardPlayedMirrorContext context)
+    {
+        if (!context.PreviewCard.IsDupe &&
+            context.PreviewCard.Owner.Creature == power.Owner &&
+            context.PreviewCard.Affliction is Bound)
+        {
+            var state = context.StateStore.Get(power, () => new ChainsOfBindingPredictionState(power));
+            state.BoundCardPlayed = true;
+        }
+    }
+
+    private static void HandleFreeAttackPower(FreeAttackPower power, BeforeCardPlayedMirrorContext context)
+    {
+        ConsumeFreeCardPower(power, CardType.Attack, context);
+    }
+
+    private static void HandleFreePowerPower(FreePowerPower power, BeforeCardPlayedMirrorContext context)
+    {
+        ConsumeFreeCardPower(power, CardType.Power, context);
+    }
+
+    private static void HandleFreeSkillPower(FreeSkillPower power, BeforeCardPlayedMirrorContext context)
+    {
+        ConsumeFreeCardPower(power, CardType.Skill, context);
+    }
+
     private static void HandleGravityPower(GravityPower power, BeforeCardPlayedMirrorContext context)
     {
         SnapshotOwnerCard(power, context, power.Amount);
@@ -94,7 +130,7 @@ internal static class BeforeCardPlayedMirrors
 
     private static void HandleJugglingPower(JugglingPower power, BeforeCardPlayedMirrorContext context)
     {
-        if (context.PreviewCard.Owner != power.Owner?.Player || context.PreviewCard.Type != CardType.Attack)
+        if (context.PreviewCard.Owner != power.Owner.Player || context.PreviewCard.Type != CardType.Attack)
         {
             return;
         }
@@ -121,9 +157,18 @@ internal static class BeforeCardPlayedMirrors
         SnapshotOwnerCard(power, context, power.Amount);
     }
 
+    private static void HandleSlothPower(SlothPower power, BeforeCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard.Owner == power.Owner.Player)
+        {
+            var state = context.StateStore.Get(power, () => new CounterPredictionState(power._cardsPlayedThisTurn));
+            state.Value++;
+        }
+    }
+
     private static void HandleSpiritOfAshPower(SpiritOfAshPower power, BeforeCardPlayedMirrorContext context)
     {
-        if (context.PreviewCard.Owner == power.Owner?.Player &&
+        if (context.PreviewCard.Owner == power.Owner.Player &&
             context.Card.GetKeywords(context.State).Contains(CardKeyword.Ethereal))
         {
             context.Simulator.GainBlock(power.Owner, power.Amount, ValueProp.Unpowered);
@@ -158,9 +203,37 @@ internal static class BeforeCardPlayedMirrors
         TheSealedThronePower power,
         BeforeCardPlayedMirrorContext context)
     {
-        if (context.PreviewCard.Owner == power.Owner?.Player)
+        if (context.PreviewCard.Owner == power.Owner.Player)
         {
             context.State.GetPlayerCombatState(context.PreviewCard.Owner).GainStars(power.Amount);
+        }
+    }
+
+    private static void HandleSurroundedPower(SurroundedPower power, BeforeCardPlayedMirrorContext context)
+    {
+        if (context.CardPlay.Target is not { } target || context.PreviewCard.Owner != power.Owner.Player)
+        {
+            return;
+        }
+
+        var state = context.StateStore.Get(power, () => new SurroundedPredictionState(power));
+        if (target.HasPower<BackAttackLeftPower>())
+        {
+            state.Facing = SurroundedPower.Direction.Left;
+        }
+        else if (target.HasPower<BackAttackRightPower>())
+        {
+            state.Facing = SurroundedPower.Direction.Right;
+        }
+    }
+
+    private static void HandleVeilpiercerPower(VeilpiercerPower power, BeforeCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard.Owner.Creature == power.Owner &&
+            context.Card.GetKeywords(context.State).Contains(CardKeyword.Ethereal) &&
+            context.Card.GetPile(context.State)?.Type is PileType.Hand or PileType.Play)
+        {
+            DecrementShadowAmount(power, context);
         }
     }
 
@@ -183,8 +256,42 @@ internal static class BeforeCardPlayedMirrors
             context.PreviewCard.Owner == relic.Owner &&
             context.PreviewCard.Type == CardType.Attack)
         {
-            state.CardBeingPlayed = context.CardPlay;
+            state.CardBeingPlayed = context.Card.Original;
         }
+    }
+
+    private static void HandlePenNib(PenNib relic, BeforeCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard.Owner != relic.Owner || context.PreviewCard.Type != CardType.Attack)
+        {
+            return;
+        }
+
+        var state = context.StateStore.Get(relic, () => new PenNibPredictionState(relic));
+        state.AttacksPlayed = (state.AttacksPlayed + 1) % 10;
+        if (state.AttacksPlayed == 0)
+        {
+            state.AttackToDouble = context.Card.Original;
+        }
+    }
+
+    private static void ConsumeFreeCardPower(
+        PowerModel power,
+        CardType type,
+        BeforeCardPlayedMirrorContext context)
+    {
+        if (context.PreviewCard.Owner.Creature == power.Owner &&
+            context.PreviewCard.Type == type &&
+            context.Card.GetPile(context.State)?.Type is PileType.Hand or PileType.Play)
+        {
+            DecrementShadowAmount(power, context);
+        }
+    }
+
+    private static void DecrementShadowAmount(PowerModel power, BeforeCardPlayedMirrorContext context)
+    {
+        var state = context.StateStore.Get(power, () => new PowerAmountPredictionState(power.Amount));
+        state.Amount = Math.Max(0, state.Amount - 1);
     }
 
     private static void SnapshotOwnerCard(
@@ -192,7 +299,7 @@ internal static class BeforeCardPlayedMirrors
         BeforeCardPlayedMirrorContext context,
         int amount)
     {
-        if (context.PreviewCard.Owner == power.Owner?.Player)
+        if (context.PreviewCard.Owner == power.Owner.Player)
         {
             GetPairState(power, context).Amounts.Add(context.CardPlay, amount);
         }
@@ -226,5 +333,5 @@ internal sealed class MusicBoxPredictionState(MusicBox relic)
 {
     public bool WasUsedThisTurn { get; set; } = relic._wasUsedThisTurn;
 
-    public CardPlay? CardBeingPlayed { get; set; }
+    public CardModel? CardBeingPlayed { get; set; }
 }

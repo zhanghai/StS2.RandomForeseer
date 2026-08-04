@@ -1,7 +1,6 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
@@ -57,17 +56,15 @@ internal sealed partial class CombatPredictionSimulator
         // CombatManager end-state and is only called from live prediction paths.
         HookMirrors.BeforeBlockGained(this, creature, amount, props, cardSource);
 
-        var modifiedBlock = Hook.ModifyBlock(
-            State.CombatState,
+        var modifiedBlock = HookMirrors.ModifyBlock(
+            this,
             creature,
             amount,
             props,
-            cardPlay?.Card,
+            cardSource,
             cardPlay,
             out var modifiers);
-        // Hook.ModifyBlock is used by vanilla card previews, so it is treated as a safe
-        // read-only value path. AfterModifyingBlockAmount is not mirrored in Phase 1.
-        _ = modifiers;
+        HookMirrors.AfterModifyingBlockAmount(this, modifiedBlock, cardSource, cardPlay, modifiers);
 
         if (modifiedBlock <= 0m)
         {

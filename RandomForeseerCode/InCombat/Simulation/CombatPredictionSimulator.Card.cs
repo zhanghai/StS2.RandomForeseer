@@ -139,8 +139,8 @@ internal sealed partial class CombatPredictionSimulator
     private ResourceInfo SpendResources(PredictedCard card, bool isAutoPlay, bool skipXCapture = false)
     {
         var playerCombatState = State.GetPlayerCombatState(card.Preview.Owner);
-        var energyValue = card.GetEnergyCostWithModifiers(State, playerCombatState);
-        var starValue = card.GetStarCostWithModifiers(State, playerCombatState);
+        var energyValue = card.GetEnergyCostWithModifiers(this, playerCombatState);
+        var starValue = card.GetStarCostWithModifiers(this, playerCombatState);
 
         if (!isAutoPlay)
         {

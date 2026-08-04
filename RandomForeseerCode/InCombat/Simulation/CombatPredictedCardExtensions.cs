@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
@@ -75,7 +76,7 @@ internal static class CombatPredictedCardExtensions
     // Mirrors CardEnergyCost.GetAmountToSpend.
     public static int GetEnergyCostWithModifiers(
         this PredictedCard card,
-        CombatPredictionState state,
+        CombatPredictionSimulator simulator,
         SimPlayerCombatState playerCombatState)
     {
         var energyCost = card.Preview.EnergyCost;
@@ -95,17 +96,14 @@ internal static class CombatPredictedCardExtensions
             cost = modifier.Modify(cost);
         }
 
-        // TODO: Simulate these hooks to read from the predicted state instead of the real state.
-        // Direct Hook calls here can drift from vanilla after simulated pile/state changes,
-        // because cost hooks may read live CardModel.Pile, combat history, or model-local counters.
-        cost = (int)Hook.ModifyEnergyCostInCombat(state.CombatState, card.Preview, cost);
+        cost = (int)HookMirrors.ModifyEnergyCostInCombat(simulator, card, cost);
         return Math.Max(0, cost);
     }
 
     // Mirrors CardModel.GetStarCostWithModifiers.
     public static int GetStarCostWithModifiers(
         this PredictedCard card,
-        CombatPredictionState state,
+        CombatPredictionSimulator simulator,
         SimPlayerCombatState playerCombatState)
     {
         if (card.Preview.HasStarCostX)
@@ -114,8 +112,7 @@ internal static class CombatPredictedCardExtensions
         }
 
         var cost = card.Preview.CurrentStarCost;
-        // TODO: Simulate these hooks to read from the predicted state instead of the real state.
-        cost = (int)Hook.ModifyStarCost(state.CombatState, card.Preview, cost);
+        cost = (int)HookMirrors.ModifyStarCost(simulator, card, cost);
         return Math.Max(0, cost);
     }
 

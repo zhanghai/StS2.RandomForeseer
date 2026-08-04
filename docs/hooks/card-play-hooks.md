@@ -5,6 +5,10 @@ Research baseline: StS2 v0.110.1 (`a421e19`).
 Mirror files: `InCombat/Mirrors/HookMirrors.cs`,
 `InCombat/Mirrors/Hooks/Card/BeforeCardPlayedMirrors.cs`,
 `InCombat/Mirrors/Hooks/Card/AfterCardPlayedMirrors.cs`,
+`InCombat/Mirrors/Hooks/Card/ShouldPlayMirrors.cs`,
+`InCombat/Mirrors/Hooks/Card/ModifyEnergyCostInCombatMirrors.cs`,
+`InCombat/Mirrors/Hooks/Card/ModifyStarCostMirrors.cs`,
+`InCombat/Mirrors/Hooks/Card/CardPlayHookPredictionStates.cs`,
 `InCombat/Simulation/CombatPredictionHistory.cs`, and
 `InCombat/Simulation/CombatPredictionSimulator.Card.cs`.
 
@@ -19,14 +23,19 @@ Current implementation progress:
 - all 11 **Ignorable** occurrences are registered as explicit no-ops;
 - prediction-local generation of `Stomp`, `BansheesCry`, `Pinpoint`, `MakeItSo`, or `RightHandHand` records
   incomplete risk because generated cards are not yet part of later listener enumeration;
-- the 15 cross-hook occurrences and trigger-conditional handling for the 19 partial/blocked occurrences remain in
-  the next implementation slices.
+- all 15 **Cross-hook feasible** occurrences are mirrored through shared shadow state and selective cost,
+  `ShouldPlay`, damage, and block hook mirrors;
+- trigger-conditional handling for the 19 partial/blocked occurrences remains in the final implementation slice.
 
 ## Hook specs
 
 - `AbstractModel.BeforeCardPlayed(CardPlay)`
 - `AbstractModel.AfterCardPlayed(PlayerChoiceContext, CardPlay)`
 - `AbstractModel.AfterCardPlayedLate(PlayerChoiceContext, CardPlay)`
+- `AbstractModel.ShouldPlay(CardModel, AutoPlayType)`
+- `AbstractModel.TryModifyEnergyCostInCombat(CardModel, decimal, out decimal)`
+- `AbstractModel.TryModifyEnergyCostInCombatLate(CardModel, decimal, out decimal)`
+- `AbstractModel.TryModifyStarCost(CardModel, decimal, out decimal)`
 
 `Hook.AfterCardPlayed` is the facade for both after phases, so this document treats
 `AfterCardPlayedLate` as part of the same hook family.
@@ -73,11 +82,11 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `Stomp` | 踩踏 | Whenever owner plays an Attack, reduces this card's this-turn cost by 1. | **Local feasible.** Find the predicted listener card and mutate only its preview cost. Live plus shadow card-play history is already an established pattern. |
 | `AfterimagePower` | 余像 | Snapshots the power amount for each owner card so the matching after hook grants that much block. | **Local feasible.** Store the amount by `CardPlay`/predicted card identity in `StateStore`. |
 | `CalamityPower` | 劫难 | Snapshots the amount when owner plays an Attack; the matching after hook generates that many random Attacks. | **Local feasible.** Pair state locally; existing combat card-generation helpers and cloned `CombatCardGeneration` cover the result. |
-| `ChainsOfBindingPower` | 魂缚锁链 | Marks that owner has played a non-dupe Bound card; `ShouldPlay` then prevents another Bound card this turn. | **Cross-hook feasible.** `AutoPlay` currently calls original `Hook.ShouldPlay`, so the predicate must read the same shadow flag. |
+| `ChainsOfBindingPower` | 魂缚锁链 | Marks that owner has played a non-dupe Bound card; `ShouldPlay` then prevents another Bound card this turn. | **Implemented cross-hook.** Auto-play gating reads the shadow flag. |
 | `DanseMacabrePower` | 死亡之舞 | If owner spends at least the configured energy, grants block before the card effect. | **Local feasible.** `CardPlay.Resources` and simulator `GainBlock` are sufficient. |
-| `FreeAttackPower` | 免费攻击 | Consumes one stack when owner plays an Attack from hand/play. | **Cross-hook feasible.** Track shadow amount and make prediction cost resolution read it; general power removal is unnecessary for this targeted mirror. |
-| `FreePowerPower` | 免费能力 | Consumes one stack when owner plays a Power from hand/play. | **Cross-hook feasible.** Same targeted shadow-cost requirement as `FreeAttackPower`. |
-| `FreeSkillPower` | 免费技能 | Consumes one stack when owner plays a Skill from hand/play. | **Cross-hook feasible.** Same targeted shadow-cost requirement as `FreeAttackPower`. |
+| `FreeAttackPower` | 免费攻击 | Consumes one stack when owner plays an Attack from hand/play. | **Implemented cross-hook.** Shadow amount feeds the late energy-cost pass. |
+| `FreePowerPower` | 免费能力 | Consumes one stack when owner plays a Power from hand/play. | **Implemented cross-hook.** Same targeted shadow-cost path as `FreeAttackPower`. |
+| `FreeSkillPower` | 免费技能 | Consumes one stack when owner plays a Skill from hand/play. | **Implemented cross-hook.** Same targeted shadow-cost path as `FreeAttackPower`. |
 | `GravityPower` | 引力 | Snapshots the power amount for each owner card so the matching after hook damages all hittable enemies. | **Local feasible.** Pair state plus simulator `Damage`. |
 | `ImitationLearningPower` | 模仿学习 | On the first play in a series of the selected ally's Power, creates an owner-swapped clone for later auto-play. | **Partial.** Detached clone creation and generic `AutoPlay` are available, but the clone's Power `OnPlay` may still be unsupported and Apply Power remains outside simulator state. |
 | `JugglingPower` | 杂耍 | Counts owner Attacks; on the third, adds `Amount` clones of that Attack to hand. | **Local feasible.** Use `StateStore`, `PredictedCard.CreateClone`, `Contextual` generation classification, and normal generation hooks. |
@@ -85,26 +94,26 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `OblivionPower` | 湮灭 | Snapshots amount for each applier card; the after hook applies Doom to the owner. | **Blocked.** Apply Power/death consequences are unsupported. |
 | `RupturePower` | 撕裂 | Opens a per-card accumulator so HP loss caused during that card is converted to Strength after the play. | **Blocked.** Pairing with the existing damage listener is possible, but the resulting Strength application is unsupported. Preserve the current explicit risk. |
 | `SerpentFormPower` | 群蛇形态 | Snapshots amount for each owner card; the after hook damages one random hittable enemy. | **Local feasible.** Pair state, cloned `CombatTargets`, and simulator `Damage` cover it. |
-| `SlothPower` | 懒惰 | Increments the owner's cards-played counter before the card effect; `ShouldPlay` enforces the cap. | **Cross-hook feasible.** Required for nested auto-plays because original `Hook.ShouldPlay` sees only the live counter. |
+| `SlothPower` | 懒惰 | Increments the owner's cards-played counter before the card effect; `ShouldPlay` enforces the cap. | **Implemented cross-hook.** Nested auto-play gating reads the shadow counter. |
 | `SpiritOfAshPower` | 灰烬之灵 | Owner gains block before playing an Ethereal card. | **Local feasible.** Use predicted keywords and simulator `GainBlock`. |
 | `StormPower` | 雷暴 | Snapshots amount when owner plays a Power; the after hook channels that many Lightning orbs. | **Local feasible.** Pair state plus simulator `OrbChannel`. |
 | `StranglePower` | 紧勒 | Snapshots amount for each applier card; the after hook deals unblockable damage to the power owner. | **Local feasible.** Pair state plus simulator `Damage`. |
 | `SubroutinePower` | 子程序 | Snapshots amount when owner plays a Power; the after hook grants that much energy. | **Local feasible.** Pair state plus simulator `GainEnergy`. |
-| `SurroundedPower` | 遭到包围 | Before owner's targeted card resolves, turns the power owner and pets toward that target, changing subsequent back-attack damage against the owner. | **Cross-hook feasible.** Store shadow facing so any retaliation/reaction inside the predicted chain uses it in `ModifyDamageMultiplicative`; visual flipping/music are ignored. |
+| `SurroundedPower` | 遭到包围 | Before owner's targeted card resolves, turns the power owner and pets toward that target, changing subsequent back-attack damage against the owner. | **Implemented cross-hook.** Retaliation/reaction damage reads shadow facing; visual flipping/music are ignored. |
 | `TheSealedThronePower` | 封印王座 | Grants owner stars before every owner card effect. | **Local feasible.** Simulator player state already owns stars. |
-| `VeilpiercerPower` | 刺破帷幕 | Consumes one stack when owner plays an Ethereal card from hand/play. | **Cross-hook feasible.** Shadow amount must also feed its zero-cost modifier. |
+| `VeilpiercerPower` | 刺破帷幕 | Consumes one stack when owner plays an Ethereal card from hand/play. | **Implemented cross-hook.** Shadow amount feeds its zero-cost modifier. |
 | `ChemicalX` | 化学物X | Flashes when owner plays an energy-X or star-X card. | **Ignorable.** The actual X increase is the separate read-only `ModifyXValue` hook. |
 | `IntimidatingHelmet` | 骇人头盔 | If owner spends at least the configured energy, grants block before the card effect. | **Local feasible.** `CardPlay.Resources` and simulator `GainBlock` are sufficient. |
 | `MusicBox` | 音乐盒 | Remembers the first owner Attack this turn so the matching after hook can clone it with Ethereal. | **Local feasible.** Pair state, preview cloning, keyword mutation, and `Contextual` generated-card flow are available. |
 | `PaelsEye` | 佩尔之眼 | Changes relic display status when owner manually plays a card before the relic has triggered. | **Ignorable.** Gameplay uses combat history/extra-turn hooks, not this status mutation. |
-| `PenNib` | 钢笔尖 | Advances the Attack counter and marks every tenth owner Attack as the card whose damage is doubled. | **Cross-hook feasible and high priority.** The current original damage modifier reads live fields, so it needs shadow counter/card identity and a prediction-aware multiplier path. |
+| `PenNib` | 钢笔尖 | Advances the Attack counter and marks every tenth owner Attack as the card whose damage is doubled. | **Implemented cross-hook.** Shadow counter and exact play occurrence feed a prediction-aware multiplier. |
 
 ## AfterCardPlayed listeners: relics
 
 | Model | 中文名 | Original effect | Research disposition |
 | --- | --- | --- | --- |
 | `ArtOfWar` | 孙子兵法 | Records that owner played an Attack, affecting next-turn energy. | **Ignorable.** Only a later turn is affected. |
-| `BrilliantScarf` | 艳丽围巾 | Counts manual owner cards so the fifth card's energy and star costs are zero. | **Cross-hook feasible.** Track the counter and make prediction cost helpers read it for a later nested card. |
+| `BrilliantScarf` | 艳丽围巾 | Counts manual owner cards so the fifth card's energy and star costs are zero. | **Implemented cross-hook.** Energy and star cost helpers read the shadow counter. |
 | `DaughterOfTheWind` | 风的女儿 | Grants block after every owner Attack. | **Local feasible.** Use simulator `GainBlock`. |
 | `GamePiece` | 棋子 | Draws cards after owner plays a Power. | **Local feasible.** Use simulator `Draw`. |
 | `HelicalDart` | 螺线飞镖 | Playing an owner Shiv applies Dexterity. | **Blocked.** Apply Power is unsupported and can affect later block in the same turn. |
@@ -118,8 +127,8 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `MusicBox` | 音乐盒 | Clones the remembered Attack into hand, adds Ethereal, and consumes the once-per-turn trigger. | **Local feasible.** Complete the paired `StateStore` transaction and use normal generated-card flow. |
 | `Nunchaku` | 双截棍 | Every configured number of owner Attacks grants energy. | **Local feasible.** Shadow counter plus simulator `GainEnergy`. |
 | `OrnamentalFan` | 精致折扇 | Every configured number of owner Attacks grants block. | **Local feasible.** Shadow counter plus simulator `GainBlock`. |
-| `PaelsLegion` | 佩尔的士兵 | After the card whose block was doubled finishes, starts the relic cooldown and consumes the doubling trigger. | **Cross-hook feasible.** Shadow `ModifyBlock`/`AfterModifyingBlockAmount` state must share the same `CardPlay` identity with this hook. Pet animation is ignored. |
-| `PenNib` | 钢笔尖 | Clears the current doubled-Attack marker after that card resolves. | **Cross-hook feasible.** Must share the shadow state used by the damage multiplier. |
+| `PaelsLegion` | 佩尔的士兵 | After the card whose block was doubled finishes, starts the relic cooldown and consumes the doubling trigger. | **Implemented cross-hook.** Block selection and cooldown commit share the exact `CardPlay`; pet animation is ignored. |
+| `PenNib` | 钢笔尖 | Clears the current doubled-Attack marker after that card resolves. | **Implemented cross-hook.** Clears the exact occurrence used by the damage multiplier. |
 | `Permafrost` | 永冻冰晶 | The first owner Power each combat grants block and consumes the trigger. | **Local feasible.** State-store once/combat flag plus simulator `GainBlock`. |
 | `Pocketwatch` | 怀表 | Counts owner cards for next-turn hand draw. | **Ignorable.** Only a later turn is affected. |
 | `RainbowRing` | 彩虹戒指 | After owner has played Attack, Skill, and Power this turn, applies Strength and Dexterity once. | **Blocked.** Counters are easy; both Apply Power results are unsupported. |
@@ -128,8 +137,8 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `Shuriken` | 手里剑 | Every configured number of owner Attacks applies Strength. | **Blocked.** Counter tracking is easy, but Apply Power is unsupported. |
 | `TuningFork` | 音叉 | Counts owner Skills persistently and grants block at each threshold. | **Local feasible.** Initialize the shadow counter from `SkillsPlayed`; use simulator `GainBlock`. |
 | `UnsettlingLamp` | 不安油灯 | Marks its one-combat debuff-doubling trigger finished after the triggering card. | **Partial / defer.** The state commit is feasible, but it only matters with power-application hooks, which are unsupported. |
-| `Vambrace` | 臂甲 | After the card whose block was doubled finishes, consumes the once-per-combat doubling. | **Cross-hook feasible.** Shadow block multiplier/commit state must replace the current live-state read for chained block gains. |
-| `VelvetChoker` | 天鹅绒颈圈 | Increments the owner's cards-played counter used by `ShouldPlay`. | **Cross-hook feasible.** Nested auto-play gating must read the shadow counter. |
+| `Vambrace` | 臂甲 | After the card whose block was doubled finishes, consumes the once-per-combat doubling. | **Implemented cross-hook.** Shadow block multiplier and exact play commit cover chained block gains. |
+| `VelvetChoker` | 天鹅绒颈圈 | Increments the owner's cards-played counter used by `ShouldPlay`. | **Implemented cross-hook.** Nested auto-play gating reads the shadow counter. |
 
 ## AfterCardPlayed listeners: powers
 
@@ -154,7 +163,7 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `RagePower` | 狂怒 | Grants block after every owner Attack. | **Local feasible.** Use simulator `GainBlock`. |
 | `RupturePower` | 撕裂 | Converts the paired during-card HP-loss accumulator into Strength. | **Blocked.** Apply Power is unsupported; retain explicit risk from the damage mirror. |
 | `SerpentFormPower` | 群蛇形态 | Consumes the paired snapshot and damages one random hittable enemy. | **Local feasible.** Cloned `CombatTargets` plus simulator `Damage`. |
-| `SlowPower` | 缓慢 | Increments the damage multiplier by 10 percentage points after every card. | **Cross-hook feasible and high priority for chains.** `ModifyDamageMultiplicative` must read shadow amount instead of the live dynamic var. |
+| `SlowPower` | 缓慢 | Increments the damage multiplier by 10 percentage points after every card. | **Implemented cross-hook.** The multiplicative damage pass reads the shadow amount. |
 | `SmoggyPower` | 烟雾弥漫 | After owner plays a Skill, afflicts every unafflicted owner Skill with Smog. | **Local feasible.** Iterate shadow piles and use simulator `Afflict`; do not call live card APIs. |
 | `SneakyPower` | 鬼祟 | Whenever another creature's Attack is played, grants block to the power owner. | **Local feasible.** Use simulator `GainBlock`. |
 | `StormPower` | 雷暴 | Consumes the paired snapshot and channels Lightning orbs. | **Local feasible.** Use simulator `OrbChannel`. |
@@ -162,7 +171,7 @@ All rows below are currently unmirrored. The disposition is an implementation re
 | `SubroutinePower` | 子程序 | Consumes the paired snapshot and grants owner energy. | **Local feasible.** Use simulator `GainEnergy`. |
 | `TenderPower` | 柔嫩 | After every owner card, applies negative Strength and Dexterity to owner. | **Blocked.** Apply Power and shadow power amounts are unsupported. |
 | `VitalSparkPower` | 活力火花 | A Tainted card applies TaintedPower to its owner after play. | **Blocked.** Apply Power is unsupported. |
-| `VoidFormPower` | 虚空形态 | Counts non-auto owner cards on the last play in a series; later cards stop being free at the power amount. | **Cross-hook feasible.** Shadow count must feed both energy- and star-cost prediction helpers. |
+| `VoidFormPower` | 虚空形态 | Counts non-auto owner cards on the last play in a series; later cards stop being free at the power amount. | **Implemented cross-hook.** Shadow count feeds both energy- and star-cost helpers. |
 | `WitheringPresencePower` | 凋萎存在 | Counts target-player cards and adds a Wither to hand every six. | **Local feasible.** State-store counter plus fixed generated-card flow. |
 
 ## AfterCardPlayed listeners: cards, enchantments, and bookkeeping
@@ -192,7 +201,7 @@ All rows below are currently unmirrored. The disposition is an implementation re
    simulated combat-ending state.
 2. First cover local effects that can change the current card or immediate projection: `PenNib`, pre-play block/stars,
    post-play block/damage/draw/energy/orbs, and paired RNG effects.
-3. Add prediction-aware adapters for the four cross-hook families: damage modifiers (`PenNib`, `SlowPower`,
+3. Add selective hook mirrors for the four cross-hook families: damage modifiers (`PenNib`, `SlowPower`,
    `SurroundedPower`), block modifiers (`PaelsLegion`, `Vambrace`), cost modifiers (free-card powers,
    `BrilliantScarf`, `VeilpiercerPower`, `VoidFormPower`), and `ShouldPlay` (`ChainsOfBindingPower`, `SlothPower`,
    `VelvetChoker`). Calling the original hooks after only updating `StateStore` would still read stale live fields.
@@ -206,8 +215,10 @@ All rows below are currently unmirrored. The disposition is an implementation re
 
 - The two TODOs are lifecycle gaps, not merely missing visible bonus effects. Until they are filled, chained
   simulations also retain stale counters for cost, `ShouldPlay`, block, and damage value hooks.
-- Direct original value/predicate hook calls read live models. `PredictionStateStore` fixes pair/counter mutation only
-  when the corresponding value hook is also routed through a prediction-aware adapter.
+- Selective hook mirrors preserve original listener order while replacing only exact listeners that consume card-play
+  shadow state. Other cost, predicate, damage, and block value listeners continue to call their original read-only
+  methods; those selective registry misses bypass unsupported lookup and do not record mirror risk. Side-effect hooks
+  such as `AfterModifyingBlockAmount` retain normal action-registry unsupported-risk handling.
 - Hook listeners are currently enumerated from the live `CombatState`. Prediction-generated cards are not added as
   listeners, so generated copies of `Stomp`, `BansheesCry`, `Pinpoint`, `MakeItSo`, or `RightHandHand` remain a parity
   gap until hook iteration can include shadow generated cards in vanilla order. Their generation now records

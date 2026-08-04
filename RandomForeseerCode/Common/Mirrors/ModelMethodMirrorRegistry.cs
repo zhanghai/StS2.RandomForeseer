@@ -38,7 +38,7 @@ internal readonly record struct MirrorDispatchResult<TResult>(MirrorDispatchKind
 /// handler may resolve instance-dependent values or skip inapplicable candidates, but it must not capture a receiver or
 /// context instance. The registry owns incomplete-risk recording for inferred invocations.
 /// </remarks>
-internal delegate Action<TBase, TContext>? ModelMethodMirrorInferer<TBase, TContext>(Type runtimeType, MethodInfo overrideMethod)
+internal delegate Action<TBase, TContext>? ModelMethodMirrorInferer<in TBase, in TContext>(Type runtimeType, MethodInfo overrideMethod)
     where TBase : class
     where TContext : IPredictionMirrorContext<TBase>;
 
@@ -46,7 +46,7 @@ internal delegate Action<TBase, TContext>? ModelMethodMirrorInferer<TBase, TCont
 /// Dispatches one mirrored virtual action method against the exact runtime type of one receiver.
 /// </summary>
 /// <remarks>
-/// Invocation-wide behavior such as listener enumeration and hook ordering belongs to the adapter layered over this
+/// Invocation-wide behavior such as listener enumeration and hook ordering belongs to the facade layered over this
 /// registry. All registrations must finish before the first query or invocation because lookup results are cached.
 /// </remarks>
 internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpec method)
@@ -120,6 +120,36 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
     {
         return _registrations.TryGetValue(receiver.GetType(), out var registration) &&
             registration.Kind is MirrorDispatchKind.Handled;
+    }
+
+    /// <summary>
+    /// Invokes only an explicit exact-type registration, without resolving inference or unsupported fallbacks.
+    /// </summary>
+    /// <remarks>
+    /// Selective hook mirrors use this to replace the few listeners that need prediction state while allowing their
+    /// facade to call every other listener's original read-only implementation without recording mirror risk.
+    /// </remarks>
+    public bool TryInvokeRegistered(
+        TBase receiver,
+        TContext context,
+        out MirrorDispatchResult dispatchResult)
+    {
+        if (!_registrations.TryGetValue(receiver.GetType(), out var registration))
+        {
+            dispatchResult = default;
+            return false;
+        }
+
+        if (registration.Kind == MirrorDispatchKind.Handled)
+        {
+            using (context.PushDispatchSource(receiver, method))
+            {
+                registration.Handler!(receiver, context);
+            }
+        }
+
+        dispatchResult = new MirrorDispatchResult(registration.Kind);
+        return true;
     }
 
     public MirrorDispatchResult Invoke(TBase receiver, TContext context)
@@ -232,16 +262,45 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(Mirror
 {
     // All registrations must be completed before the first invocation. Registries are built during
     // static initialization and do not support runtime registration.
-    private readonly Dictionary<Type, LookupResult> _lookups = [];
+    private readonly Dictionary<Type, LookupResult> _registrations = [];
+    private readonly Dictionary<Type, LookupResult> _lookupCache = [];
 
     public void Register<TModel>(Func<TModel, TContext, TResult> handler)
         where TModel : TBase
     {
         var type = typeof(TModel);
         ValidateOverride(type);
-        _lookups.Add(type, new(
+        _registrations.Add(type, new(
             MirrorDispatchKind.Handled,
             (receiver, context) => handler((TModel)receiver, context)));
+    }
+
+    /// <summary>
+    /// Invokes only an explicit exact-type registration, without resolving unsupported fallbacks.
+    /// </summary>
+    /// <remarks>
+    /// The caller owns the strongly typed original-method fallback when this returns <see langword="false"/>.
+    /// No unsupported lookup is cached and no prediction risk is recorded.
+    /// </remarks>
+    public bool TryInvokeRegistered(
+        TBase receiver,
+        TContext context,
+        out MirrorDispatchResult<TResult> dispatchResult)
+    {
+        if (!_registrations.TryGetValue(receiver.GetType(), out var registration))
+        {
+            dispatchResult = default;
+            return false;
+        }
+
+        using (context.PushDispatchSource(receiver, method))
+        {
+            dispatchResult = new MirrorDispatchResult<TResult>(
+                registration.Kind,
+                registration.Handler!(receiver, context));
+        }
+
+        return true;
     }
 
     public MirrorDispatchResult<TResult> Invoke(
@@ -269,12 +328,13 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(Mirror
 
     private LookupResult Lookup(Type type)
     {
-        if (_lookups.TryGetValue(type, out var result))
+        if (_registrations.TryGetValue(type, out var result) ||
+            _lookupCache.TryGetValue(type, out result))
         {
             return result;
         }
 
-        if (!method.TryGetOverride(type, out var overrideMethod))
+        if (!method.TryGetOverride(type, out _))
         {
             result = new(MirrorDispatchKind.NotOverridden, null);
         }
@@ -285,7 +345,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(Mirror
             result = new(MirrorDispatchKind.Unsupported, null);
         }
 
-        _lookups.Add(type, result);
+        _lookupCache.Add(type, result);
         return result;
     }
 

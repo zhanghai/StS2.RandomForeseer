@@ -1,8 +1,8 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Hooks;
 using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
@@ -16,7 +16,7 @@ internal sealed partial class CombatPredictionSimulator
         bool skipXCapture = false)
     {
         if (card.GetKeywords(State).Contains(CardKeyword.Unplayable) ||
-            !Hook.ShouldPlay(State.CombatState, card.Preview, out var _, type) ||
+            !HookMirrors.ShouldPlay(this, card, out _, type) ||
             !TryResolveAutoPlayTarget(card, ref target))
         {
             MoveToResultPileWithoutPlaying(card);

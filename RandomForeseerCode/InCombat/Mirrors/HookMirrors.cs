@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
@@ -23,6 +24,88 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
 // hook-level ordering while method-specific registries and contexts remain implementation details.
 internal static class HookMirrors
 {
+    /// <summary>
+    /// Mirrors <see cref="Hook.ModifyBlock"/>.
+    /// </summary>
+    public static decimal ModifyBlock(
+        CombatPredictionSimulator simulator,
+        Creature target,
+        decimal block,
+        ValueProp props,
+        PredictedCard? cardSource,
+        CardPlay? cardPlay,
+        out List<AbstractModel> modifiers)
+    {
+        modifiers = [];
+
+        var cardModel = cardSource?.Preview;
+        if (cardModel?.Enchantment is { } enchantment)
+        {
+            block += enchantment.EnchantBlockAdditive(block);
+            block *= enchantment.EnchantBlockMultiplicative(block);
+        }
+
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            var additive = listener.ModifyBlockAdditive(target, block, props, cardModel, cardPlay);
+            block += additive;
+            if (additive != 0)
+            {
+                modifiers.Add(listener);
+            }
+        }
+
+        var context = new ModifyBlockMultiplicativeMirrorContext
+        {
+            Simulator = simulator,
+            Target = target,
+            Amount = block,
+            Props = props,
+            CardSource = cardSource,
+            CardPlay = cardPlay
+        };
+
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            context.Amount = block;
+            var multiplier = ModifyBlockMultiplicativeMirrors.Invoke(listener, context);
+            block *= multiplier;
+            if (multiplier != 1)
+            {
+                modifiers.Add(listener);
+            }
+        }
+
+        return Math.Max(0, block);
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="Hook.AfterModifyingBlockAmount"/>.
+    /// </summary>
+    public static void AfterModifyingBlockAmount(
+        CombatPredictionSimulator simulator,
+        decimal modifiedBlock,
+        PredictedCard? cardSource,
+        CardPlay? cardPlay,
+        IReadOnlyList<AbstractModel> modifiers)
+    {
+        var context = new AfterModifyingBlockAmountMirrorContext
+        {
+            Simulator = simulator,
+            ModifiedBlock = modifiedBlock,
+            CardSource = cardSource,
+            CardPlay = cardPlay
+        };
+
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            if (modifiers.Contains(listener))
+            {
+                AfterModifyingBlockAmountMirrors.Invoke(listener, context);
+            }
+        }
+    }
+
     // Mirrors Hook.BeforeBlockGained.
     public static void BeforeBlockGained(
         CombatPredictionSimulator simulator,
@@ -223,6 +306,95 @@ internal static class HookMirrors
         }
     }
 
+    /// <summary>
+    /// Mirrors <see cref="Hook.ShouldPlay"/>.
+    /// </summary>
+    public static bool ShouldPlay(
+        CombatPredictionSimulator simulator,
+        PredictedCard card,
+        [NotNullWhen(false)] out AbstractModel? preventer,
+        AutoPlayType autoPlayType)
+    {
+        var context = new ShouldPlayMirrorContext
+        {
+            Simulator = simulator,
+            Card = card,
+            AutoPlayType = autoPlayType
+        };
+
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            if (!ShouldPlayMirrors.Invoke(listener, context))
+            {
+                preventer = listener;
+                return false;
+            }
+        }
+
+        preventer = null;
+        return true;
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="Hook.ModifyEnergyCostInCombat"/>.
+    /// </summary>
+    public static decimal ModifyEnergyCostInCombat(
+        CombatPredictionSimulator simulator,
+        PredictedCard card,
+        decimal originalCost)
+    {
+        if (originalCost < 0)
+        {
+            return originalCost;
+        }
+
+        var context = new ModifyEnergyCostInCombatMirrorContext
+        {
+            Simulator = simulator,
+            Card = card,
+            Cost = originalCost
+        };
+
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            context.Cost = ModifyEnergyCostInCombatMirrors.Invoke(listener, context);
+        }
+
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            context.Cost = ModifyEnergyCostInCombatMirrors.InvokeLate(listener, context);
+        }
+
+        return context.Cost;
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="Hook.ModifyStarCost"/>.
+    /// </summary>
+    public static decimal ModifyStarCost(
+        CombatPredictionSimulator simulator,
+        PredictedCard card,
+        decimal originalCost)
+    {
+        if (originalCost < 0)
+        {
+            return originalCost;
+        }
+
+        var context = new ModifyStarCostMirrorContext
+        {
+            Simulator = simulator,
+            Card = card,
+            Cost = originalCost
+        };
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            context.Cost = ModifyStarCostMirrors.Invoke(listener, context);
+        }
+
+        return context.Cost;
+    }
+
     // Mirrors Hook.BeforeCardPlayed. Unlike the two after phases, vanilla suppresses this
     // guarded dispatch when combat was already over or ending at dispatch start.
     public static void BeforeCardPlayed(
@@ -293,6 +465,57 @@ internal static class HookMirrors
         }
     }
 
+    /// <summary>
+    /// Mirrors <see cref="Hook.ModifyDamage"/>.
+    /// </summary>
+    public static decimal ModifyDamage(
+        CombatPredictionSimulator simulator,
+        Creature? target,
+        Creature? dealer,
+        decimal damage,
+        ValueProp props,
+        PredictedCard? cardSource,
+        CardPlay? cardPlay)
+    {
+        var combatState = simulator.State.CombatState;
+        var runState = combatState.RunState;
+        var cardModel = cardSource?.Preview;
+        if (cardModel?.Enchantment is { } enchantment)
+        {
+            damage += enchantment.EnchantDamageAdditive(damage, props);
+            damage *= enchantment.EnchantDamageMultiplicative(damage, props);
+        }
+
+        foreach (var listener in runState.IterateHookListeners(combatState))
+        {
+            damage += listener.ModifyDamageAdditive(target, damage, props, dealer, cardModel, cardPlay);
+        }
+
+        var context = new ModifyDamageMultiplicativeMirrorContext
+        {
+            Simulator = simulator,
+            Target = target,
+            Dealer = dealer,
+            Amount = damage,
+            Props = props,
+            CardSource = cardSource,
+            CardPlay = cardPlay
+        };
+        foreach (var listener in runState.IterateHookListeners(combatState))
+        {
+            context.Amount = damage;
+            damage *= ModifyDamageMultiplicativeMirrors.Invoke(listener, context);
+        }
+
+        var cap = decimal.MaxValue;
+        foreach (var listener in runState.IterateHookListeners(combatState))
+        {
+            cap = Math.Min(cap, listener.ModifyDamageCap(target, props, dealer, cardModel, cardPlay));
+        }
+
+        return Math.Max(0, Math.Min(damage, cap));
+    }
+
     // Mirrors Hook.AfterDamageGiven.
     public static void AfterDamageGiven(
         CombatPredictionSimulator simulator,
@@ -318,10 +541,12 @@ internal static class HookMirrors
         }
     }
 
-    // Mirrors Hook.AfterModifyingHpLostAfterOsty for the modifiers selected by the value hook.
+    /// <summary>
+    /// Mirrors <see cref="Hook.AfterModifyingHpLostAfterOsty"/>.
+    /// </summary>
     public static void AfterModifyingHpLostAfterOsty(
         CombatPredictionSimulator simulator,
-        IEnumerable<AbstractModel> modifiers)
+        IReadOnlyList<AbstractModel> modifiers)
     {
         var context = new AfterModifyingHpLostMirrorContext { Simulator = simulator };
 

@@ -2,7 +2,7 @@
 
 ## Guidelines
 
-- Prefer original read-only value hooks when vanilla already uses them for previews. Current examples: `Hook.ModifyBlock`, `Hook.ModifyDamage`, `Hook.ModifyHpLost`, card reward creation options, and card reward upgrade odds.
+- Prefer original read-only value hooks when vanilla already uses them for previews. Current examples include `Hook.ModifyHpLost`, card reward creation options, and card reward upgrade odds. When a simulated hook commits shadow state consumed by a later value hook, preserve original listener order but replace the affected listener through an exact hook-mirror registration, as the card-play cost, predicate, damage, and block mirrors do.
 - Mirror only side effects that can change prediction output: draw order, hand/discard/exhaust piles, preview card cost/dynamic vars, block, damage, death/liveness, orb counts, current-turn energy, and RNG consumption.
 - Combat predictions are scoped to outcomes that can still affect the current player turn. Do not mark risk only because vanilla would mutate state for an enemy turn, a later player turn, room-end rewards, or future reward screens, unless that state can feed back into a prediction surfaced before the current player turn finishes.
 - Do not simulate VFX, SFX, waits, achievement unlocks, or effects that cannot occur during the current player-turn prediction surface.
@@ -14,6 +14,11 @@
 ## Mirror registry architecture
 
 - `Common/Mirrors/ModelMethodMirrorRegistry.cs` centralizes exact-type registration and dispatch, override detection, lookup caching, trace scoping, and unsupported-risk recording. Action registries can check for an explicit handler and optionally infer unregistered gameplay overrides; inferred dispatch records incomplete risk. Result registries require a registered handler that supplies the return value and do not support inference.
+- Selective read-only value and predicate hook mirrors use `TryInvokeRegistered` to dispatch only exact
+  prediction-state overrides. A miss does not resolve or cache an unsupported lookup and records no risk; the hook
+  facade instead calls that listener's original method in the same vanilla pass. Side-effect hooks continue through
+  the full action registry: reviewed visual/no-op overrides are registered ignored, while an unknown override records
+  unsupported risk because it may mutate prediction-relevant state and cannot safely run against live models.
 - `IPredictionMirrorContext<TBase>` is a dispatcher-only contract. Combat contexts explicitly map ordinary listeners to the listener, orb receivers to the shadow orb, and `CardModel.OnPlay` / `CardModel.OnTurnEndInHand` receivers to the original card rather than an optional detached preview. Typed handlers use the context's `History` alias for explicit risk reasons.
 - `HookMirrors` facades own hook-level control flow, including context construction, listener enumeration, phase refresh, short-circuiting, result chaining, and only-modifier dispatch. The registry only dispatches one listener at a time.
 - Hook-level listener enumeration follows each vanilla facade rather than assuming every hook uses

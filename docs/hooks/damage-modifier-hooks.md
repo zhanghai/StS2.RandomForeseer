@@ -1,6 +1,7 @@
 # Damage modifier hooks
 
 Mirror files: `InCombat/Mirrors/HookMirrors.cs`,
+`InCombat/Mirrors/Hooks/Damage/ModifyDamageMultiplicativeMirrors.cs`,
 `InCombat/Mirrors/Hooks/Damage/AfterModifyingHpLostAfterOstyMirrors.cs`, and
 `InCombat/Simulation/CombatPredictionSimulator.Damage.cs`.
 
@@ -40,7 +41,8 @@ The simulator calls the three value-producing modifier hooks directly, but does 
 
 ## ModifyDamage listeners
 
-Current mirror status: implemented by directly calling original `Hook.ModifyDamage`. These hooks are expected to be read-only value modifiers during prediction.
+Current mirror status: the simulator preserves vanilla additive, multiplicative, and cap passes. It calls original
+read-only listener methods except for the three card-play-state consumers documented below.
 
 ### ModifyDamageAdditive listeners
 
@@ -75,11 +77,11 @@ Current mirror status: implemented by directly calling original `Hook.ModifyDama
 | `InterceptPower` | 拦截 | Powered attacks against owner are increased by covered-creature count. | Implemented by original hook. |
 | `KnockdownPower` | 击倒 | Powered attacks against owner are multiplied unless dealt by applier. | Implemented by original hook. |
 | `LethalityPower` | 致死性 | Owner's first Attack card this turn deals bonus powered damage. | Implemented by original hook, but reads live `CombatManager.Instance.History.CardPlaysStarted`. |
-| `PenNib` | 钢笔尖 | Owner's every tenth Attack card is doubled. | Implemented by original hook, but relies on live relic counter/card-play state. `card-play-hooks.md` documents the required paired shadow state. |
+| `PenNib` | 钢笔尖 | Owner's every tenth Attack card is doubled. | Implemented by a prediction-aware multiplier using the shadow counter and exact `CardPlay` occurrence shared with the before/after card hooks. |
 | `ShrinkPower` | 缩小 | Owner's powered attacks are reduced. | Implemented by original hook. |
-| `SlowPower` | 缓慢 | Powered attacks against owner scale up with cards played this turn. | Implemented by original hook, but chained simulated card plays do not advance the live amount. See `card-play-hooks.md`. |
+| `SlowPower` | 缓慢 | Powered attacks against owner scale up with cards played this turn. | Implemented by a prediction-aware multiplier reading the shadow card-play count. |
 | `SoarPower` | 翱翔 | Powered attacks against owner are reduced by configured percentage. | Implemented by original hook. |
-| `SurroundedPower` | 遭到包围 | Back attacks against owner are multiplied. | Implemented by original hook, but a simulated targeted card does not update live facing first. See `card-play-hooks.md`. |
+| `SurroundedPower` | 遭到包围 | Back attacks against owner are multiplied. | Implemented by a prediction-aware multiplier reading the facing updated by the simulated targeted card. |
 | `TankPower` | 肉盾 | Powered attacks against owner are doubled. | Implemented by original hook. |
 | `TrackingPower` | 跟踪 | Owner or pet powered card attacks against Weak targets are multiplied. | Implemented by original hook. |
 | `UndyingSigil` | 不死符文 | Incoming powered attacks from doomed enemies are reduced. | Implemented by original hook. |
@@ -162,10 +164,10 @@ Current mirror status: `AfterModifyingHpLostAfterOsty` is dispatched only to the
 - StS2 v0.108.0 added `CardPlay?` to damage modifiers. Real card execution passes the active `CardPlay`; hover forecasts and other vanilla previews pass `null`. The simulator forwards `AttackCommand.CardPlay` through `ExecuteAttack(AttackCommand)` for simulated card-play/autoplay attacks, but direct `Damage` calls and helper-created attacks without a `CardPlay` still pass `null`.
 - StS2 v0.109.0 deleted `DiamondDiademPower`; `DiamondDiadem` no longer contributes a
   multiplicative damage listener.
-- Direct original hook calls read live model state. History-dependent listeners such as `LethalityPower` and
-  `PhantomBladesPower`, plus card-play state listeners such as `PenNib`, `SlowPower`, and `SurroundedPower`, do not read
-  simulator shadow history/state, so chained simulated card plays or auto-plays can drift until those models get
-  targeted mirrors. See `card-play-hooks.md` for the paired lifecycle analysis.
+- Damage modifiers normally call the original read-only listener methods. The multiplicative hook mirror has exact
+  registrations only for `PenNib`, `SlowPower`, and `SurroundedPower`, so chained simulated card plays read shadow
+  state without treating every other listener as an unsupported mirror; history-dependent `LethalityPower` and
+  `PhantomBladesPower` still read live history.
 - Missing shadow state for `BufferPower` is the only currently known `AfterModifying*` hook with immediate prediction-relevant state; it is surfaced as risk instead of silently diverging.
 
 ## Mock model list

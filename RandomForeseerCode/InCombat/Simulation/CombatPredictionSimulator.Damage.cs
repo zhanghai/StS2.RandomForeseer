@@ -93,23 +93,13 @@ internal sealed partial class CombatPredictionSimulator
         }
 
         var runState = State.CombatState.RunState;
-        var modifiedAmount = Hook.ModifyDamage(
-            runState,
-            State.CombatState,
+        var modifiedAmount = HookMirrors.ModifyDamage(
+            this,
             originalTarget,
-            dealer,
-            amount,
+            dealer, amount,
             props,
-            cardSource?.Preview,
-            // StS2 v0.108.0 passes CardPlay into damage modifiers during real card execution.
-            cardPlay,
-            ModifyDamageHookType.All,
-            CardPreviewMode.None,
-            out var damageModifiers);
-        // Hook.Modify* is the same read-only value path used by vanilla previews. It is
-        // safe to call directly; AfterModifying* usually only keeps modifier-internal
-        // state in sync and is intentionally left for targeted hook mirrors.
-        _ = damageModifiers;
+            cardSource,
+            cardPlay);
 
         HookMirrors.BeforeDamageReceived(
             this,
@@ -152,7 +142,7 @@ internal sealed partial class CombatPredictionSimulator
             cardSource?.Preview,
             HpLossHookPhase.AfterOsty,
             out var afterOstyModifiers);
-        HookMirrors.AfterModifyingHpLostAfterOsty(this, afterOstyModifiers);
+        HookMirrors.AfterModifyingHpLostAfterOsty(this, [.. afterOstyModifiers]);
 
         var unblockedDamageTargetState = State.GetCreature(unblockedDamageTarget);
         var unblockedDamageResult = unblockedDamageTargetState.LoseHp(unblockedDamage, props);
@@ -181,7 +171,7 @@ internal sealed partial class CombatPredictionSimulator
                 cardSource?.Preview,
                 HpLossHookPhase.AfterOsty,
                 out var redirectedAfterOstyModifiers);
-            HookMirrors.AfterModifyingHpLostAfterOsty(this, redirectedAfterOstyModifiers);
+            HookMirrors.AfterModifyingHpLostAfterOsty(this, [.. redirectedAfterOstyModifiers]);
 
             var damageResult = originalTargetDamage > 0m
                 ? originalTargetState.LoseHp(originalTargetDamage, props)
@@ -271,8 +261,6 @@ internal sealed partial class CombatPredictionSimulator
     // Mirrors CreatureCmd.KillWithoutCheckingWinCondition, without recursion checks.
     private void KillWithoutCheckingWinCondition(Creature creature, bool force)
     {
-        var runState = State.CombatState.RunState;
-
         var creatureState = State.GetCreature(creature);
         var currentHp = creatureState.CurrentHp;
         if (currentHp > 0)
@@ -290,7 +278,7 @@ internal sealed partial class CombatPredictionSimulator
             HookMirrors.AfterDeath(this, creature, wasRemovalPrevented: false);
 
             var aliveTeammates = State.GetTeammatesOf(creature)
-                .Where(creature => State.GetCreature(creature).IsAlive)
+                .Where(c => State.GetCreature(c).IsAlive)
                 .ToArray();
 
             if (shouldRemoveFromCombat && creature.Side == CombatSide.Enemy && State.Enemies.Contains(creature))
@@ -306,7 +294,7 @@ internal sealed partial class CombatPredictionSimulator
 
             if (creature.Side == CombatSide.Enemy)
             {
-                if (isPrimaryEnemy && aliveTeammates.Length > 0 && aliveTeammates.All(creature => creature.IsSecondaryEnemy))
+                if (isPrimaryEnemy && aliveTeammates.Length > 0 && aliveTeammates.All(c => c.IsSecondaryEnemy))
                 {
                     Kill(aliveTeammates);
                 }
@@ -339,7 +327,7 @@ internal sealed partial class CombatPredictionSimulator
         // TODO: Vanilla sets player.IsActiveForHooks to false here.
 
         // Mirrors CombatManager.HandlePlayerDeath, which is only called when not all players are dead.
-        if (!State.Players.All(player => State.GetCreature(player.Creature).IsDead))
+        if (!State.Players.All(p => State.GetCreature(p.Creature).IsDead))
         {
             RemoveFromCombat([.. playerState.AllCards]);
 
