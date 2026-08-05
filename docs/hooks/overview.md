@@ -8,6 +8,8 @@
 - Do not simulate VFX, SFX, waits, achievement unlocks, or effects that cannot occur during the current player-turn prediction surface.
 - Treat Apply Power, Remove Power, summon, revive, monster move/state changes, combat removal, player death, and max HP mutation as unsupported until the simulator owns those state domains.
 - Use `PredictionStateStore` for model-local counters/flags instead of mutating live model fields.
+- Consumable live powers whose later value hooks depend on amount/presence use the shared
+  `PowerAmountPredictionState`; only those exact listeners are replaced by prediction-aware value-hook adapters.
 - If a listener has any unmodeled prediction-relevant side effect, append an explicit `CombatPredictionRiskReason` to prediction history instead of silently ignoring it.
 - Keep Mock models out of implementation/ignore registries; list them only in docs.
 

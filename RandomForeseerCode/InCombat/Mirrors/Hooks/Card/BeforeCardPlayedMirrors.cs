@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
@@ -276,7 +277,7 @@ internal static class BeforeCardPlayedMirrors
             context.Card.GetKeywords(context.State).Contains(CardKeyword.Ethereal) &&
             context.Card.GetPile(context.State)?.Type is PileType.Hand or PileType.Play)
         {
-            DecrementShadowAmount(power, context);
+            context.StateStore.GetPowerAmount(power).Decrement();
         }
     }
 
@@ -327,14 +328,8 @@ internal static class BeforeCardPlayedMirrors
             context.PreviewCard.Type == type &&
             context.Card.GetPile(context.State)?.Type is PileType.Hand or PileType.Play)
         {
-            DecrementShadowAmount(power, context);
+            context.StateStore.GetPowerAmount(power).Decrement();
         }
-    }
-
-    private static void DecrementShadowAmount(PowerModel power, BeforeCardPlayedMirrorContext context)
-    {
-        var state = context.StateStore.Get(power, () => new PowerAmountPredictionState(power.Amount));
-        state.Amount = Math.Max(0, state.Amount - 1);
     }
 
     private static void SnapshotOwnerCard(

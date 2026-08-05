@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
@@ -83,7 +84,7 @@ internal static class ModifyEnergyCostInCombatMirrors
         return context.Card.Preview.Owner.Creature == power.Owner &&
             context.Card.GetKeywords(context.State).Contains(CardKeyword.Ethereal) &&
             IsInPlayablePile(context) &&
-            context.StateStore.Get(power, () => new PowerAmountPredictionState(power.Amount)).Amount > 0
+            context.StateStore.GetPowerAmount(power).IsActive
                 ? 0
                 : context.Cost;
     }
@@ -119,7 +120,7 @@ internal static class ModifyEnergyCostInCombatMirrors
         return context.Card.Preview.Owner.Creature == power.Owner &&
             context.Card.Preview.Type == type &&
             IsInPlayablePile(context) &&
-            context.StateStore.Get(power, () => new PowerAmountPredictionState(power.Amount)).Amount > 0
+            context.StateStore.GetPowerAmount(power).IsActive
                 ? 0
                 : context.Cost;
     }

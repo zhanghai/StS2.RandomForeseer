@@ -11,11 +11,6 @@ internal sealed class CounterPredictionState(int value)
     public int Value { get; set; } = value;
 }
 
-internal sealed class PowerAmountPredictionState(int amount)
-{
-    public int Amount { get; set; } = amount;
-}
-
 internal sealed class ChainsOfBindingPredictionState(ChainsOfBindingPower power)
 {
     public bool BoundCardPlayed { get; set; } =

@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
@@ -151,7 +152,7 @@ internal static class AfterDamageReceivedMirrors
             context.Result.UnblockedDamage != 0 &&
             context.Props.IsPoweredAttack())
         {
-            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+            context.StateStore.GetPowerAmount(power).Decrement();
         }
     }
 
@@ -229,8 +230,7 @@ internal static class AfterDamageReceivedMirrors
     {
         if (context.Target == power.Owner && context.Result.UnblockedDamage >= 1)
         {
-            // TODO: Mirror the power amount decrement in prediction state.
-            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+            context.StateStore.GetPowerAmount(power).Decrement();
         }
     }
 

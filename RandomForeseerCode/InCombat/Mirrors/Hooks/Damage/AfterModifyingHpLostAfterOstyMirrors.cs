@@ -1,8 +1,8 @@
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
-using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
@@ -36,9 +36,7 @@ internal static class AfterModifyingHpLostAfterOstyMirrors
 
     private static void HandleBufferPower(BufferPower power, AfterModifyingHpLostMirrorContext context)
     {
-        // Vanilla decrements Buffer here. The simulator cannot shadow that into the original
-        // ModifyHpLostAfterOstyLate hook without mutating the live power, so surface a warning.
-        context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+        context.StateStore.GetPowerAmount(power).Decrement();
     }
 }
 

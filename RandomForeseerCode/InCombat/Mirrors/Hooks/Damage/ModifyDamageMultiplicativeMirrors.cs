@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
@@ -31,11 +32,13 @@ internal static class ModifyDamageMultiplicativeMirrors
 
     public static decimal Invoke(AbstractModel listener, ModifyDamageMultiplicativeMirrorContext context)
     {
-        if (Registry.TryInvokeRegistered(listener, context, out var result))
-        {
-            return result.Value;
-        }
+        return Registry.TryInvokeRegistered(listener, context, out var result)
+            ? result.Value
+            : InvokeOriginal(listener, context);
+    }
 
+    private static decimal InvokeOriginal(AbstractModel listener, ModifyDamageMultiplicativeMirrorContext context)
+    {
         return listener.ModifyDamageMultiplicative(
             context.Target,
             context.Amount,
@@ -49,12 +52,22 @@ internal static class ModifyDamageMultiplicativeMirrors
     {
         var registry = new Registry(ModifyDamageMultiplicative);
 
+        registry.Register<FlutterPower>(HandleFlutterPower);
         registry.Register<SlowPower>(HandleSlowPower);
         registry.Register<SurroundedPower>(HandleSurroundedPower);
 
         registry.Register<PenNib>(HandlePenNib);
 
         return registry;
+    }
+
+    private static decimal HandleFlutterPower(
+        FlutterPower power,
+        ModifyDamageMultiplicativeMirrorContext context)
+    {
+        return context.StateStore.GetPowerAmount(power).IsActive
+            ? InvokeOriginal(power, context)
+            : 1;
     }
 
     private static decimal HandleSlowPower(SlowPower power, ModifyDamageMultiplicativeMirrorContext context)

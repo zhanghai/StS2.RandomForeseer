@@ -132,17 +132,15 @@ internal sealed partial class CombatPredictionSimulator
             props,
             dealer);
 
-        unblockedDamage = Hook.ModifyHpLost(
-            runState,
-            State.CombatState,
+        unblockedDamage = HookMirrors.ModifyHpLostAfterOsty(
+            this,
             unblockedDamageTarget,
             unblockedDamage,
             props,
             dealer,
-            cardSource?.Preview,
-            HpLossHookPhase.AfterOsty,
+            cardSource,
             out var afterOstyModifiers);
-        HookMirrors.AfterModifyingHpLostAfterOsty(this, [.. afterOstyModifiers]);
+        HookMirrors.AfterModifyingHpLostAfterOsty(this, afterOstyModifiers);
 
         var unblockedDamageTargetState = State.GetCreature(unblockedDamageTarget);
         var unblockedDamageResult = unblockedDamageTargetState.LoseHp(unblockedDamage, props);
@@ -161,17 +159,15 @@ internal sealed partial class CombatPredictionSimulator
         }
         else
         {
-            var originalTargetDamage = Hook.ModifyHpLost(
-                runState,
-                State.CombatState,
+            var originalTargetDamage = HookMirrors.ModifyHpLostAfterOsty(
+                this,
                 originalTarget,
                 unblockedDamageResult.OverkillDamage,
                 props,
                 dealer,
-                cardSource?.Preview,
-                HpLossHookPhase.AfterOsty,
+                cardSource,
                 out var redirectedAfterOstyModifiers);
-            HookMirrors.AfterModifyingHpLostAfterOsty(this, [.. redirectedAfterOstyModifiers]);
+            HookMirrors.AfterModifyingHpLostAfterOsty(this, redirectedAfterOstyModifiers);
 
             var damageResult = originalTargetDamage > 0m
                 ? originalTargetState.LoseHp(originalTargetDamage, props)

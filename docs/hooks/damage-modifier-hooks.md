@@ -2,6 +2,7 @@
 
 Mirror files: `InCombat/Mirrors/HookMirrors.cs`,
 `InCombat/Mirrors/Hooks/Damage/ModifyDamageMultiplicativeMirrors.cs`,
+`InCombat/Mirrors/Hooks/Damage/ModifyHpLostAfterOstyMirrors.cs`,
 `InCombat/Mirrors/Hooks/Damage/AfterModifyingHpLostAfterOstyMirrors.cs`, and
 `InCombat/Simulation/CombatPredictionSimulator.Damage.cs`.
 
@@ -23,7 +24,9 @@ This document covers the read-only damage modifier path used by `CombatPredictio
 10. If damage was redirected, `Hook.ModifyHpLost(..., HpLossHookPhase.AfterOsty, out modifiers)` for original-target overkill damage
 11. `Hook.AfterModifyingHpLostAfterOsty(..., modifiers)`
 
-The simulator calls the three value-producing modifier hooks directly, but does not call the `AfterModifying*` hooks. Those after hooks are mostly visual, except where noted below.
+The simulator mirrors the value-producing passes and dispatches `AfterModifyingHpLostAfterOsty` to the exact
+modifiers returned by the corresponding value pass. The other `AfterModifying*` hooks are currently omitted because
+their reviewed vanilla listeners are visual only.
 
 ## Hook specs
 
@@ -42,7 +45,7 @@ The simulator calls the three value-producing modifier hooks directly, but does 
 ## ModifyDamage listeners
 
 Current mirror status: the simulator preserves vanilla additive, multiplicative, and cap passes. It calls original
-read-only listener methods except for the three card-play-state consumers documented below.
+read-only listener methods except for the prediction-state consumers documented below.
 
 ### ModifyDamageAdditive listeners
 
@@ -70,7 +73,7 @@ read-only listener methods except for the three card-play-state consumers docume
 | `CoveredPower` | 掩护 | Powered attacks against owner are reduced to zero. | Implemented by original hook. |
 | `DoubleDamagePower` | 双倍伤害 | Owner or pet powered card attacks are doubled. | Implemented by original hook. |
 | `FlankingPower` | 夹击 | Powered attacks against owner are multiplied unless dealt by applier. | Implemented by original hook. |
-| `FlutterPower` | 振翅 | Powered attacks against owner are reduced by configured percentage. | Implemented by original hook; post-hit decrement/stun is covered in `damage-hooks.md`. |
+| `FlutterPower` | 振翅 | Powered attacks against owner are reduced by configured percentage. | Implemented by a prediction-aware multiplier that reads the shadow stack amount consumed by `AfterDamageReceived`; post-hit stun scope is covered in `damage-hooks.md`. |
 | `GigantificationPower` | 超巨化 | Owner's powered attack card is tripled, usually scoped by `BeforeAttack`/`AfterAttack`. | Implemented by original hook, but direct simulator damage does not mirror attack-command state changes. |
 | `GuardedPower` | 护卫 | Powered attacks against owner are halved. | Implemented by original hook. |
 | `HangPower` | 吊杀 | `Hang` damage against owner is multiplied by amount. | Implemented by original hook. |
@@ -98,7 +101,9 @@ read-only listener methods except for the three card-play-state consumers docume
 
 ## ModifyHpLost listeners
 
-Current mirror status: implemented by directly calling original `Hook.ModifyHpLost`. These hooks change unblocked HP loss after block has been removed.
+Current mirror status: the BeforeOsty phase still calls original `Hook.ModifyHpLost`. The simulator mirrors both
+AfterOsty listener passes so exact registered consumers can read prediction state while all other listeners continue
+through their original read-only methods.
 
 ### ModifyHpLostBeforeOstyLate listeners
 
@@ -112,14 +117,14 @@ Current mirror status: implemented by directly calling original `Hook.ModifyHpLo
 | --- | --- | --- | --- |
 | `BeatingRemnant` | 律动残余 | Caps owner's per-turn HP loss while combat is in progress. | Implemented by original hook; post-hit per-turn counter update is covered in `damage-hooks.md`. |
 | `IntangiblePower` | 无实体 | Caps owner's HP loss to 1 while combat is in progress. | Implemented by original hook. |
-| `SlipperyPower` | 滑溜 | Caps owner's HP loss to 1. | Implemented by original hook; post-hit decrement is covered in `damage-hooks.md`. |
+| `SlipperyPower` | 滑溜 | Caps owner's HP loss to 1. | Implemented by a prediction-aware adapter that stops applying the cap after the shadow amount reaches zero. |
 | `TungstenRod` | 钨合金棍 | Reduces owner's HP loss by configured amount. | Implemented by original hook. |
 
 ### ModifyHpLostAfterOstyLate listeners
 
 | Model | 中文名 | Original effect | Current mirror status |
 | --- | --- | --- | --- |
-| `BufferPower` | 缓冲 | Sets owner's HP loss to 0. | Implemented by original hook, but missing after hook means repeated simulated hits can reuse the same live Buffer stack. |
+| `BufferPower` | 缓冲 | Sets owner's HP loss to 0. | Implemented by a prediction-aware late adapter that stops applying after the shadow amount reaches zero. |
 | `TheBoot` | 发条靴 | Raises owner's powered unblocked attack damage below threshold to minimum damage. | Implemented by original hook. |
 
 ## ModifyUnblockedDamageTarget listeners
@@ -132,7 +137,9 @@ Current mirror status: implemented by directly calling original `Hook.ModifyUnbl
 
 ## AfterModifying listeners
 
-Current mirror status: `AfterModifyingHpLostAfterOsty` is dispatched only to the modifier list returned by the original value hook. Reviewed vanilla flash-only listeners are ignored. `BufferPower` is marked risky because the simulator cannot shadow-decrement the live power stack without changing what the next original `ModifyHpLostAfterOstyLate` call reads.
+Current mirror status: `AfterModifyingHpLostAfterOsty` is dispatched only to the modifier list returned by the
+mirrored value hook. Reviewed vanilla flash-only listeners are ignored. `BufferPower` decrements the same shadow
+amount read by its late value-hook adapter.
 
 ### AfterModifyingDamageAmount listeners
 
@@ -153,7 +160,7 @@ Current mirror status: `AfterModifyingHpLostAfterOsty` is dispatched only to the
 | Model | 中文名 | Original effect | Current impact |
 | --- | --- | --- | --- |
 | `BeatingRemnant` | 律动残余 | Flash only. | Ignored by `DamageModifiersHook`; damage-received state is marked risky in `AfterDamageReceivedMirrors`. |
-| `BufferPower` | 缓冲 | Decrements Buffer after it prevents HP loss. | Marked risky when returned as a modifier. Prediction can diverge on multiple simulated hits because the live Buffer amount is not shadow-decremented. |
+| `BufferPower` | 缓冲 | Decrements Buffer after it prevents HP loss. | Implemented with prediction-local amount decrement; later simulated hits stop consuming Buffer after the live number of stacks. |
 | `IntangiblePower` | 无实体 | Flash only. | Ignored by `DamageModifiersHook`. |
 | `TheBoot` | 发条靴 | Flash only. | Ignored by `DamageModifiersHook`. |
 | `TungstenRod` | 钨合金棍 | Flash only. | Ignored by `DamageModifiersHook`. |
@@ -165,10 +172,14 @@ Current mirror status: `AfterModifyingHpLostAfterOsty` is dispatched only to the
 - StS2 v0.109.0 deleted `DiamondDiademPower`; `DiamondDiadem` no longer contributes a
   multiplicative damage listener.
 - Damage modifiers normally call the original read-only listener methods. The multiplicative hook mirror has exact
-  registrations only for `PenNib`, `SlowPower`, and `SurroundedPower`, so chained simulated card plays read shadow
-  state without treating every other listener as an unsupported mirror; history-dependent `LethalityPower` and
-  `PhantomBladesPower` still read live history.
-- Missing shadow state for `BufferPower` is the only currently known `AfterModifying*` hook with immediate prediction-relevant state; it is surfaced as risk instead of silently diverging.
+  registrations only for `FlutterPower`, `PenNib`, `SlowPower`, and `SurroundedPower`, so chained simulation reads
+  their shadow state without treating every other listener as an unsupported mirror; history-dependent
+  `LethalityPower` and `PhantomBladesPower` still read live history.
+- `SlipperyPower`, `BufferPower`, and `FlutterPower` use the same shared shadow-amount state from their side-effect
+  and value-hook mirrors. This models gameplay-relevant power removal without mutating the live power collection;
+  `FlutterPower`'s resulting monster stun remains outside the current player-turn prediction scope.
+- The shadow decrement does not yet mirror the full vanilla `PowerCmd.ModifyAmount` lifecycle, including power-amount
+  hooks and removal callbacks.
 
 ## Mock model list
 

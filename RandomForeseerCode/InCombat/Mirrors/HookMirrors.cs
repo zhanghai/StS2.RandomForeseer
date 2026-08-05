@@ -516,6 +516,52 @@ internal static class HookMirrors
         return Math.Max(0, Math.Min(damage, cap));
     }
 
+    /// <summary>
+    /// Mirrors the AfterOsty phase of <see cref="Hook.ModifyHpLost"/>.
+    /// </summary>
+    public static decimal ModifyHpLostAfterOsty(
+        CombatPredictionSimulator simulator,
+        Creature target,
+        decimal amount,
+        ValueProp props,
+        Creature? dealer,
+        PredictedCard? cardSource,
+        out List<AbstractModel> modifiers)
+    {
+        var context = new ModifyHpLostAfterOstyMirrorContext
+        {
+            Simulator = simulator,
+            Target = target,
+            Amount = amount,
+            Props = props,
+            Dealer = dealer,
+            CardSource = cardSource
+        };
+        modifiers = [];
+
+        foreach (var listener in context.RunState.IterateHookListeners(context.CombatState))
+        {
+            var previousAmount = context.Amount;
+            context.Amount = ModifyHpLostAfterOstyMirrors.Invoke(listener, context);
+            if (decimal.Truncate(previousAmount) != decimal.Truncate(context.Amount))
+            {
+                modifiers.Add(listener);
+            }
+        }
+
+        foreach (var listener in context.RunState.IterateHookListeners(context.CombatState))
+        {
+            var previousAmount = context.Amount;
+            context.Amount = ModifyHpLostAfterOstyMirrors.InvokeLate(listener, context);
+            if (decimal.Truncate(previousAmount) != decimal.Truncate(context.Amount))
+            {
+                modifiers.Add(listener);
+            }
+        }
+
+        return context.Amount;
+    }
+
     // Mirrors Hook.AfterDamageGiven.
     public static void AfterDamageGiven(
         CombatPredictionSimulator simulator,

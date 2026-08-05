@@ -68,7 +68,7 @@ Damage hooks use the current player-turn prediction scope from `overview.md`: on
 | `CurlUpPower` | 蜷身 | Records the powered attack card, then grants block/removes self later in `AfterCardPlayed`. | Records the exact shadow source here; the card-play hook later grants block and consumes the shadow listener in vanilla order. Curled state only affects later monster moves. |
 | `SelfFormingClay` | 自成型黏土 | On owner HP loss, applies next-turn block power. | Ignored by current-turn scope: the block is gained next turn. |
 | `FlameBarrierPower` | 火焰屏障 | When owner is attacked, damages dealer. | Implemented with simulator `Damage`. |
-| `FlutterPower` | 振翅 | On powered HP loss, decrements/removes mitigation power. | Marked risky when powered owner HP loss occurs. Power mutation/removal and stun unsupported. |
+| `FlutterPower` | 振翅 | On powered HP loss, decrements/removes mitigation power. | Implemented for current-turn prediction. The mirror decrements a shadow amount, and the multiplicative damage adapter stops applying mitigation after it reaches zero. Monster stun/state changes remain intentionally outside the current scope. |
 | `InfernoPower` | 狱火 | During owner's turn, HP loss triggers all-enemy damage. | Implemented with simulator `Damage` against current shadow hittable enemies. |
 | `HardenedShellPower` | 硬化外壳 | Tracks non-fully-blocked hits for later HP-loss cap/status. | Marked risky when owner is not fully blocked. Original value hook reads live internal state, so a state-store-only mirror would not affect later cap checks. |
 | `PersonalHivePower` | 人体蜂房 | On powered damage, adds Dazed cards to dealer draw pile. | Implemented by generating Dazed previews and inserting them into the simulated draw pile with cloned Shuffle RNG. |
@@ -79,7 +79,7 @@ Damage hooks use the current player-turn prediction scope from `overview.md`: on
 | `DemonTongue` | 恶魔之舌 | Once per turn, owner HP loss heals owner. | Implemented with simulator `Heal` and a prediction-local triggered-this-turn flag. |
 | `BeatingRemnant` | 律动残余 | Tracks per-turn HP loss cap/status. | Marked risky when owner is targeted. Original value hook reads live per-turn state, so chained simulated damage may drift. |
 | `EmotionChip` | 情感芯片 | Tracks owner HP loss for next turn orb passive behavior/status. | Ignored by current-turn scope: the orb passive trigger occurs on the next player turn. |
-| `SlipperyPower` | 滑溜 | Decrements on HP loss. | Marked risky when owner loses HP. Power mutation/removal unsupported, and later caps read live amount. |
+| `SlipperyPower` | 滑溜 | Decrements on HP loss. | Implemented. The mirror decrements a shadow amount, and the HP-loss adapter stops applying the cap after the last stack is consumed. |
 | `ShriekPower` | 尖叫 | Stuns owner when HP first decreases below threshold. | Ignored by current-turn scope: enemy stun/intent changes affect later enemy behavior. |
 | `CentennialPuzzle` | 百年积木 | First owner HP loss each combat draws cards. | Implemented with prediction-local used flag and simulator `Draw`. |
 | `SlumberPower` | 熟睡 | Decrements/wakes on HP loss. | Ignored by current-turn scope: wake/stun changes affect later enemy behavior. |
@@ -99,6 +99,8 @@ Damage hooks use the current player-turn prediction scope from `overview.md`: on
   rule are also recorded in `block-hooks.md`.
 - `AfterDamageGiven` listeners that only affect achievements, later monster behavior, or max HP state not consumed by current hover predictions are registered ignored instead of surfaced as risk.
 - The remaining post-result mirrors are surfaced as risk only when their trigger conditions can affect the current player-turn prediction surface.
+- `SlipperyPower`, `BufferPower`, and `FlutterPower` share prediction-local power amount state with their
+  downstream value-hook adapters, so chained hits consume exactly the live number of stacks without mutating powers.
 - Not implementable without architecture changes: Apply/Remove Power, summon, revive, monster move/state transitions, max HP loss, and combat removal. This includes StS2 v0.108.0 `ConcoctPower` and `UnderworldPower` until prediction owns power application.
 
 ## Mock model list
