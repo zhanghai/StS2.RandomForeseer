@@ -46,6 +46,10 @@ Current implementation coverage (excluding the Mock listener):
 
 ## Vanilla order and dispatch semantics
 
+Before the per-play-index lifecycle below, `CardModel.OnPlayWrapper` resolves and commits selected result-location and
+play-count modifiers. Their exact ordering and shadow consumption are documented in
+`card-play-result-location-hooks.md` and `card-play-count-hooks.md`.
+
 For every generated play index, `CardModel.OnPlayWrapper` does the following:
 
 1. Constructs a new `CardPlay` with the current `PlayIndex` and shared `PlayCount`.

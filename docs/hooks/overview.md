@@ -11,7 +11,7 @@
 - Consumable live powers whose later value hooks depend on amount/presence use the shared
   `PowerAmountPredictionState`; only those exact listeners are replaced by prediction-aware value-hook adapters.
   Current damage and attack consumers include `SlipperyPower`, `BufferPower`, `FlutterPower`, `VigorPower`, and
-  `GigantificationPower`.
+  `GigantificationPower`; result-location and play-count consumers are documented in their dedicated hook pages.
 - If a listener has any unmodeled prediction-relevant side effect, append an explicit `CombatPredictionRiskReason` to prediction history instead of silently ignoring it.
 - Keep Mock models out of implementation/ignore registries; list them only in docs.
 
@@ -24,7 +24,7 @@
   the full action registry: reviewed visual/no-op overrides are registered ignored, while an unknown override records
   unsupported risk because it may mutate prediction-relevant state and cannot safely run against live models.
 - `IPredictionMirrorContext<TBase>` is a dispatcher-only contract. Combat contexts explicitly map ordinary listeners to the listener, orb receivers to the shadow orb, and `CardModel.OnPlay` / `CardModel.OnTurnEndInHand` receivers to the original card rather than an optional detached preview. Typed handlers use the context's `History` alias for explicit risk reasons.
-- `HookMirrors` facades own hook-level control flow, including context construction, listener enumeration, phase refresh, short-circuiting, result chaining, and only-modifier dispatch. The registry only dispatches one listener at a time.
+- `HookMirrors` facades own hook-level control flow, including context construction, listener enumeration, phase refresh, short-circuiting, result chaining, and only-modifier dispatch. The registry only dispatches one listener at a time. Play-count after dispatch follows `Hook.AfterModifyingCardPlayCount` by starting a fresh listener pass and checking the modifier list; result-location after dispatch follows `CardModel.OnPlayWrapper` by iterating the returned modifier list directly.
 - Hook-level listener enumeration follows each vanilla facade rather than assuming every hook uses
   the guarded iterator. In particular, `AfterBlockBroken` and the two passes inside `AfterCardPlayed`
   directly iterate the combat state so a killing hit/card can still finish its listeners. The paired
@@ -54,4 +54,6 @@
 - `orb-hooks.md`
 - `shuffle-hooks.md`
 - `card-reward-hooks.md`
+- `card-play-count-hooks.md`
 - `card-play-hooks.md`
+- `card-play-result-location-hooks.md`

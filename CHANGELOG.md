@@ -15,6 +15,12 @@
 - 修复连续攻击预测在活力或超巨化层数耗尽后仍重复应用其增伤效果的问题。<br>
   Fixed chained attack predictions continuing to apply Vigor or Gigantification damage bonuses after their stacks were consumed.
 
+- 修复连续卡牌预测会重复使用弹回，或错误计算野性和怀旧返回牌堆次数的问题。<br>
+  Fixed chained card predictions reusing Rebound or miscounting Feral and Nostalgia result-pile effects.
+
+- 修复连续卡牌预测未正确消费额外打出次数效果的问题，包括爆发、复制、连环拳、信号增强、多人组队和投斧；回响形态现在也会计入预测内已打出的牌。<br>
+  Fixed chained card predictions not consuming replay effects from Burst, Duplication, One-Two Punch, Signal Boost, Tag Team, and Throwing Axe; Echo Form now also counts cards played within the prediction.
+
 - 模组设置页现在会根据卡牌、药水和回合结束预测入口正确启用战斗伤害及实验性通用卡牌预测设置。<br>
   The mod settings page now correctly enables combat damage and experimental best-effort card prediction settings based on the card, potion, and end-turn prediction entry points.
 

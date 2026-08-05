@@ -14,7 +14,7 @@ Mirror files: `InCombat/Mirrors/HookMirrors.cs` and
 | `BurningSticks` | 燃烧木棍 | Once per combat, when owner exhausts a Skill, creates a clone in hand. | Implemented. Uses preview clone and state-store once/combat flag. |
 | `CharonsAshes` | 卡戎之灰 | When owner exhausts a card, damages all hittable enemies. | Implemented with simulator `Damage`; inherits current damage post-hook gaps. |
 | `DarkEmbracePower` | 黑暗之拥 | When owner's card exhausts, draws cards; ethereal exhaust only records a delayed cleanup count. | Implemented for non-ethereal. Ethereal path is intentionally a no-op because the actual draw happens in end-turn cleanup outside this simulation path. |
-| `DrumOfBattle` | 战鼓 | When this card exhausts, gains energy based on generated play count. | Implemented for energy gain. Uses the original play-count value hook; marks risk if play-count modifiers are present because `AfterModifyingCardPlayCount` state commits are not mirrored. |
+| `DrumOfBattle` | 战鼓 | When this card exhausts, gains energy based on generated play count. | Implemented for energy gain through the prediction-aware play-count hook, including selected modifier state commits. |
 | `FeelNoPainPower` | 无惧疼痛 | When owner exhausts a card, gains block. | Implemented via `GainBlock`; matches relevant state change. |
 | `ForgottenSoul` | 遗忘之魂 | When owner exhausts a card, rolls a random target and deals damage. | Implemented with cloned `CombatTargets` and simulator `Damage`; inherits current damage post-hook gaps. |
 | `JossPaper` | 金纸 | Counts owner exhausts; at threshold draws cards. Ethereal exhaust only records a delayed cleanup count. | Implemented for non-ethereal. Ethereal path is intentionally a no-op because the actual draw happens in end-turn cleanup outside this simulation path. |
@@ -23,7 +23,8 @@ Mirror files: `InCombat/Mirrors/HookMirrors.cs` and
 
 ## Parity notes
 
-- `DrumOfBattle` applies energy gain once per predicted generated play. Play-count modifier state commits are still not mirrored and are surfaced as risk.
+- `DrumOfBattle` applies energy gain once per predicted generated play and uses the same selected-modifier commit path
+  as normal card play; details are recorded in `card-play-count-hooks.md`.
 - Ethereal exhaust delayed draws are intentionally not simulated by this draw/exhaust path, because their actual draw timing is in end-turn cleanup.
 
 ## Mock model list

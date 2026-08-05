@@ -68,19 +68,13 @@ internal static class CombatPredictedCardExtensions
     // Mirrors CardModel.GeneratePlayCount.
     public static int GeneratePlayCount(this PredictedCard card, CombatPredictionSimulator simulator, Creature? target)
     {
-        var playCount = Hook.ModifyCardPlayCount(
-            simulator.State.CombatState,
-            card.Preview,
+        var playCount = HookMirrors.ModifyCardPlayCount(
+            simulator,
+            card,
             card.Preview.GetEnchantedReplayCount() + 1,
             target,
             out var modifiers);
-        if (modifiers.Count > 0)
-        {
-            // Vanilla GeneratePlayCount would also run AfterModifyingCardPlayCount here.
-            // Those listeners can decrement/remove live powers or relic state, so prediction
-            // uses the value hook for energy amount and marks the missing state commit as risk.
-            simulator.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
-        }
+        HookMirrors.AfterModifyingCardPlayCount(simulator, card, modifiers);
         return playCount;
     }
 

@@ -16,4 +16,9 @@ internal sealed class PowerAmountPredictionState(int amount)
     {
         Amount = Math.Max(0, Amount - amount);
     }
+
+    public void Consume()
+    {
+        Amount = 0;
+    }
 }

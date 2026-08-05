@@ -395,6 +395,116 @@ internal static class HookMirrors
         return context.Cost;
     }
 
+    /// <summary>
+    /// Mirrors <see cref="Hook.ModifyCardPlayCount"/>.
+    /// </summary>
+    public static int ModifyCardPlayCount(
+        CombatPredictionSimulator simulator,
+        PredictedCard card,
+        int originalPlayCount,
+        Creature? target,
+        out List<AbstractModel> modifiers)
+    {
+        var context = new ModifyCardPlayCountMirrorContext
+        {
+            Simulator = simulator,
+            Card = card,
+            Target = target,
+            PlayCount = originalPlayCount
+        };
+        modifiers = [];
+
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            var previousPlayCount = context.PlayCount;
+            context.PlayCount = ModifyCardPlayCountMirrors.Invoke(listener, context);
+            if (context.PlayCount != previousPlayCount)
+            {
+                modifiers.Add(listener);
+            }
+        }
+
+        return context.PlayCount;
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="Hook.AfterModifyingCardPlayCount"/>.
+    /// </summary>
+    public static void AfterModifyingCardPlayCount(
+        CombatPredictionSimulator simulator,
+        PredictedCard card,
+        IReadOnlyList<AbstractModel> modifiers)
+    {
+        var context = new AfterModifyingCardPlayCountMirrorContext
+        {
+            Simulator = simulator,
+            Card = card
+        };
+
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            if (modifiers.Contains(listener))
+            {
+                ModifyCardPlayCountMirrors.InvokeAfter(listener, context);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="Hook.ModifyCardPlayResultLocation"/>.
+    /// </summary>
+    public static CardLocation ModifyCardPlayResultLocation(
+        CombatPredictionSimulator simulator,
+        PredictedCard card,
+        bool isAutoPlay,
+        ResourceInfo resources,
+        CardLocation originalLocation,
+        out List<AbstractModel> modifiers)
+    {
+        var context = new ModifyCardPlayResultLocationMirrorContext
+        {
+            Simulator = simulator,
+            Card = card,
+            IsAutoPlay = isAutoPlay,
+            Resources = resources,
+            Location = originalLocation
+        };
+        modifiers = [];
+
+        foreach (var listener in simulator.State.IterateHookListeners())
+        {
+            var previousLocation = context.Location;
+            context.Location = ModifyCardPlayResultLocationMirrors.Invoke(listener, context);
+            if (context.Location != previousLocation)
+            {
+                modifiers.Add(listener);
+            }
+        }
+
+        return context.Location;
+    }
+
+    // Vanilla Hook has no facade for this step. Mirrors CardModel.OnPlayWrapper's direct
+    // iteration over the modifier list returned by Hook.ModifyCardPlayResultLocation.
+    public static void AfterModifyingCardPlayResultLocation(
+        CombatPredictionSimulator simulator,
+        PredictedCard card,
+        CardLocation location,
+        IReadOnlyList<AbstractModel> modifiers)
+    {
+        var context = new AfterModifyingCardPlayResultLocationMirrorContext
+        {
+            Simulator = simulator,
+            Card = card,
+            Location = location
+        };
+
+        foreach (var modifier in modifiers)
+        {
+            ModifyCardPlayResultLocationMirrors.InvokeAfter(modifier, context);
+        }
+    }
+
     // Mirrors Hook.BeforeCardPlayed. Unlike the two after phases, vanilla suppresses this
     // guarded dispatch when combat was already over or ending at dispatch start.
     public static void BeforeCardPlayed(

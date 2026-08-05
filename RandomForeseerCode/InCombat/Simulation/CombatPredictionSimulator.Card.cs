@@ -193,7 +193,9 @@ internal sealed partial class CombatPredictionSimulator
         };
     }
 
-    // Mirrors CardModel.OnPlayWrapper.
+    /// <summary>
+    /// Mirrors <see cref="CardModel.OnPlayWrapper"/>.
+    /// </summary>
     private void OnPlayWrapper(
         PredictedCard card,
         Creature? target,
@@ -219,17 +221,18 @@ internal sealed partial class CombatPredictionSimulator
         }
 
         var resultLocation = CardResultLocationMirrors.GetResultLocation(this, card);
-        resultLocation = Hook.ModifyCardPlayResultLocation(
-            State.CombatState,
-            previewCard,
+        resultLocation = HookMirrors.ModifyCardPlayResultLocation(
+            this,
+            card,
             isAutoPlay,
             resources,
             resultLocation,
-            out var modifiers);
-        foreach (var modifier in modifiers)
-        {
-            // TODO: Dispatch Hook.AfterModifyingCardPlayResultLocation.
-        }
+            out var resultLocationModifiers);
+        HookMirrors.AfterModifyingCardPlayResultLocation(
+            this,
+            card,
+            resultLocation,
+            resultLocationModifiers);
 
         var playCount = card.GeneratePlayCount(this, target);
         var ownerCreature = State.GetCreature(originalOwner.Creature);
