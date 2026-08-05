@@ -85,7 +85,7 @@ internal sealed class CombatPredictionCausalTipBuilder(PredictionTraceFrame root
     private void AddGroup(CausalCause cause, CausalEffectKind effect, IEnumerable<AbstractModel> models)
     {
         CausalGroup group;
-        if (_groups is [.., var last] && last.Cause == cause && last.Effect == effect)
+        if (_groups is [.., var last] && last.IsMergeableWith(cause, effect))
         {
             group = _groups[^1];
         }
@@ -151,6 +151,15 @@ internal sealed class CombatPredictionCausalTipBuilder(PredictionTraceFrame root
         public AbstractModel Source => Cause.Source;
 
         public AbstractModel? Listener => Cause.Listener;
+
+        /// <summary>
+        /// Determines whether this group can be merged with another group. Two groups are mergeable if they share
+        /// the same source frame, listener model, and effect kind.
+        /// </summary>
+        public bool IsMergeableWith(CausalCause cause, CausalEffectKind effect)
+        {
+            return SourceFrame == cause.SourceFrame && Listener == cause.Listener && Effect == effect;
+        }
     }
 
     private readonly record struct CausalCause(
