@@ -9,6 +9,11 @@ internal sealed class PowerAmountPredictionState(int amount)
 
     public void Decrement()
     {
-        Amount = Math.Max(0, Amount - 1);
+        Decrease(1);
+    }
+
+    public void Decrease(int amount)
+    {
+        Amount = Math.Max(0, Amount - amount);
     }
 }

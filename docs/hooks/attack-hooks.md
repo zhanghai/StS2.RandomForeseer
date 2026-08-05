@@ -52,9 +52,9 @@ Per-hit `CreatureCmd.Damage` modifier and result hooks are documented in `damage
 
 | Model | 中文名 | Original effect | Current status and feasibility |
 | --- | --- | --- | --- |
-| `GigantificationPower` | 超巨化 | Records the first matching powered Attack-card command so its damage multiplier applies to every hit of that attack, then consumes one stack in `AfterAttack`. | Partially mirrored. Trigger state is tracked prediction-locally so `AfterAttack` can mark consumption risk. Damage still comes from original `ModifyDamageMultiplicative`; shadow power decrement is unsupported. |
+| `GigantificationPower` | 超巨化 | Records the first matching powered Attack-card command so its damage multiplier applies to every hit of that attack, then consumes one stack in `AfterAttack`. | Implemented. Prediction-local command and amount state feed a selective multiplicative damage adapter, preserving the bonus across every hit of the selected attack. |
 | `HellraiserPower` | 地狱狂徒 | For cards being auto-played by Hellraiser, changes attack VFX/animation settings. | Ignorable for prediction. It does not affect target, RNG, damage, block, card piles, or power state. |
-| `VigorPower` | 活力 | Records the first matching powered attack command and starting Vigor amount so all hits of that attack receive the bonus, then removes that starting amount in `AfterAttack`. | Partially mirrored. Trigger state is tracked prediction-locally so `AfterAttack` can mark consumption risk. Damage still comes from original `ModifyDamageAdditive`; shadow power decrement is unsupported. |
+| `VigorPower` | 活力 | Records the first matching powered attack command and starting Vigor amount so all hits of that attack receive the bonus, then removes that starting amount in `AfterAttack`. | Implemented. The prediction-local amount snapshot feeds a selective additive damage adapter for every hit of the selected attack. |
 
 ## ModifyAttackHitCount listeners
 
@@ -70,25 +70,25 @@ between `BeforeAttack` and the per-hit target loop.
 | --- | --- | --- | --- |
 | `BoneFlute` | 骨笛 | When Osty attacks for the relic owner, owner gains block. | Implemented with simulator `GainBlock`. |
 | `Flatten` | 重压 | When Osty attacks, this card's cost becomes 0 for the turn. | Implemented for cards present in simulator piles/previews. Live listener cards are not mutated. |
-| `GigantificationPower` | 超巨化 | Clears the recorded command and decrements one stack if this was the selected attack. | Triggered cases are marked risky. Shadow power decrement/removal is unsupported. |
+| `GigantificationPower` | 超巨化 | Clears the recorded command and decrements one stack if this was the selected attack. | Implemented by clearing the prediction-local command and decrementing its shared shadow amount. |
 | `PainfulStabsPower` | 疼痛戳刺 | If owner dealt powered unblocked attack damage to player creatures, adds `Wound` cards to each affected player's discard pile based on unblocked hit count. | Implemented by generating prediction-local `Wound` cards and inserting them into simulated discard piles. |
 | `SkittishPower` | 胆小 | Once per turn, when owner receives unblocked `Move` damage from a card attack, owner gains block. | Implemented with prediction-local per-turn trigger state initialized from live `HasGainedBlockThisTurn`, then simulator `GainBlock`. |
 | `SuckPower` | 吮吸 | For each hit where owner dealt powered unblocked attack damage, applies Strength to owner. Pet/Osty trample duplicate results are collapsed before counting. | Triggered cases are marked risky. Apply Power unsupported until shadow power application exists. |
-| `VigorPower` | 活力 | Removes the amount of Vigor that existed when the attack started. | Triggered cases are marked risky. Shadow power decrement/removal is unsupported. |
+| `VigorPower` | 活力 | Removes the amount of Vigor that existed when the attack started. | Implemented by consuming the snapshotted amount from shared shadow state, so later chained attacks no longer reuse it. |
 
 ## Current attack simulation gaps
 
 - The simulator records shadow `CreatureAttacked` entries in `CombatPredictionHistory`, but original value hooks and card model methods still read live `CombatManager.Instance.History`, not this shadow history.
 - `CalculatedDamageVar.Calculate(target)` may read live combat state. The simulator calculates the value for parity, but marks the attack source risky.
 - Reviewed vanilla `_beforeDamage` and `_afterAttackerAnim` callbacks are command-local cosmetic effects only: VFX/SFX, waits, screen shake, radial blur, hit stop, and audio-only strength fields. The simulator does not execute them and does not mark risk solely because a vanilla attack command contains these callbacks.
-- Attack-scoped power consumption requires shadow power amount/removal support or trigger-scoped risk. Until then, chained attack predictions can overuse live `VigorPower`, `GigantificationPower`, `PenNib`, and similar state.
+- `VigorPower` and `GigantificationPower` share their prediction-local attack selection with exact damage-modifier adapters and shadow amount consumption. The shadow decrement does not run the full vanilla power amount/removal lifecycle documented in `damage-modifier-hooks.md`.
 - `AttackContext` cards need a separate mirror shape. They share `BeforeAttack`/`AfterAttack`, but their hit generation is card-specific and does not pass through `AttackCommand.Execute`.
 
 ## Remaining implementation sequence
 
-1. Add shadow power amount/removal support for `VigorPower`, `GigantificationPower`, and `SuckPower`.
+1. Add shadow Apply Power support for the Strength granted by `SuckPower`.
 2. Teach history-dependent value hooks and card logic to read simulator shadow attack/card-play history where prediction chains need it.
-4. Add separate `AttackContext` mirrors for `EchoingSlash` and `Omnislice` if card-play prediction starts simulating their full attack bodies.
+3. Add separate `AttackContext` mirrors for `EchoingSlash` and `Omnislice` if card-play prediction starts simulating their full attack bodies.
 
 ## Mock model list
 

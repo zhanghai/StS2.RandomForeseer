@@ -486,12 +486,7 @@ internal static class HookMirrors
             damage *= enchantment.EnchantDamageMultiplicative(damage, props);
         }
 
-        foreach (var listener in runState.IterateHookListeners(combatState))
-        {
-            damage += listener.ModifyDamageAdditive(target, damage, props, dealer, cardModel, cardPlay);
-        }
-
-        var context = new ModifyDamageMultiplicativeMirrorContext
+        var context = new ModifyDamageMirrorContext
         {
             Simulator = simulator,
             Target = target,
@@ -504,7 +499,13 @@ internal static class HookMirrors
         foreach (var listener in runState.IterateHookListeners(combatState))
         {
             context.Amount = damage;
-            damage *= ModifyDamageMultiplicativeMirrors.Invoke(listener, context);
+            damage += ModifyDamageMirrors.InvokeAdditive(listener, context);
+        }
+
+        foreach (var listener in runState.IterateHookListeners(combatState))
+        {
+            context.Amount = damage;
+            damage *= ModifyDamageMirrors.InvokeMultiplicative(listener, context);
         }
 
         var cap = decimal.MaxValue;

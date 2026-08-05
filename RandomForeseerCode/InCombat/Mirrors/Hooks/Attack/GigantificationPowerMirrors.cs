@@ -3,7 +3,8 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Attack;
 
@@ -11,7 +12,7 @@ internal static class GigantificationPowerMirrors
 {
     public static void BeforeAttack(GigantificationPower power, BeforeAttackMirrorContext context)
     {
-        if (ShouldTrigger(power, context.Command))
+        if (context.StateStore.GetPowerAmount(power).IsActive && ShouldTrigger(power, context.Command))
         {
             GetState(power, context).CommandToModify ??= context.Command;
         }
@@ -23,8 +24,24 @@ internal static class GigantificationPowerMirrors
         if (context.Command == state.CommandToModify)
         {
             state.CommandToModify = null;
-            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+            context.StateStore.GetPowerAmount(power).Decrement();
         }
+    }
+
+    public static decimal ModifyDamageMultiplicative(
+        GigantificationPower power,
+        ModifyDamageMirrorContext context)
+    {
+        if (!context.StateStore.GetPowerAmount(power).IsActive ||
+            context.CardSource is null ||
+            context.CardSource.Preview.Owner.Creature != power.Owner ||
+            !context.Props.IsPoweredAttack())
+        {
+            return 1;
+        }
+
+        var commandToModify = GetState(power, context).CommandToModify;
+        return commandToModify is null || context.CardSource.References(commandToModify.ModelSource) ? 3 : 1;
     }
 
     private static State GetState(GigantificationPower power, CombatPredictionMirrorContext context)

@@ -1,7 +1,7 @@
 # Damage modifier hooks
 
 Mirror files: `InCombat/Mirrors/HookMirrors.cs`,
-`InCombat/Mirrors/Hooks/Damage/ModifyDamageMultiplicativeMirrors.cs`,
+`InCombat/Mirrors/Hooks/Damage/ModifyDamageMirrors.cs`,
 `InCombat/Mirrors/Hooks/Damage/ModifyHpLostAfterOstyMirrors.cs`,
 `InCombat/Mirrors/Hooks/Damage/AfterModifyingHpLostAfterOstyMirrors.cs`, and
 `InCombat/Simulation/CombatPredictionSimulator.Damage.cs`.
@@ -62,7 +62,7 @@ read-only listener methods except for the prediction-state consumers documented 
 | `StrikeDummy` | 打击木偶 | Owner Strike-tag attacks gain flat damage. | Implemented by original hook. |
 | `StrengthPower` | 力量 | Owner powered attacks gain flat damage; negative amounts reduce damage. | Implemented by original hook. |
 | `TaintedPower` | 污染 | Powered attacks against owner gain flat damage. | Implemented by original hook. |
-| `VigorPower` | 活力 | Owner's next powered attack gains flat damage, usually scoped by `BeforeAttack`/`AfterAttack`. | Implemented by original hook, but direct simulator damage does not mirror attack-command state changes. |
+| `VigorPower` | 活力 | Owner's next powered attack gains flat damage, usually scoped by `BeforeAttack`/`AfterAttack`. | Implemented by a prediction-aware additive adapter using the selected attack and shadow amount shared with the attack hooks. |
 
 ### ModifyDamageMultiplicative listeners
 
@@ -74,7 +74,7 @@ read-only listener methods except for the prediction-state consumers documented 
 | `DoubleDamagePower` | 双倍伤害 | Owner or pet powered card attacks are doubled. | Implemented by original hook. |
 | `FlankingPower` | 夹击 | Powered attacks against owner are multiplied unless dealt by applier. | Implemented by original hook. |
 | `FlutterPower` | 振翅 | Powered attacks against owner are reduced by configured percentage. | Implemented by a prediction-aware multiplier that reads the shadow stack amount consumed by `AfterDamageReceived`; post-hit stun scope is covered in `damage-hooks.md`. |
-| `GigantificationPower` | 超巨化 | Owner's powered attack card is tripled, usually scoped by `BeforeAttack`/`AfterAttack`. | Implemented by original hook, but direct simulator damage does not mirror attack-command state changes. |
+| `GigantificationPower` | 超巨化 | Owner's powered attack card is tripled, usually scoped by `BeforeAttack`/`AfterAttack`. | Implemented by a prediction-aware multiplier using the selected attack and shadow amount shared with the attack hooks. |
 | `GuardedPower` | 护卫 | Powered attacks against owner are halved. | Implemented by original hook. |
 | `HangPower` | 吊杀 | `Hang` damage against owner is multiplied by amount. | Implemented by original hook. |
 | `InterceptPower` | 拦截 | Powered attacks against owner are increased by covered-creature count. | Implemented by original hook. |
@@ -172,12 +172,14 @@ amount read by its late value-hook adapter.
 - StS2 v0.109.0 deleted `DiamondDiademPower`; `DiamondDiadem` no longer contributes a
   multiplicative damage listener.
 - Damage modifiers normally call the original read-only listener methods. The multiplicative hook mirror has exact
-  registrations only for `FlutterPower`, `PenNib`, `SlowPower`, and `SurroundedPower`, so chained simulation reads
-  their shadow state without treating every other listener as an unsupported mirror; history-dependent
+  registrations only for `FlutterPower`, `GigantificationPower`, `PenNib`, `SlowPower`, and `SurroundedPower`, while
+  the additive mirror registers only `VigorPower`. Chained simulation therefore reads their shadow state without
+  treating every other listener as an unsupported mirror; history-dependent
   `LethalityPower` and `PhantomBladesPower` still read live history.
-- `SlipperyPower`, `BufferPower`, and `FlutterPower` use the same shared shadow-amount state from their side-effect
-  and value-hook mirrors. This models gameplay-relevant power removal without mutating the live power collection;
-  `FlutterPower`'s resulting monster stun remains outside the current player-turn prediction scope.
+- `SlipperyPower`, `BufferPower`, `FlutterPower`, `VigorPower`, and `GigantificationPower` use the same shared
+  shadow-amount state from their side-effect and value-hook mirrors. This models gameplay-relevant power removal
+  without mutating the live power collection; `FlutterPower`'s resulting monster stun remains outside the current
+  player-turn prediction scope.
 - The shadow decrement does not yet mirror the full vanilla `PowerCmd.ModifyAmount` lifecycle, including power-amount
   hooks and removal callbacks.
 

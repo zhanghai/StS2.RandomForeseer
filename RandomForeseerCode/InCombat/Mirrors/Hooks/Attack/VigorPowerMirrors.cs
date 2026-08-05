@@ -2,7 +2,8 @@ using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
-using RandomForeseer.RandomForeseerCode.Common;
+using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Attack;
 
@@ -10,10 +11,15 @@ internal static class VigorPowerMirrors
 {
     public static void BeforeAttack(VigorPower power, BeforeAttackMirrorContext context)
     {
-        if (ShouldTrigger(power, context.Command))
+        var amountState = context.StateStore.GetPowerAmount(power);
+        if (amountState.IsActive && ShouldTrigger(power, context.Command))
         {
             var state = GetState(power, context);
-            state.CommandToModify ??= context.Command;
+            if (state.CommandToModify is null)
+            {
+                state.CommandToModify = context.Command;
+                state.AmountWhenAttackStarted = amountState.Amount;
+            }
         }
     }
 
@@ -22,9 +28,34 @@ internal static class VigorPowerMirrors
         var state = GetState(power, context);
         if (context.Command == state.CommandToModify)
         {
-            // Vanilla does not clear the command to modify here, which may be a bug.
-            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+            context.StateStore.GetPowerAmount(power).Decrease(state.AmountWhenAttackStarted);
+            state.CommandToModify = null;
+            state.AmountWhenAttackStarted = 0;
         }
+    }
+
+    public static decimal ModifyDamageAdditive(VigorPower power, ModifyDamageMirrorContext context)
+    {
+        var amountState = context.StateStore.GetPowerAmount(power);
+        if (!amountState.IsActive || context.Dealer != power.Owner || !context.Props.IsPoweredAttack())
+        {
+            return 0;
+        }
+
+        var commandToModify = GetState(power, context).CommandToModify;
+        if (commandToModify is not null &&
+            context.CardSource is not null &&
+            !context.CardSource.References(commandToModify.ModelSource))
+        {
+            return 0;
+        }
+
+        if (commandToModify is not null && commandToModify.Attacker != context.Dealer)
+        {
+            return 0;
+        }
+
+        return amountState.Amount;
     }
 
     private static State GetState(VigorPower power, CombatPredictionMirrorContext context)
@@ -42,5 +73,7 @@ internal static class VigorPowerMirrors
     private sealed class State
     {
         public AttackCommand? CommandToModify { get; set; }
+
+        public int AmountWhenAttackStarted { get; set; }
     }
 }

@@ -10,6 +10,8 @@
 - Use `PredictionStateStore` for model-local counters/flags instead of mutating live model fields.
 - Consumable live powers whose later value hooks depend on amount/presence use the shared
   `PowerAmountPredictionState`; only those exact listeners are replaced by prediction-aware value-hook adapters.
+  Current damage and attack consumers include `SlipperyPower`, `BufferPower`, `FlutterPower`, `VigorPower`, and
+  `GigantificationPower`.
 - If a listener has any unmodeled prediction-relevant side effect, append an explicit `CombatPredictionRiskReason` to prediction history instead of silently ignoring it.
 - Keep Mock models out of implementation/ignore registries; list them only in docs.
 

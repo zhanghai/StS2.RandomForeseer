@@ -7,16 +7,28 @@ using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Attack;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyDamageMultiplicativeMirrorContext, decimal>;
+using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyDamageMirrorContext, decimal>;
 
-// Mirrors the multiplicative listener pass inside Hook.ModifyDamage.
-internal static class ModifyDamageMultiplicativeMirrors
+// Mirrors the additive and multiplicative listener passes inside Hook.ModifyDamage.
+internal static class ModifyDamageMirrors
 {
+    private static readonly MirrorMethodSpec ModifyDamageAdditive = MirrorMethodSpec.Hook(
+        nameof(AbstractModel.ModifyDamageAdditive),
+        [
+            typeof(Creature),
+            typeof(decimal),
+            typeof(ValueProp),
+            typeof(Creature),
+            typeof(CardModel),
+            typeof(CardPlay)
+        ]);
+
     private static readonly MirrorMethodSpec ModifyDamageMultiplicative = MirrorMethodSpec.Hook(
         nameof(AbstractModel.ModifyDamageMultiplicative),
         [
@@ -28,16 +40,35 @@ internal static class ModifyDamageMultiplicativeMirrors
             typeof(CardPlay)
         ]);
 
-    private static readonly Registry Registry = CreateRegistry();
+    private static readonly Registry AdditiveRegistry = CreateAdditiveRegistry();
+    private static readonly Registry MultiplicativeRegistry = CreateMultiplicativeRegistry();
 
-    public static decimal Invoke(AbstractModel listener, ModifyDamageMultiplicativeMirrorContext context)
+    public static decimal InvokeAdditive(AbstractModel listener, ModifyDamageMirrorContext context)
     {
-        return Registry.TryInvokeRegistered(listener, context, out var result)
+        return AdditiveRegistry.TryInvokeRegistered(listener, context, out var result)
             ? result.Value
-            : InvokeOriginal(listener, context);
+            : InvokeOriginalAdditive(listener, context);
     }
 
-    private static decimal InvokeOriginal(AbstractModel listener, ModifyDamageMultiplicativeMirrorContext context)
+    public static decimal InvokeMultiplicative(AbstractModel listener, ModifyDamageMirrorContext context)
+    {
+        return MultiplicativeRegistry.TryInvokeRegistered(listener, context, out var result)
+            ? result.Value
+            : InvokeOriginalMultiplicative(listener, context);
+    }
+
+    private static decimal InvokeOriginalAdditive(AbstractModel listener, ModifyDamageMirrorContext context)
+    {
+        return listener.ModifyDamageAdditive(
+            context.Target,
+            context.Amount,
+            context.Props,
+            context.Dealer,
+            context.CardSource?.Preview,
+            context.CardPlay);
+    }
+
+    private static decimal InvokeOriginalMultiplicative(AbstractModel listener, ModifyDamageMirrorContext context)
     {
         return listener.ModifyDamageMultiplicative(
             context.Target,
@@ -48,11 +79,21 @@ internal static class ModifyDamageMultiplicativeMirrors
             context.CardPlay);
     }
 
-    private static Registry CreateRegistry()
+    private static Registry CreateAdditiveRegistry()
+    {
+        var registry = new Registry(ModifyDamageAdditive);
+
+        registry.Register<VigorPower>(VigorPowerMirrors.ModifyDamageAdditive);
+
+        return registry;
+    }
+
+    private static Registry CreateMultiplicativeRegistry()
     {
         var registry = new Registry(ModifyDamageMultiplicative);
 
         registry.Register<FlutterPower>(HandleFlutterPower);
+        registry.Register<GigantificationPower>(GigantificationPowerMirrors.ModifyDamageMultiplicative);
         registry.Register<SlowPower>(HandleSlowPower);
         registry.Register<SurroundedPower>(HandleSurroundedPower);
 
@@ -61,16 +102,14 @@ internal static class ModifyDamageMultiplicativeMirrors
         return registry;
     }
 
-    private static decimal HandleFlutterPower(
-        FlutterPower power,
-        ModifyDamageMultiplicativeMirrorContext context)
+    private static decimal HandleFlutterPower(FlutterPower power, ModifyDamageMirrorContext context)
     {
         return context.StateStore.GetPowerAmount(power).IsActive
-            ? InvokeOriginal(power, context)
+            ? InvokeOriginalMultiplicative(power, context)
             : 1;
     }
 
-    private static decimal HandleSlowPower(SlowPower power, ModifyDamageMultiplicativeMirrorContext context)
+    private static decimal HandleSlowPower(SlowPower power, ModifyDamageMirrorContext context)
     {
         if (context.Target != power.Owner || !context.Props.IsPoweredAttack())
         {
@@ -82,9 +121,7 @@ internal static class ModifyDamageMultiplicativeMirrors
         return 1 + 0.1m * amount;
     }
 
-    private static decimal HandleSurroundedPower(
-        SurroundedPower power,
-        ModifyDamageMultiplicativeMirrorContext context)
+    private static decimal HandleSurroundedPower(SurroundedPower power, ModifyDamageMirrorContext context)
     {
         if (context.Dealer is null || context.Target != power.Owner)
         {
@@ -100,7 +137,7 @@ internal static class ModifyDamageMultiplicativeMirrors
         };
     }
 
-    private static decimal HandlePenNib(PenNib relic, ModifyDamageMultiplicativeMirrorContext context)
+    private static decimal HandlePenNib(PenNib relic, ModifyDamageMirrorContext context)
     {
         if (!context.Props.IsPoweredAttack() ||
             context.CardSource is null ||
@@ -123,7 +160,7 @@ internal static class ModifyDamageMultiplicativeMirrors
     }
 }
 
-internal sealed class ModifyDamageMultiplicativeMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyDamageMirrorContext : CombatPredictionMirrorContext
 {
     public required Creature? Target { get; init; }
 

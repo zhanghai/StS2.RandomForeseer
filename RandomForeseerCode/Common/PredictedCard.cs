@@ -28,7 +28,7 @@ internal sealed class PredictedCard(
         return FromGenerated(PredictionUtils.CreateCard(canonicalCard, player));
     }
 
-    public bool References(CardModel card)
+    public bool References(object? card)
     {
         return ReferenceEquals(original, card) || ReferenceEquals(preview, card);
     }
