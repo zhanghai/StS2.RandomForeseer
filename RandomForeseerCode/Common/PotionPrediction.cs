@@ -73,7 +73,7 @@ internal static class PotionPredictionHoverTipsPatch
 {
     private static void Postfix(PotionModel __instance, ref IEnumerable<IHoverTip> __result)
     {
-        if (!__instance.IsMutable || __instance.Owner == null || __instance.Owner.RunState is not RunState)
+        if (!__instance.IsMutable || __instance is not { Owner.RunState: RunState })
         {
             return;
         }

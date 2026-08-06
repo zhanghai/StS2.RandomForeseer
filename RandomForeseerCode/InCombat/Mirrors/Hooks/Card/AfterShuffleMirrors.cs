@@ -51,7 +51,7 @@ internal static class AfterShuffleMirrors
 
     private static void HandleStratagemPower(StratagemPower power, AfterShuffleMirrorContext context)
     {
-        if (power.Owner?.Player == context.Player)
+        if (power.Owner.Player == context.Player)
         {
             // Stratagem opens a combat-pile card selection and moves chosen cards to hand;
             // combat pile selection is not mirrored here.

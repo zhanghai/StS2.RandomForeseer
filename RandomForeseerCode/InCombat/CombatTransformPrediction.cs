@@ -29,7 +29,7 @@ internal static class CombatTransformPrediction
 
         var realRng = source switch
         {
-            EntropyPower entropyPower => entropyPower.Owner?.Player?.RunState.Rng.CombatCardSelection,
+            EntropyPower entropyPower => entropyPower.Owner.Player?.RunState.Rng.CombatCardSelection,
             _ => null
         };
 

@@ -34,7 +34,7 @@ internal static class ShouldDrawMirrors
 
     private static bool HandleNoDrawPower(NoDrawPower power, ShouldDrawMirrorContext context)
     {
-        if (!context.FromHandDraw && context.Player == power.Owner?.Player)
+        if (!context.FromHandDraw && context.Player == power.Owner.Player)
         {
             return false;
         }

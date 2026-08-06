@@ -27,7 +27,7 @@ internal static class CombatCardPrediction
     /// </remarks>
     public static IReadOnlyList<IHoverTip> GetHoverTips(CardModel card)
     {
-        if (!card.IsMutable)
+        if (!card.IsMutable || card is not { Owner.Creature.CombatState: not null })
         {
             return [];
         }
@@ -73,31 +73,24 @@ internal static class CombatCardPrediction
     /// <remarks>Simulation and projection exceptions are intentionally handled by the calling UI injection boundary.</remarks>
     public static CombatPredictionProjection? Predict(CardModel card, Creature? target)
     {
-        if (!card.IsMutable ||
-            card.Owner?.Creature.CombatState is not { } combatState ||
-            (!ModData.Settings.ExperimentalBestEffortCardPlayPredictionEnabled && !CardOnPlayMirrors.CanMirror(card)) ||
+        if (!ModData.Settings.ExperimentalBestEffortCardPlayPredictionEnabled && !CardOnPlayMirrors.CanMirror(card) ||
             !card.TryResolveTarget(ref target))
         {
             return null;
         }
 
-        var simulator = new CombatPredictionSimulator(combatState);
+        var simulator = new CombatPredictionSimulator(card.Owner.Creature.CombatState!);
         var predictedCard = simulator.State.FindCard(card) ?? new PredictedCard(card);
 
-        if (simulator.ManualPlay(predictedCard, target, out var frame))
-        {
-            return CombatPredictionProjector.Project(simulator.History, frame);
-        }
-
-        return null;
+        return simulator.ManualPlay(predictedCard, target, out var frame)
+            ? CombatPredictionProjector.Project(simulator.History, frame)
+            : null;
     }
 
     private static bool ShouldShowCombatPlayPrediction(CardModel card)
     {
         var settings = ModData.Settings;
-
-        if (!settings.IsPredictionEnabled || !settings.CardPlayPredictionEnabled ||
-            card.Owner?.Creature.CombatState == null)
+        if (!settings.IsPredictionEnabled || !settings.CardPlayPredictionEnabled)
         {
             return false;
         }
@@ -110,20 +103,21 @@ internal static class CombatCardPrediction
             return true;
         }
 
-        if (card.Pile is { Type: PileType.Hand })
+        if (card.Pile is not { Type: PileType.Hand })
         {
-            if (NPlayerHand.Instance is { } hand && hand.GetCardHolder(card) is { } localHolder)
-            {
-                // For the local hand UI, only show play predictions in normal play mode, not selection modes.
-                return hand.CurrentMode == NPlayerHand.Mode.Play && localHolder is NHandCardHolder;
-            }
-
-            // If no local holder exists, fall back to allowing prediction. This preserves existing
-            // behavior for non-local or integration-provided hand card views.
-            return true;
+            // Only show combat card-play predictions for cards in the player's hand.
+            return false;
         }
 
-        return false;
+        if (NPlayerHand.Instance is { } hand && hand.GetCardHolder(card) is { } localHolder)
+        {
+            // For the local hand UI, only show play predictions in normal play mode, not selection modes.
+            return hand.CurrentMode == NPlayerHand.Mode.Play && localHolder is NHandCardHolder;
+        }
+
+        // If no local holder exists, fall back to allowing prediction. This preserves existing
+        // behavior for non-local or integration-provided hand card views.
+        return true;
     }
 }
 

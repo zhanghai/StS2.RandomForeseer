@@ -113,7 +113,7 @@ internal static class AfterCardDrawnMirrors
 
     private static void HandleConfusedPower(ConfusedPower power, AfterCardDrawnMirrorContext context)
     {
-        if (context.PreviewCard.Owner == power.Owner?.Player &&
+        if (context.PreviewCard.Owner == power.Owner.Player &&
             context.PreviewCard.EnergyCost.Canonical >= 0)
         {
             SetRandomEnergyCost(context);
@@ -213,7 +213,7 @@ internal static class AfterCardDrawnMirrors
 
     private static void HandleAutomationPower(AutomationPower power, AfterCardDrawnMirrorContext context)
     {
-        if (context.PreviewCard.Owner != power.Owner?.Player)
+        if (context.PreviewCard.Owner != power.Owner.Player)
         {
             return;
         }

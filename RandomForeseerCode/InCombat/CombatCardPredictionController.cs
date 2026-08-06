@@ -83,8 +83,7 @@ internal static class CombatCardPredictionController
         var settings = ModData.Settings;
 
         if (!settings.IsPredictionEnabled || !settings.CardPlayPredictionEnabled ||
-            holder.CardModel is not { } card ||
-            card.Owner?.Creature.CombatState is null ||
+            holder.CardModel is not { Owner.Creature.CombatState: not null } card ||
             _session?.Mode > mode)
         {
             return;

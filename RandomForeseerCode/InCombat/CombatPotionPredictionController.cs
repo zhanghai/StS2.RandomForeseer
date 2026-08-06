@@ -97,8 +97,7 @@ internal static class CombatPotionPredictionController
         var settings = ModData.Settings;
 
         if (!settings.IsPredictionEnabled || !settings.PotionPredictionEnabled ||
-            holder.Potion?.Model is not { } potion ||
-            potion.Owner?.Creature.CombatState is null ||
+            holder.Potion?.Model is not { Owner.Creature.CombatState: not null } potion ||
             _session?.Mode > mode)
         {
             return;
