@@ -628,18 +628,19 @@ internal static class HookMirrors
     }
 
     /// <summary>
-    /// Mirrors the AfterOsty phase of <see cref="Hook.ModifyHpLost"/>.
+    /// Mirrors <see cref="Hook.ModifyHpLost"/>.
     /// </summary>
-    public static decimal ModifyHpLostAfterOsty(
+    public static decimal ModifyHpLost(
         CombatPredictionSimulator simulator,
         Creature target,
         decimal amount,
         ValueProp props,
         Creature? dealer,
         PredictedCard? cardSource,
+        HpLossHookPhase phases,
         out List<AbstractModel> modifiers)
     {
-        var context = new ModifyHpLostAfterOstyMirrorContext
+        var context = new ModifyHpLostMirrorContext
         {
             Simulator = simulator,
             Target = target,
@@ -650,23 +651,49 @@ internal static class HookMirrors
         };
         modifiers = [];
 
-        foreach (var listener in context.RunState.IterateHookListeners(context.CombatState))
+        if (phases.HasFlag(HpLossHookPhase.BeforeOsty))
         {
-            var previousAmount = context.Amount;
-            context.Amount = ModifyHpLostAfterOstyMirrors.Invoke(listener, context);
-            if (decimal.Truncate(previousAmount) != decimal.Truncate(context.Amount))
+            foreach (var listener in context.RunState.IterateHookListeners(context.CombatState))
             {
-                modifiers.Add(listener);
+                var previousAmount = context.Amount;
+                context.Amount = ModifyHpLostMirrors.InvokeBeforeOsty(listener, context);
+                if (decimal.Truncate(previousAmount) != decimal.Truncate(context.Amount))
+                {
+                    modifiers.Add(listener);
+                }
+            }
+
+            foreach (var listener in context.RunState.IterateHookListeners(context.CombatState))
+            {
+                var previousAmount = context.Amount;
+                context.Amount = ModifyHpLostMirrors.InvokeBeforeOstyLate(listener, context);
+                if (decimal.Truncate(previousAmount) != decimal.Truncate(context.Amount))
+                {
+                    modifiers.Add(listener);
+                }
             }
         }
 
-        foreach (var listener in context.RunState.IterateHookListeners(context.CombatState))
+        if (phases.HasFlag(HpLossHookPhase.AfterOsty))
         {
-            var previousAmount = context.Amount;
-            context.Amount = ModifyHpLostAfterOstyMirrors.InvokeLate(listener, context);
-            if (decimal.Truncate(previousAmount) != decimal.Truncate(context.Amount))
+            foreach (var listener in context.RunState.IterateHookListeners(context.CombatState))
             {
-                modifiers.Add(listener);
+                var previousAmount = context.Amount;
+                context.Amount = ModifyHpLostMirrors.InvokeAfterOsty(listener, context);
+                if (decimal.Truncate(previousAmount) != decimal.Truncate(context.Amount))
+                {
+                    modifiers.Add(listener);
+                }
+            }
+
+            foreach (var listener in context.RunState.IterateHookListeners(context.CombatState))
+            {
+                var previousAmount = context.Amount;
+                context.Amount = ModifyHpLostMirrors.InvokeAfterOstyLate(listener, context);
+                if (decimal.Truncate(previousAmount) != decimal.Truncate(context.Amount))
+                {
+                    modifiers.Add(listener);
+                }
             }
         }
 

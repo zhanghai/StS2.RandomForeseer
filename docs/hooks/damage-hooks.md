@@ -70,14 +70,14 @@ Damage hooks use the current player-turn prediction scope from `overview.md`: on
 | `FlameBarrierPower` | 火焰屏障 | When owner is attacked, damages dealer. | Implemented with simulator `Damage`. |
 | `FlutterPower` | 振翅 | On powered HP loss, decrements/removes mitigation power. | Implemented for current-turn prediction. The mirror decrements a shadow amount, and the multiplicative damage adapter stops applying mitigation after it reaches zero. Monster stun/state changes remain intentionally outside the current scope. |
 | `InfernoPower` | 狱火 | During owner's turn, HP loss triggers all-enemy damage. | Implemented with simulator `Damage` against current shadow hittable enemies. |
-| `HardenedShellPower` | 硬化外壳 | Tracks non-fully-blocked hits for later HP-loss cap/status. | Marked risky when owner is not fully blocked. Original value hook reads live internal state, so a state-store-only mirror would not affect later cap checks. |
+| `HardenedShellPower` | 硬化外壳 | Tracks non-fully-blocked hits for later HP-loss cap/status. | Implemented with a prediction-local per-turn damage counter shared with the BeforeOsty late HP-loss adapter. HP display changes remain visual-only. |
 | `PersonalHivePower` | 人体蜂房 | On powered damage, adds Dazed cards to dealer draw pile. | Implemented by generating Dazed previews and inserting them into the simulated draw pile with cloned Shuffle RNG. |
 | `PlowPower` | 横冲直撞 | Damage-received movement/stun behavior. | Ignored by current-turn scope: the stun/monster state change affects later enemy behavior. |
 | `LavaLamp` | 熔岩灯 | Marks owner took damage this combat, affecting card reward upgrades. | Ignored by current-turn scope: card reward modification happens after combat, outside combat hover prediction. |
 | `ReflectPower` | 倒映 | Reflects blocked powered attack damage to dealer. | Implemented with simulator `Damage`. |
 | `RupturePower` | 撕裂 | Owner losing HP during own turn applies or delays Strength. | Marked risky when its HP-loss condition occurs. Apply Power and delayed `AfterCardPlayed` application unsupported. |
 | `DemonTongue` | 恶魔之舌 | Once per turn, owner HP loss heals owner. | Implemented with simulator `Heal` and a prediction-local triggered-this-turn flag. |
-| `BeatingRemnant` | 律动残余 | Tracks per-turn HP loss cap/status. | Marked risky when owner is targeted. Original value hook reads live per-turn state, so chained simulated damage may drift. |
+| `BeatingRemnant` | 律动残余 | Tracks per-turn HP loss cap/status. | Implemented with a prediction-local per-turn damage counter shared with the AfterOsty HP-loss adapter. |
 | `EmotionChip` | 情感芯片 | Tracks owner HP loss for next turn orb passive behavior/status. | Ignored by current-turn scope: the orb passive trigger occurs on the next player turn. |
 | `SlipperyPower` | 滑溜 | Decrements on HP loss. | Implemented. The mirror decrements a shadow amount, and the HP-loss adapter stops applying the cap after the last stack is consumed. |
 | `ShriekPower` | 尖叫 | Stuns owner when HP first decreases below threshold. | Ignored by current-turn scope: enemy stun/intent changes affect later enemy behavior. |
@@ -101,6 +101,8 @@ Damage hooks use the current player-turn prediction scope from `overview.md`: on
 - The remaining post-result mirrors are surfaced as risk only when their trigger conditions can affect the current player-turn prediction surface.
 - `SlipperyPower`, `BufferPower`, and `FlutterPower` share prediction-local power amount state with their
   downstream value-hook adapters, so chained hits consume exactly the live number of stacks without mutating powers.
+- `HardenedShellPower` and `BeatingRemnant` similarly share prediction-local per-turn damage counters between
+  `AfterDamageReceived` and their respective HP-loss cap adapters, so later chained hits use the remaining cap.
 - Not implementable without architecture changes: Apply/Remove Power, summon, revive, monster move/state transitions, max HP loss, and combat removal. This includes StS2 v0.108.0 `ConcoctPower` and `UnderworldPower` until prediction owns power application.
 
 ## Mock model list

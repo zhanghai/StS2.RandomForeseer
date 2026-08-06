@@ -92,7 +92,6 @@ internal sealed partial class CombatPredictionSimulator
             return [];
         }
 
-        var runState = State.CombatState.RunState;
         var modifiedAmount = HookMirrors.ModifyDamage(
             this,
             originalTarget,
@@ -113,17 +112,15 @@ internal sealed partial class CombatPredictionSimulator
         var blockTargetState = State.GetCreature(blockTarget);
         var blockedDamage = blockTargetState.DamageBlock(modifiedAmount, props);
 
-        var unblockedDamage = Hook.ModifyHpLost(
-            runState,
-            State.CombatState,
+        var unblockedDamage = HookMirrors.ModifyHpLost(
+            this,
             originalTarget,
             Math.Max(modifiedAmount - blockedDamage, 0m),
             props,
             dealer,
-            cardSource?.Preview,
+            cardSource,
             HpLossHookPhase.BeforeOsty,
-            out var beforeOstyModifiers);
-        _ = beforeOstyModifiers;
+            out _);
 
         var unblockedDamageTarget = Hook.ModifyUnblockedDamageTarget(
             State.CombatState,
@@ -132,13 +129,14 @@ internal sealed partial class CombatPredictionSimulator
             props,
             dealer);
 
-        unblockedDamage = HookMirrors.ModifyHpLostAfterOsty(
+        unblockedDamage = HookMirrors.ModifyHpLost(
             this,
             unblockedDamageTarget,
             unblockedDamage,
             props,
             dealer,
             cardSource,
+            HpLossHookPhase.AfterOsty,
             out var afterOstyModifiers);
         HookMirrors.AfterModifyingHpLostAfterOsty(this, afterOstyModifiers);
 
@@ -159,13 +157,14 @@ internal sealed partial class CombatPredictionSimulator
         }
         else
         {
-            var originalTargetDamage = HookMirrors.ModifyHpLostAfterOsty(
+            var originalTargetDamage = HookMirrors.ModifyHpLost(
                 this,
                 originalTarget,
                 unblockedDamageResult.OverkillDamage,
                 props,
                 dealer,
                 cardSource,
+                HpLossHookPhase.AfterOsty,
                 out var redirectedAfterOstyModifiers);
             HookMirrors.AfterModifyingHpLostAfterOsty(this, redirectedAfterOstyModifiers);
 

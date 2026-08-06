@@ -87,10 +87,10 @@ internal static class AfterDamageReceivedMirrors
 
     private static void HandleBeatingRemnant(BeatingRemnant relic, AfterDamageReceivedMirrorContext context)
     {
-        if (context.Target == relic.Owner.Creature && context.Result.UnblockedDamage > 0)
+        if (context.Target == relic.Owner.Creature)
         {
-            // TODO: Track the amount of unblocked damage taken by the owner this turn.
-            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+            var state = context.StateStore.Get(relic, () => new BeatingRemnantPredictionState(relic));
+            state.DamageReceivedThisTurn += context.Result.UnblockedDamage;
         }
     }
 
@@ -158,10 +158,15 @@ internal static class AfterDamageReceivedMirrors
 
     private static void HandleHardenedShellPower(HardenedShellPower power, AfterDamageReceivedMirrorContext context)
     {
-        if (context.Target == power.Owner && context.Result.UnblockedDamage > 0)
+        if (context.Target == power.Owner && !context.Result.WasFullyBlocked)
         {
-            // TODO: Track the amount of unblocked damage taken by the owner this turn.
-            context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+            var state = context.StateStore.Get(power, () => new HardenedShellPredictionState(power));
+            state.DamageReceivedThisTurn += context.Result.UnblockedDamage;
+
+            if (state.DamageReceivedThisTurn >= power.Amount)
+            {
+                context.State.GetCreature(power.Owner).HpDisplay = HpDisplay.InfiniteWithNumbers;
+            }
         }
     }
 
@@ -268,4 +273,15 @@ internal sealed class CentennialPuzzlePredictionState(CentennialPuzzle relic)
 internal sealed class DemonTonguePredictionState(DemonTongue relic)
 {
     public bool TriggeredThisTurn { get; set; } = relic._triggeredThisTurn;
+}
+
+internal sealed class BeatingRemnantPredictionState(BeatingRemnant relic)
+{
+    public decimal DamageReceivedThisTurn { get; set; } = relic._damageReceivedThisTurn;
+}
+
+internal sealed class HardenedShellPredictionState(HardenedShellPower power)
+{
+    public decimal DamageReceivedThisTurn { get; set; } =
+        power.GetInternalData<HardenedShellPower.Data>().damageReceivedThisTurn;
 }

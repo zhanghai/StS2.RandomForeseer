@@ -2,7 +2,7 @@
 
 Mirror files: `InCombat/Mirrors/HookMirrors.cs`,
 `InCombat/Mirrors/Hooks/Damage/ModifyDamageMirrors.cs`,
-`InCombat/Mirrors/Hooks/Damage/ModifyHpLostAfterOstyMirrors.cs`,
+`InCombat/Mirrors/Hooks/Damage/ModifyHpLostMirrors.cs`,
 `InCombat/Mirrors/Hooks/Damage/AfterModifyingHpLostAfterOstyMirrors.cs`, and
 `InCombat/Simulation/CombatPredictionSimulator.Damage.cs`.
 
@@ -101,21 +101,21 @@ read-only listener methods except for the prediction-state consumers documented 
 
 ## ModifyHpLost listeners
 
-Current mirror status: the BeforeOsty phase still calls original `Hook.ModifyHpLost`. The simulator mirrors both
-AfterOsty listener passes so exact registered consumers can read prediction state while all other listeners continue
-through their original read-only methods.
+Current mirror status: the phase-aware `HookMirrors.ModifyHpLost` mirrors the original phase flag and all four
+BeforeOsty/AfterOsty listener passes. Exact registered consumers read prediction state while all other listeners
+continue through their original read-only methods.
 
 ### ModifyHpLostBeforeOstyLate listeners
 
 | Model | 中文名 | Original effect | Current mirror status |
 | --- | --- | --- | --- |
-| `HardenedShellPower` | 硬化外壳 | Caps owner's HP loss by remaining per-turn shell amount before Osty redirection. | Implemented by original hook; post-hit per-turn counter update is covered in `damage-hooks.md`. |
+| `HardenedShellPower` | 硬化外壳 | Caps owner's HP loss by remaining per-turn shell amount before Osty redirection. | Implemented by a prediction-aware late adapter using the per-turn damage counter shared with `AfterDamageReceived`. |
 
 ### ModifyHpLostAfterOsty listeners
 
 | Model | 中文名 | Original effect | Current mirror status |
 | --- | --- | --- | --- |
-| `BeatingRemnant` | 律动残余 | Caps owner's per-turn HP loss while combat is in progress. | Implemented by original hook; post-hit per-turn counter update is covered in `damage-hooks.md`. |
+| `BeatingRemnant` | 律动残余 | Caps owner's per-turn HP loss while combat is in progress. | Implemented by a prediction-aware adapter using the per-turn damage counter shared with `AfterDamageReceived`. |
 | `IntangiblePower` | 无实体 | Caps owner's HP loss to 1 while combat is in progress. | Implemented by original hook. |
 | `SlipperyPower` | 滑溜 | Caps owner's HP loss to 1. | Implemented by a prediction-aware adapter that stops applying the cap after the shadow amount reaches zero. |
 | `TungstenRod` | 钨合金棍 | Reduces owner's HP loss by configured amount. | Implemented by original hook. |
@@ -159,7 +159,7 @@ amount read by its late value-hook adapter.
 
 | Model | 中文名 | Original effect | Current impact |
 | --- | --- | --- | --- |
-| `BeatingRemnant` | 律动残余 | Flash only. | Ignored by `DamageModifiersHook`; damage-received state is marked risky in `AfterDamageReceivedMirrors`. |
+| `BeatingRemnant` | 律动残余 | Flash only. | Ignored; the prediction-relevant per-turn counter is mirrored in `AfterDamageReceivedMirrors`. |
 | `BufferPower` | 缓冲 | Decrements Buffer after it prevents HP loss. | Implemented with prediction-local amount decrement; later simulated hits stop consuming Buffer after the live number of stacks. |
 | `IntangiblePower` | 无实体 | Flash only. | Ignored by `DamageModifiersHook`. |
 | `TheBoot` | 发条靴 | Flash only. | Ignored by `DamageModifiersHook`. |
@@ -180,6 +180,9 @@ amount read by its late value-hook adapter.
   shadow-amount state from their side-effect and value-hook mirrors. This models gameplay-relevant power removal
   without mutating the live power collection; `FlutterPower`'s resulting monster stun remains outside the current
   player-turn prediction scope.
+- `HardenedShellPower` and `BeatingRemnant` use shared shadow per-turn damage counters initialized from their live
+  state. Their value adapters therefore apply the remaining HP-loss cap across chained damage without mutating model
+  fields; Hardened Shell's HP display update is visual-only.
 - The shadow decrement does not yet mirror the full vanilla `PowerCmd.ModifyAmount` lifecycle, including power-amount
   hooks and removal callbacks.
 

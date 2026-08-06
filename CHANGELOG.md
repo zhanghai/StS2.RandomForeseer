@@ -12,6 +12,9 @@
 - 修复多段伤害预测在滑溜、缓冲或振翅层数耗尽后仍重复应用其减伤效果的问题。<br>
   Fixed multi-hit damage predictions continuing to apply Slippery, Buffer, or Flutter mitigation after their stacks were consumed.
 
+- 修复连续伤害预测未累计硬化外壳和律动残余的本回合受伤量，导致后续生命损失上限错误的问题。<br>
+  Fixed chained damage predictions not accumulating Hardened Shell or Beating Remnant damage taken this turn, which caused incorrect HP-loss caps on later hits.
+
 - 修复连续攻击预测在活力或超巨化层数耗尽后仍重复应用其增伤效果的问题。<br>
   Fixed chained attack predictions continuing to apply Vigor or Gigantification damage bonuses after their stacks were consumed.
 
