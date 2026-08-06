@@ -5,7 +5,6 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Random;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
@@ -20,12 +19,6 @@ internal static class CombatTransformPrediction
     public static void BeginSession(NPlayerHand hand, AbstractModel? source)
     {
         _session = null;
-
-        var settings = ModData.Settings;
-        if (!settings.IsPredictionEnabled || !settings.CombatTransformPredictionEnabled)
-        {
-            return;
-        }
 
         var realRng = source switch
         {
@@ -49,16 +42,13 @@ internal static class CombatTransformPrediction
 
     public static IReadOnlyList<IHoverTip> GetCardHoverTips(CardModel card)
     {
-        if (!card.IsMutable)
+        if (_session is not { } session)
         {
             return [];
         }
 
-        var hand = NPlayerHand.Instance;
-        if (hand == null ||
-            _session is not { } session ||
-            session.Hand != hand ||
-            hand.GetCardHolder(card) == null)
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled || !settings.CombatTransformPredictionEnabled)
         {
             return [];
         }
@@ -72,6 +62,11 @@ internal static class CombatTransformPrediction
 
         public IReadOnlyList<IHoverTip> GetHoverTips(CardModel hoveredCard)
         {
+            if (Hand.GetCardHolder(hoveredCard) is null)
+            {
+                return [];
+            }
+
             return TransformPrediction.GetHoverTips(
                 hoveredCard,
                 Hand._selectedCards,
@@ -86,41 +81,32 @@ internal static class CombatTransformSelectedHoverTips
 {
     public static IReadOnlyList<IHoverTip> GetHoverTips(Control owner)
     {
-        if (owner is not NSelectedHandCardHolder { CardModel: { } card })
-        {
-            return [];
-        }
-
-        return CombatTransformPrediction.GetCardHoverTips(card);
-    }
-
-    public static void RefreshHoverTips(CardModel? card)
-    {
-        if (card == null ||
-            NPlayerHand.Instance?.GetCardHolder(card) is not { } holder ||
-            !holder._isHovered)
-        {
-            return;
-        }
-
-        NHoverTipSet.Remove(holder);
-        holder.Call(NCardHolder.MethodName.CreateHoverTips);
+        return owner is NSelectedHandCardHolder { CardModel: { } card }
+            ? CombatTransformPrediction.GetCardHoverTips(card)
+            : [];
     }
 }
 
-[HarmonyPatch(typeof(NPlayerHand), nameof(NPlayerHand.SelectCards))]
-internal static class CombatTransformPredictionSessionPatch
+[HarmonyPatch(typeof(NPlayerHand))]
+internal static class CombatTransformPredictionPlayerHandPatch
 {
-    private static void Prefix(NPlayerHand __instance, AbstractModel? source)
+    [HarmonyPatch(nameof(NPlayerHand.SelectCards))]
+    [HarmonyPrefix]
+    private static void BeginSession(NPlayerHand __instance, AbstractModel? source)
     {
         CombatTransformPrediction.BeginSession(__instance, source);
     }
-}
 
-[HarmonyPatch(typeof(NPlayerHand), "AfterCardsSelected")]
-internal static class CombatTransformPredictionSessionCleanupPatch
-{
-    private static void Prefix(NPlayerHand __instance)
+    [HarmonyPatch(nameof(NPlayerHand.AfterCardsSelected))]
+    [HarmonyPrefix]
+    private static void EndSession(NPlayerHand __instance)
+    {
+        CombatTransformPrediction.EndSession(__instance);
+    }
+
+    [HarmonyPatch(nameof(NPlayerHand._ExitTree))]
+    [HarmonyPrefix]
+    private static void CleanupSession(NPlayerHand __instance)
     {
         CombatTransformPrediction.EndSession(__instance);
     }
@@ -133,28 +119,5 @@ internal static class CombatTransformPredictionSelectedHoverTipsPatch
     private static void Postfix(NSelectedHandCardHolder __instance)
     {
         PredictionHoverTipSetHelper.EnsureHoverTipSet(__instance)?.SetAlignmentForCardHolder(__instance);
-    }
-}
-
-[HarmonyPatch(typeof(NPlayerHand), "SelectCardInSimpleMode")]
-internal static class CombatTransformPredictionSelectRefreshPatch
-{
-    private static void Prefix(NHandCardHolder holder, out CardModel? __state)
-    {
-        __state = holder.CardModel;
-    }
-
-    private static void Postfix(CardModel? __state)
-    {
-        CombatTransformSelectedHoverTips.RefreshHoverTips(__state);
-    }
-}
-
-[HarmonyPatch(typeof(NSelectedHandCardContainer), "DeselectHolder")]
-internal static class CombatTransformPredictionDeselectRefreshPatch
-{
-    private static void Postfix(NCardHolder holder)
-    {
-        CombatTransformSelectedHoverTips.RefreshHoverTips(holder.CardModel);
     }
 }
