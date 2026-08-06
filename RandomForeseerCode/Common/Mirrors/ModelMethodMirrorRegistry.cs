@@ -212,8 +212,8 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
         }
         else
         {
-            Entry.Logger.Warn(
-                $"Mirror for {method.Name} does not safely handle {type.FullName}; preview may omit that modifier.");
+            Entry.Logger.Info(
+                $"No mirror is registered for {method.Name} on {type.FullName}; preview results may be incomplete.");
             result = new(MirrorDispatchKind.Unsupported, null);
         }
 
@@ -340,8 +340,8 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(Mirror
         }
         else
         {
-            Entry.Logger.Warn(
-                $"Mirror for {method.Name} does not safely handle {type.FullName}; preview may omit that behavior.");
+            Entry.Logger.Info(
+                $"No mirror is registered for {method.Name} on {type.FullName}; preview results may be incomplete.");
             result = new(MirrorDispatchKind.Unsupported, null);
         }
 
