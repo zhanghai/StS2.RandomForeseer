@@ -4,6 +4,9 @@
 
 ### feat
 
+- 局外预测设置现在按通用、事件和遗物分组，并优化了部分设置文案。<br>
+  Out-of-combat prediction settings are now grouped into general, event, and relic categories, with improved wording for several options.
+
 - 拥有送货员时，悬浮商店中可以购买的卡牌、药水或遗物会显示购买后补货的商品。<br>
   While you have The Courier, hovering merchant cards, potions, or relics you can afford now shows the item that will restock that slot after purchase.
 

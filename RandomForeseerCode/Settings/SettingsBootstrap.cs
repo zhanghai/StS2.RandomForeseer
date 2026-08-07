@@ -42,10 +42,13 @@ internal static class SettingsBootstrap
             .WithTitle(T("page.out_of_combat_prediction.title"))
             .WithDescription(T("page.out_of_combat_prediction.description"))
             .WithSortOrder(0)
-            .AddSection("out_of_combat_prediction", section => section
-                .WithTitle(T("page.out_of_combat_prediction.title"))
+            .AddSection("out_of_combat_prediction_sources", section => section
+                .WithTitle(T("section.out_of_combat_prediction_sources.title"))
+                .WithDescription(T("section.out_of_combat_prediction_sources.description"))
+                .AddHeader("general_out_of_combat_predictions")
                 .AddToggle("deck_transform_prediction_enabled", SettingsUiBindings.DeckTransformPredictionEnabled)
-                .AddToggle("relic_pickup_prediction_enabled", SettingsUiBindings.RelicPickupPredictionEnabled)
+                .AddToggle("next_act_prediction_enabled", SettingsUiBindings.NextActPredictionEnabled)
+                .AddHeader("event_predictions")
                 .AddToggle("event_option_prediction_enabled", SettingsUiBindings.EventOptionPredictionEnabled)
                 .AddIntSlider(
                     "slippery_bridge_reroll_preview_count",
@@ -58,11 +61,12 @@ internal static class SettingsBootstrap
                     "slippery_bridge_reroll_preview_count",
                     () => SettingsUiBindings.EventOptionPredictionEnabled.Read())
                 .AddToggle("crystal_sphere_clairvoyance_enabled", SettingsUiBindings.CrystalSphereClairvoyanceEnabled)
+                .AddHeader("relic_predictions")
+                .AddToggle("relic_pickup_prediction_enabled", SettingsUiBindings.RelicPickupPredictionEnabled)
                 .AddToggle("merchant_restock_prediction_enabled", SettingsUiBindings.MerchantRestockPredictionEnabled)
                 .AddToggle("driftwood_reroll_prediction_enabled", SettingsUiBindings.DriftwoodRerollPredictionEnabled)
                 .AddToggle("paels_wing_sacrifice_prediction_enabled", SettingsUiBindings.PaelsWingSacrificePredictionEnabled)
-                .AddToggle("rest_site_prediction_enabled", SettingsUiBindings.RestSitePredictionEnabled)
-                .AddToggle("next_act_prediction_enabled", SettingsUiBindings.NextActPredictionEnabled)),
+                .AddToggle("rest_site_prediction_enabled", SettingsUiBindings.RestSitePredictionEnabled)),
             "out_of_combat_prediction");
     }
 
@@ -73,9 +77,9 @@ internal static class SettingsBootstrap
             .WithTitle(T("page.in_combat_prediction.title"))
             .WithDescription(T("page.in_combat_prediction.description"))
             .WithSortOrder(1)
-            .AddSection("prediction_sources", section => section
-                .WithTitle(T("section.prediction_sources.title"))
-                .WithDescription(T("section.prediction_sources.description"))
+            .AddSection("in_combat_prediction_sources", section => section
+                .WithTitle(T("section.in_combat_prediction_sources.title"))
+                .WithDescription(T("section.in_combat_prediction_sources.description"))
                 .AddHeader("card_and_potion_predictions")
                 .AddToggle("card_play_prediction_enabled", SettingsUiBindings.CardPlayPredictionEnabled)
                 .AddToggle("potion_prediction_enabled", SettingsUiBindings.PotionPredictionEnabled)

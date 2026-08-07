@@ -20,7 +20,8 @@ internal sealed class ModSettings
 
     // Out-of-combat prediction settings
     public bool DeckTransformPredictionEnabled { get; set; } = true;
-    public bool RelicPickupPredictionEnabled { get; set; } = true;
+    public bool NextActPredictionEnabled { get; set; } = true;
+
     public bool EventOptionPredictionEnabled { get; set; } = true;
     public int SlipperyBridgeRerollPreviewCount
     {
@@ -28,11 +29,12 @@ internal sealed class ModSettings
         set => field = Math.Clamp(value, 1, 10);
     } = 5;
     public bool CrystalSphereClairvoyanceEnabled { get; set; } = true;
+
+    public bool RelicPickupPredictionEnabled { get; set; } = true;
     public bool MerchantRestockPredictionEnabled { get; set; } = true;
     public bool DriftwoodRerollPredictionEnabled { get; set; } = true;
     public bool PaelsWingSacrificePredictionEnabled { get; set; } = true;
     public bool RestSitePredictionEnabled { get; set; } = true;
-    public bool NextActPredictionEnabled { get; set; } = true;
 
     // In-combat prediction triggers
     public bool CardPlayPredictionEnabled { get; set; } = true;

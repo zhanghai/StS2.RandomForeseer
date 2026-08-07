@@ -22,8 +22,8 @@ internal static class SettingsUiBindings
     public static IModSettingsValueBinding<bool> DeckTransformPredictionEnabled { get; } =
         Binding(s => s.DeckTransformPredictionEnabled, (s, v) => s.DeckTransformPredictionEnabled = v);
 
-    public static IModSettingsValueBinding<bool> RelicPickupPredictionEnabled { get; } =
-        Binding(s => s.RelicPickupPredictionEnabled, (s, v) => s.RelicPickupPredictionEnabled = v);
+    public static IModSettingsValueBinding<bool> NextActPredictionEnabled { get; } =
+        Binding(s => s.NextActPredictionEnabled, (s, v) => s.NextActPredictionEnabled = v);
 
     public static IModSettingsValueBinding<bool> EventOptionPredictionEnabled { get; } =
         Binding(s => s.EventOptionPredictionEnabled, (s, v) => s.EventOptionPredictionEnabled = v);
@@ -33,6 +33,9 @@ internal static class SettingsUiBindings
 
     public static IModSettingsValueBinding<bool> CrystalSphereClairvoyanceEnabled { get; } =
         Binding(s => s.CrystalSphereClairvoyanceEnabled, (s, v) => s.CrystalSphereClairvoyanceEnabled = v);
+
+    public static IModSettingsValueBinding<bool> RelicPickupPredictionEnabled { get; } =
+        Binding(s => s.RelicPickupPredictionEnabled, (s, v) => s.RelicPickupPredictionEnabled = v);
 
     public static IModSettingsValueBinding<bool> MerchantRestockPredictionEnabled { get; } =
         Binding(s => s.MerchantRestockPredictionEnabled, (s, v) => s.MerchantRestockPredictionEnabled = v);
@@ -45,9 +48,6 @@ internal static class SettingsUiBindings
 
     public static IModSettingsValueBinding<bool> RestSitePredictionEnabled { get; } =
         Binding(s => s.RestSitePredictionEnabled, (s, v) => s.RestSitePredictionEnabled = v);
-
-    public static IModSettingsValueBinding<bool> NextActPredictionEnabled { get; } =
-        Binding(s => s.NextActPredictionEnabled, (s, v) => s.NextActPredictionEnabled = v);
 
     // In-combat prediction triggers
     public static IModSettingsValueBinding<bool> CardPlayPredictionEnabled { get; } =
