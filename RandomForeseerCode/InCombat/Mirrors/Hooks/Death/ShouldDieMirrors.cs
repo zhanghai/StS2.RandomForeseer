@@ -6,7 +6,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Death;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ShouldDieMirrorContext, bool>;
+using Registry = MethodMirrorRegistry<AbstractModel, ShouldDieMirrorContext, bool>;
 
 // Mirrors Hook.ShouldDie's normal and late predicate phases.
 internal static class ShouldDieMirrors
@@ -51,7 +51,7 @@ internal static class ShouldDieMirrors
     }
 }
 
-internal sealed class ShouldDieMirrorContext : CombatPredictionMirrorContext
+internal sealed class ShouldDieMirrorContext : CombatMirrorContext
 {
     public required Creature Creature { get; init; }
 }

@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using MegaCrit.Sts2.Core.Modding;
-using MegaCrit.Sts2.Core.Models;
 
 namespace RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
@@ -38,9 +37,9 @@ internal readonly record struct MirrorDispatchResult<TResult>(MirrorDispatchKind
 /// handler may resolve instance-dependent values or skip inapplicable candidates, but it must not capture a receiver or
 /// context instance. The registry owns incomplete-risk recording for inferred invocations.
 /// </remarks>
-internal delegate Action<TBase, TContext>? ModelMethodMirrorInferer<in TBase, in TContext>(Type runtimeType, MethodInfo overrideMethod)
+internal delegate Action<TBase, TContext>? MethodMirrorInferrer<in TBase, in TContext>(Type runtimeType, MethodInfo overrideMethod)
     where TBase : class
-    where TContext : IPredictionMirrorContext<TBase>;
+    where TContext : IMethodMirrorContext<TBase>;
 
 /// <summary>
 /// Dispatches one mirrored virtual action method against the exact runtime type of one receiver.
@@ -49,24 +48,24 @@ internal delegate Action<TBase, TContext>? ModelMethodMirrorInferer<in TBase, in
 /// Invocation-wide behavior such as listener enumeration and hook ordering belongs to the facade layered over this
 /// registry. All registrations must finish before the first query or invocation because lookup results are cached.
 /// </remarks>
-internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpec method)
+internal sealed class MethodMirrorRegistry<TBase, TContext>(MirrorMethodSpec method)
     where TBase : class
-    where TContext : IPredictionMirrorContext<TBase>
+    where TContext : IMethodMirrorContext<TBase>
 {
     // All registrations must be completed before the first invocation. Registries are built during
     // static initialization and do not support runtime registration.
     private readonly Dictionary<Type, LookupResult> _registrations = [];
     private readonly Dictionary<Type, LookupResult> _lookupCache = [];
 
-    private ModelMethodMirrorInferer<TBase, TContext>? _inferer;
+    private MethodMirrorInferrer<TBase, TContext>? _inferrer;
     private bool _allowInference = true;
 
     /// <summary>
-    /// Gets or sets whether unregistered gameplay overrides may use the registered Type-level inferer.
+    /// Gets or sets whether unregistered gameplay overrides may use the registered Type-level inferrer.
     /// </summary>
     /// <remarks>
     /// Changing this policy clears only resolved Type lookups. Explicit handled and ignored registrations remain
-    /// intact, and the registered inferer remains available if inference is enabled again.
+    /// intact, and the registered inferrer remains available if inference is enabled again.
     /// </remarks>
     public bool AllowInference
     {
@@ -87,7 +86,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
         var type = typeof(TModel);
         ValidateOverride(type);
         // Exact type matching is intentional: derived models must be reviewed independently.
-        _registrations.Add(type, new(
+        _registrations.Add(type, new LookupResult(
             MirrorDispatchKind.Handled,
             (receiver, context) => handler((TModel)receiver, context)));
     }
@@ -97,19 +96,19 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
     {
         var type = typeof(TModel);
         ValidateOverride(type);
-        _registrations.Add(type, new(MirrorDispatchKind.Ignored, null));
+        _registrations.Add(type, new LookupResult(MirrorDispatchKind.Ignored, null));
     }
 
     /// <summary>
     /// Registers the single type-level fallback used to infer unregistered, gameplay-relevant overrides.
     /// </summary>
-    public void RegisterInferer(ModelMethodMirrorInferer<TBase, TContext> inferer)
+    public void RegisterInferrer(MethodMirrorInferrer<TBase, TContext> inferrer)
     {
-        ArgumentNullException.ThrowIfNull(inferer);
+        ArgumentNullException.ThrowIfNull(inferrer);
 
-        _inferer = _inferer is not null
-            ? throw new InvalidOperationException($"Mirror for {method.Name} already has a registered inferer.")
-            : inferer;
+        _inferrer = _inferrer is not null
+            ? throw new InvalidOperationException($"Mirror for {method.Name} already has a registered inferrer.")
+            : inferrer;
     }
 
     /// <summary>
@@ -157,7 +156,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
         var (kind, handler) = Lookup(receiver.GetType());
         if (kind is MirrorDispatchKind.NotOverridden or MirrorDispatchKind.Ignored)
         {
-            return new(kind);
+            return new MirrorDispatchResult(kind);
         }
 
         using (context.PushDispatchSource(receiver, method))
@@ -182,7 +181,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
                     throw new InvalidOperationException($"Unexpected mirror dispatch kind {kind}.");
             }
 
-            return new(kind);
+            return new MirrorDispatchResult(kind);
         }
     }
 
@@ -196,38 +195,29 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
 
         if (!method.TryGetOverride(type, out var overrideMethod))
         {
-            result = new(MirrorDispatchKind.NotOverridden, null);
+            result = new LookupResult(MirrorDispatchKind.NotOverridden, null);
         }
         else if (TryGetMod(overrideMethod, out var mod) && mod.manifest?.affectsGameplay is false)
         {
             Entry.Logger.Info(
                 $"Mirror for {method.Name} ignored unsupported {type.FullName} from non-gameplay mod {mod.manifest?.id}.");
-            result = new(MirrorDispatchKind.Ignored, null);
+            result = new LookupResult(MirrorDispatchKind.Ignored, null);
         }
-        else if (_allowInference && _inferer?.Invoke(type, overrideMethod) is { } inferredHandler)
+        else if (_allowInference && _inferrer?.Invoke(type, overrideMethod) is { } inferredHandler)
         {
             Entry.Logger.Info(
                 $"Mirror for {method.Name} will best-effort infer behavior for unregistered {type.FullName}.");
-            result = new(MirrorDispatchKind.Inferred, inferredHandler);
+            result = new LookupResult(MirrorDispatchKind.Inferred, inferredHandler);
         }
         else
         {
             Entry.Logger.Info(
                 $"No mirror is registered for {method.Name} on {type.FullName}; preview results may be incomplete.");
-            result = new(MirrorDispatchKind.Unsupported, null);
+            result = new LookupResult(MirrorDispatchKind.Unsupported, null);
         }
 
         _lookupCache.Add(type, result);
         return result;
-    }
-
-    private void ValidateOverride(Type type)
-    {
-        if (!method.TryGetOverride(type, out _))
-        {
-            throw new InvalidOperationException(
-                $"{type.FullName} does not override {method.BaseMethod.DeclaringType?.FullName}.{method.Name}.");
-        }
     }
 
     private static bool TryGetMod(MethodInfo overrideMethod, [NotNullWhen(true)] out Mod? mod)
@@ -244,6 +234,15 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
         return !isBaseGame && mod is not null;
     }
 
+    private void ValidateOverride(Type type)
+    {
+        if (!method.TryGetOverride(type, out _))
+        {
+            throw new InvalidOperationException(
+                $"{type.FullName} does not override {method.BaseMethod.DeclaringType?.FullName}.{method.Name}.");
+        }
+    }
+
     private readonly record struct LookupResult(
         MirrorDispatchKind Kind,
         Action<TBase, TContext>? Handler);
@@ -253,12 +252,12 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext>(MirrorMethodSpe
 /// Dispatches one mirrored virtual result method and falls back to a caller-provided value when no result is available.
 /// </summary>
 /// <remarks>
-/// This result-producing counterpart is used by methods such as <see cref="OrbModel.Evoke"/>. Registrations must finish
+/// This result-producing counterpart is used by methods that return a value. Registrations must finish
 /// before the first invocation because exact-type lookup results are cached.
 /// </remarks>
-internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(MirrorMethodSpec method)
+internal sealed class MethodMirrorRegistry<TBase, TContext, TResult>(MirrorMethodSpec method)
     where TBase : class
-    where TContext : IPredictionMirrorContext<TBase>
+    where TContext : IMethodMirrorContext<TBase>
 {
     // All registrations must be completed before the first invocation. Registries are built during
     // static initialization and do not support runtime registration.
@@ -270,7 +269,7 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(Mirror
     {
         var type = typeof(TModel);
         ValidateOverride(type);
-        _registrations.Add(type, new(
+        _registrations.Add(type, new LookupResult(
             MirrorDispatchKind.Handled,
             (receiver, context) => handler((TModel)receiver, context)));
     }
@@ -311,18 +310,18 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(Mirror
         var (kind, handler) = Lookup(receiver.GetType());
         if (kind is MirrorDispatchKind.NotOverridden or MirrorDispatchKind.Ignored)
         {
-            return new(kind, defaultResult);
+            return new MirrorDispatchResult<TResult>(kind, defaultResult);
         }
 
         using (context.PushDispatchSource(receiver, method))
         {
             if (kind is MirrorDispatchKind.Handled)
             {
-                return new(kind, handler!(receiver, context));
+                return new MirrorDispatchResult<TResult>(kind, handler!(receiver, context));
             }
 
             context.RecordMethodNotMirroredRisk();
-            return new(kind, defaultResult);
+            return new MirrorDispatchResult<TResult>(kind, defaultResult);
         }
     }
 
@@ -336,13 +335,13 @@ internal sealed class ModelMethodMirrorRegistry<TBase, TContext, TResult>(Mirror
 
         if (!method.TryGetOverride(type, out _))
         {
-            result = new(MirrorDispatchKind.NotOverridden, null);
+            result = new LookupResult(MirrorDispatchKind.NotOverridden, null);
         }
         else
         {
             Entry.Logger.Info(
                 $"No mirror is registered for {method.Name} on {type.FullName}; preview results may be incomplete.");
-            result = new(MirrorDispatchKind.Unsupported, null);
+            result = new LookupResult(MirrorDispatchKind.Unsupported, null);
         }
 
         _lookupCache.Add(type, result);

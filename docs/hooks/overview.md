@@ -19,13 +19,13 @@
 
 ## Mirror registry architecture
 
-- `Common/Mirrors/ModelMethodMirrorRegistry.cs` centralizes exact-type registration and dispatch, override detection, lookup caching, trace scoping, and unsupported-risk recording. Action registries can check for an explicit handler and optionally infer unregistered gameplay overrides; inferred dispatch records incomplete risk. Result registries require a registered handler that supplies the return value and do not support inference.
+- `Common/Mirrors/MethodMirrorRegistry.cs` centralizes exact-type registration and dispatch, override detection, lookup caching, trace scoping, and unsupported-risk recording. Action registries can check for an explicit handler and optionally infer unregistered gameplay overrides; inferred dispatch records incomplete risk. Result registries require a registered handler that supplies the return value and do not support inference.
 - Selective read-only value and predicate hook mirrors use `TryInvokeRegistered` to dispatch only exact
   prediction-state overrides. A miss does not resolve or cache an unsupported lookup and records no risk; the hook
   facade instead calls that listener's original method in the same vanilla pass. Side-effect hooks continue through
   the full action registry: reviewed visual/no-op overrides are registered ignored, while an unknown override records
   unsupported risk because it may mutate prediction-relevant state and cannot safely run against live models.
-- `IPredictionMirrorContext<TBase>` is a dispatcher-only contract. Combat contexts explicitly map ordinary listeners to the listener, orb receivers to the shadow orb, and `CardModel.OnPlay` / `CardModel.OnTurnEndInHand` receivers to the original card rather than an optional detached preview. Typed handlers use the context's `History` alias for explicit risk reasons.
+- `IMethodMirrorContext<TBase>` is a dispatcher-only contract. Combat contexts explicitly map ordinary listeners to the listener, orb receivers to the shadow orb, and `CardModel.OnPlay` / `CardModel.OnTurnEndInHand` receivers to the original card rather than an optional detached preview. Typed handlers use the context's `History` alias for explicit risk reasons.
 - `HookMirrors` facades own hook-level control flow, including context construction, listener enumeration, phase refresh, short-circuiting, result chaining, and only-modifier dispatch. The registry only dispatches one listener at a time. Play-count after dispatch follows `Hook.AfterModifyingCardPlayCount` by starting a fresh listener pass and checking the modifier list; result-location after dispatch follows `CardModel.OnPlayWrapper` by iterating the returned modifier list directly.
 - The phase-aware `HookMirrors.ModifyHpLost` follows the original facade's `HpLossHookPhase` flag and preserves the
   separate early/late listener pass for each selected BeforeOsty and AfterOsty phase.

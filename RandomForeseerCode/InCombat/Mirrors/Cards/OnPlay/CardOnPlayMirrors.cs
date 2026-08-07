@@ -7,9 +7,9 @@ using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards.OnPlay;
 
-using Registry = ModelMethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>;
+using Registry = MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>;
 
 // Simulation-facing facade and central registration index for mirrored CardModel.OnPlay behavior.
 internal static class CardOnPlayMirrors
@@ -154,7 +154,7 @@ internal static class CardOnPlayMirrors
         registry.Register<DefendNecrobinder>(GeneralCardMirrors.GeneralBlockOnPlay);
         registry.Register<DefendDefect>(GeneralCardMirrors.GeneralBlockOnPlay);
 
-        registry.RegisterInferer(CardOnPlayInferer.Infer);
+        registry.RegisterInferrer(CardOnPlayInferrer.Infer);
 
         return registry;
     }

@@ -10,7 +10,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterShuffleMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterShuffleMirrorContext>;
 
 internal static class AfterShuffleMirrors
 {
@@ -68,7 +68,7 @@ internal static class AfterShuffleMirrors
     }
 }
 
-internal sealed class AfterShuffleMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterShuffleMirrorContext : CombatMirrorContext
 {
     public required Player Player { get; init; }
 }

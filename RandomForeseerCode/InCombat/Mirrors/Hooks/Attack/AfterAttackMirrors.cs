@@ -13,7 +13,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Attack;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterAttackMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterAttackMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.AfterAttack.
 internal static class AfterAttackMirrors
@@ -135,7 +135,7 @@ internal static class AfterAttackMirrors
     }
 }
 
-internal sealed class AfterAttackMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterAttackMirrorContext : CombatMirrorContext
 {
     public required AttackCommand Command { get; init; }
 }

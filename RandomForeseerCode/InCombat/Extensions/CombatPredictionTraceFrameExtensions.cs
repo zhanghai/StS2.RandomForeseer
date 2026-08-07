@@ -2,7 +2,7 @@
 
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
-using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards.OnPlay;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Extensions;

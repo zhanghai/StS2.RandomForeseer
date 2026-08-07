@@ -7,7 +7,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Block;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterBlockGainedMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterBlockGainedMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.AfterBlockGained.
 internal static class AfterBlockGainedMirrors
@@ -89,7 +89,7 @@ internal static class AfterBlockGainedMirrors
     }
 }
 
-internal sealed class AfterBlockGainedMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterBlockGainedMirrorContext : CombatMirrorContext
 {
     public required Creature Creature { get; init; }
 

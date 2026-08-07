@@ -6,7 +6,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Orb;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterOrbChanneledMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterOrbChanneledMirrorContext>;
 
 internal static class AfterOrbChanneledMirrors
 {
@@ -48,7 +48,7 @@ internal static class AfterOrbChanneledMirrors
     }
 }
 
-internal sealed class AfterOrbChanneledMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterOrbChanneledMirrorContext : CombatMirrorContext
 {
     public required Player Player { get; init; }
 

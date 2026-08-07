@@ -5,7 +5,7 @@ using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards.OnPlay;
 
 internal static class CardGenerationCardMirrors
 {

@@ -3,7 +3,6 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Attack;
@@ -44,7 +43,7 @@ internal static class GigantificationPowerMirrors
         return commandToModify is null || context.CardSource.References(commandToModify.ModelSource) ? 3 : 1;
     }
 
-    private static State GetState(GigantificationPower power, CombatPredictionMirrorContext context)
+    private static State GetState(GigantificationPower power, CombatMirrorContext context)
     {
         return context.StateStore.Get<State>(power);
     }

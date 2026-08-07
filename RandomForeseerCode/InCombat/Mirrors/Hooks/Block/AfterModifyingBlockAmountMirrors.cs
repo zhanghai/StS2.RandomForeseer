@@ -9,7 +9,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Block;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterModifyingBlockAmountMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterModifyingBlockAmountMirrorContext>;
 
 /// <summary>
 /// Mirrors prediction-relevant commits from <see cref="Hook.AfterModifyingBlockAmount"/>.
@@ -61,7 +61,7 @@ internal static class AfterModifyingBlockAmountMirrors
     }
 }
 
-internal sealed class AfterModifyingBlockAmountMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterModifyingBlockAmountMirrorContext : CombatMirrorContext
 {
     public required decimal ModifiedBlock { get; init; }
 

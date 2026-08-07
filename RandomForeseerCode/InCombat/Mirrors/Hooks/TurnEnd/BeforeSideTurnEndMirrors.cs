@@ -16,7 +16,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.TurnEnd;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, BeforeSideTurnEndMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, BeforeSideTurnEndMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.BeforeSideTurnEnd.
 internal static class BeforeSideTurnEndMirrors
@@ -283,7 +283,7 @@ internal static class BeforeSideTurnEndMirrors
     }
 }
 
-internal sealed class BeforeSideTurnEndMirrorContext : CombatPredictionMirrorContext
+internal sealed class BeforeSideTurnEndMirrorContext : CombatMirrorContext
 {
     public required CombatSide Side { get; init; }
 

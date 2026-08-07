@@ -9,7 +9,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.TurnEnd;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterAutoPostPlayMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterAutoPostPlayMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.AfterAutoPostPlayPhaseEntered.
 internal static class AfterAutoPostPlayPhaseEnteredMirrors
@@ -86,7 +86,7 @@ internal static class AfterAutoPostPlayPhaseEnteredMirrors
     }
 }
 
-internal sealed class AfterAutoPostPlayMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterAutoPostPlayMirrorContext : CombatMirrorContext
 {
     public required Player Player { get; init; }
 }

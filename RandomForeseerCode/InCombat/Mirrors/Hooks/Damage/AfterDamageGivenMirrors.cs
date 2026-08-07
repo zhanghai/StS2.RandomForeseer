@@ -10,7 +10,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterDamageGivenMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterDamageGivenMirrorContext>;
 
 internal static class AfterDamageGivenMirrors
 {
@@ -115,7 +115,7 @@ internal static class AfterDamageGivenMirrors
     }
 }
 
-internal sealed class AfterDamageGivenMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterDamageGivenMirrorContext : CombatMirrorContext
 {
     public required Creature Target { get; init; }
 

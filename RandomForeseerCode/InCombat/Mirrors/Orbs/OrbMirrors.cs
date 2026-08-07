@@ -8,9 +8,9 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Orbs;
 
-using OrbPassiveRegistry = ModelMethodMirrorRegistry<OrbModel, OrbPassiveMirrorContext>;
-using OrbEvokeRegistry = ModelMethodMirrorRegistry<OrbModel, OrbMirrorContext, IReadOnlyList<Creature>>;
-using OrbTriggerRegistry = ModelMethodMirrorRegistry<OrbModel, OrbMirrorContext>;
+using OrbPassiveRegistry = MethodMirrorRegistry<OrbModel, OrbPassiveMirrorContext>;
+using OrbEvokeRegistry = MethodMirrorRegistry<OrbModel, OrbMirrorContext, IReadOnlyList<Creature>>;
+using OrbTriggerRegistry = MethodMirrorRegistry<OrbModel, OrbMirrorContext>;
 
 // Simulation-facing facade and central registration index for mirrored OrbModel behavior.
 internal static class OrbMirrors

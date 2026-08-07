@@ -9,7 +9,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ShouldPlayMirrorContext, bool>;
+using Registry = MethodMirrorRegistry<AbstractModel, ShouldPlayMirrorContext, bool>;
 
 // Mirrors Hook.ShouldPlay while selectively replacing listeners that read card-play state.
 internal static class ShouldPlayMirrors
@@ -66,7 +66,7 @@ internal static class ShouldPlayMirrors
     }
 }
 
-internal sealed class ShouldPlayMirrorContext : CombatPredictionMirrorContext
+internal sealed class ShouldPlayMirrorContext : CombatMirrorContext
 {
     public required PredictedCard Card { get; init; }
 

@@ -4,7 +4,7 @@ Simulation-facing hook facade: `InCombat/Mirrors/HookMirrors.cs`.
 
 Mirror files:
 
-- `InCombat/Mirrors/CombatPredictionMirrorContext.cs`
+- `InCombat/Mirrors/CombatMirrorContext.cs`
 - `InCombat/Mirrors/Hooks/TurnEnd/AfterAutoPostPlayPhaseEnteredMirrors.cs`
 - `InCombat/Mirrors/Hooks/TurnEnd/BeforeSideTurnEndMirrors.cs`
 - `InCombat/Mirrors/Hooks/TurnEnd/OrichalcumMirrors.cs`

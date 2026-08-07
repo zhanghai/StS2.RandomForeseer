@@ -13,11 +13,11 @@ using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
-using Cards = MegaCrit.Sts2.Core.Models.Cards;
+using Models = MegaCrit.Sts2.Core.Models;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterCardDrawnMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterCardDrawnMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.AfterCardDrawn.
 internal static class AfterCardDrawnMirrors
@@ -75,7 +75,7 @@ internal static class AfterCardDrawnMirrors
         registry.Register<KinglyKick>(HandleKinglyKick);
         registry.Register<KinglyPunch>(HandleKinglyPunch);
         registry.Register<AutomationPower>(HandleAutomationPower);
-        registry.Register<Cards.Void>(HandleVoid);
+        registry.Register<Models.Cards.Void>(HandleVoid);
 
         return registry;
     }
@@ -230,7 +230,7 @@ internal static class AfterCardDrawnMirrors
         state.CardsLeft = AutomationPower._baseCardsLeft;
     }
 
-    private static void HandleVoid(Cards.Void card, AfterCardDrawnMirrorContext context)
+    private static void HandleVoid(Models.Cards.Void card, AfterCardDrawnMirrorContext context)
     {
         if (context.Card.References(card))
         {
@@ -284,7 +284,7 @@ internal static class AfterCardDrawnMirrors
     }
 }
 
-internal sealed class AfterCardDrawnMirrorContext : CombatPredictionCardMirrorContext
+internal sealed class AfterCardDrawnMirrorContext : CombatCardMirrorContext
 {
     public required bool FromHandDraw { get; init; }
 }

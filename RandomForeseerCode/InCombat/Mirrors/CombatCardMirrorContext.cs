@@ -3,7 +3,7 @@ using RandomForeseer.RandomForeseerCode.Common;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
 
-internal abstract class CombatPredictionCardMirrorContext<TBase> : CombatPredictionMirrorContext<TBase>
+internal abstract class CombatCardMirrorContext<TBase> : CombatMirrorContext<TBase>
     where TBase : AbstractModel
 {
     public required PredictedCard Card { get; init; }
@@ -15,4 +15,4 @@ internal abstract class CombatPredictionCardMirrorContext<TBase> : CombatPredict
     public CardModel MutablePreviewCard => Card.MutablePreview;
 }
 
-internal abstract class CombatPredictionCardMirrorContext : CombatPredictionCardMirrorContext<AbstractModel>;
+internal abstract class CombatCardMirrorContext : CombatCardMirrorContext<AbstractModel>;

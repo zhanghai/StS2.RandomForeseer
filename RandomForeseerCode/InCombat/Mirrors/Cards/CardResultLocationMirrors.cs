@@ -6,9 +6,9 @@ using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards;
 
-using Registry = ModelMethodMirrorRegistry<CardModel, CardResultLocationMirrorContext, CardLocation>;
+using Registry = MethodMirrorRegistry<CardModel, CardResultLocationMirrorContext, CardLocation>;
 
 // Mirrors CardModel.GetResultLocationForCardPlay without calling virtual methods on detached
 // preview cards. In particular, TheBall's original override would advance the real CombatTargets RNG.
@@ -117,7 +117,7 @@ internal static class CardResultLocationMirrors
     }
 }
 
-internal sealed class CardResultLocationMirrorContext : CombatPredictionCardMirrorContext<CardModel>
+internal sealed class CardResultLocationMirrorContext : CombatCardMirrorContext<CardModel>
 {
     public required CardLocation BaseResult { get; init; }
 

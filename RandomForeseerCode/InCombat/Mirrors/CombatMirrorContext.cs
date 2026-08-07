@@ -7,7 +7,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
 
-internal abstract class CombatPredictionMirrorContext<TBase> : IPredictionMirrorContext<TBase>
+internal abstract class CombatMirrorContext<TBase> : IMethodMirrorContext<TBase>
     where TBase : AbstractModel
 {
     public required CombatPredictionSimulator Simulator { get; init; }
@@ -26,20 +26,20 @@ internal abstract class CombatPredictionMirrorContext<TBase> : IPredictionMirror
 
     protected virtual AbstractModel GetDispatchSource(TBase receiver) => receiver;
 
-    IDisposable IPredictionMirrorContext<TBase>.PushDispatchSource(TBase receiver, MirrorMethodSpec method)
+    IDisposable IMethodMirrorContext<TBase>.PushDispatchSource(TBase receiver, MirrorMethodSpec method)
     {
         return Simulator.PushMethodSource(GetDispatchSource(receiver), method);
     }
 
-    void IPredictionMirrorContext<TBase>.RecordMethodNotMirroredRisk()
+    void IMethodMirrorContext<TBase>.RecordMethodNotMirroredRisk()
     {
         History.RecordRisk(PredictionRiskReason.MethodNotMirrored);
     }
 
-    void IPredictionMirrorContext<TBase>.RecordMethodMirrorIncompleteRisk()
+    void IMethodMirrorContext<TBase>.RecordMethodMirrorIncompleteRisk()
     {
         History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
     }
 }
 
-internal abstract class CombatPredictionMirrorContext : CombatPredictionMirrorContext<AbstractModel>;
+internal abstract class CombatMirrorContext : CombatMirrorContext<AbstractModel>;

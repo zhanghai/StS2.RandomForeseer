@@ -4,7 +4,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Orb;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyOrbPassiveTriggerCountMirrorContext, int>;
+using Registry = MethodMirrorRegistry<AbstractModel, ModifyOrbPassiveTriggerCountMirrorContext, int>;
 
 internal static class ModifyOrbPassiveTriggerCountMirrors
 {
@@ -42,7 +42,7 @@ internal static class ModifyOrbPassiveTriggerCountMirrors
     }
 }
 
-internal sealed class ModifyOrbPassiveTriggerCountMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyOrbPassiveTriggerCountMirrorContext : CombatMirrorContext
 {
     public required OrbModel Orb { get; init; }
 

@@ -1,5 +1,5 @@
 using RandomForeseer.RandomForeseerCode.Data;
-using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards.OnPlay;
 using RandomForeseer.RandomForeseerCode.Settings;
 using STS2RitsuLib.Settings;
 

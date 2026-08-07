@@ -6,14 +6,13 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Attack;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyDamageMirrorContext, decimal>;
+using Registry = MethodMirrorRegistry<AbstractModel, ModifyDamageMirrorContext, decimal>;
 
 // Mirrors the additive and multiplicative listener passes inside Hook.ModifyDamage.
 internal static class ModifyDamageMirrors
@@ -160,7 +159,7 @@ internal static class ModifyDamageMirrors
     }
 }
 
-internal sealed class ModifyDamageMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyDamageMirrorContext : CombatMirrorContext
 {
     public required Creature? Target { get; init; }
 

@@ -5,13 +5,12 @@ using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyCardPlayCountMirrorContext, int>;
-using AfterRegistry = ModelMethodMirrorRegistry<AbstractModel, AfterModifyingCardPlayCountMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, ModifyCardPlayCountMirrorContext, int>;
+using AfterRegistry = MethodMirrorRegistry<AbstractModel, AfterModifyingCardPlayCountMirrorContext>;
 
 // Mirrors Hook.ModifyCardPlayCount and the selected-modifier AfterModifyingCardPlayCount dispatch.
 internal static class ModifyCardPlayCountMirrors
@@ -128,7 +127,7 @@ internal static class ModifyCardPlayCountMirrors
     }
 }
 
-internal sealed class ModifyCardPlayCountMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyCardPlayCountMirrorContext : CombatMirrorContext
 {
     public required PredictedCard Card { get; init; }
 
@@ -137,7 +136,7 @@ internal sealed class ModifyCardPlayCountMirrorContext : CombatPredictionMirrorC
     public required int PlayCount { get; set; }
 }
 
-internal sealed class AfterModifyingCardPlayCountMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterModifyingCardPlayCountMirrorContext : CombatMirrorContext
 {
     public required PredictedCard Card { get; init; }
 }

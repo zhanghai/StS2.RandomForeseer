@@ -5,7 +5,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterCardDiscardedMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterCardDiscardedMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.AfterCardDiscarded.
 internal static class AfterCardDiscardedMirrors
@@ -54,6 +54,6 @@ internal static class AfterCardDiscardedMirrors
     }
 }
 
-internal sealed class AfterCardDiscardedMirrorContext : CombatPredictionCardMirrorContext
+internal sealed class AfterCardDiscardedMirrorContext : CombatCardMirrorContext
 {
 }

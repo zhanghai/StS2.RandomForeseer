@@ -1,6 +1,6 @@
 # CardModel.OnTurnEndInHand mirror
 
-Mirror files: `InCombat/Mirrors/CardOnTurnEndInHand/` and
+Mirror files: `InCombat/Mirrors/Cards/CardOnTurnEndInHandMirrors.cs` and
 `InCombat/Simulation/CombatPredictionSimulator.EndTurn.cs`.
 
 Combat prediction never invokes the real protected virtual method. After moving a predicted card from the shadow hand

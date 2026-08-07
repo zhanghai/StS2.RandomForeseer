@@ -6,11 +6,10 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyHpLostMirrorContext, decimal>;
+using Registry = MethodMirrorRegistry<AbstractModel, ModifyHpLostMirrorContext, decimal>;
 
 /// <summary>
 /// Mirrors the four phase-specific listener passes inside <see cref="Hook.ModifyHpLost"/>.
@@ -197,7 +196,7 @@ internal static class ModifyHpLostMirrors
     }
 }
 
-internal sealed class ModifyHpLostMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyHpLostMirrorContext : CombatMirrorContext
 {
     public required Creature Target { get; init; }
 

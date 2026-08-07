@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
-using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnTurnEndInHand;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 

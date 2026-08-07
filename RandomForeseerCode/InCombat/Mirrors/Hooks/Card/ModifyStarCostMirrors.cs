@@ -8,7 +8,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyStarCostMirrorContext, decimal>;
+using Registry = MethodMirrorRegistry<AbstractModel, ModifyStarCostMirrorContext, decimal>;
 
 // Mirrors Hook.ModifyStarCost while selectively replacing listeners that read card-play state.
 internal static class ModifyStarCostMirrors
@@ -66,7 +66,7 @@ internal static class ModifyStarCostMirrors
     }
 }
 
-internal sealed class ModifyStarCostMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyStarCostMirrorContext : CombatMirrorContext
 {
     public required PredictedCard Card { get; init; }
 

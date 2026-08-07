@@ -8,11 +8,11 @@ Combat prediction never invokes the real virtual method. `CombatPredictionSimula
 
 ## Dispatch priority
 
-`CardOnPlayMirrors` uses one exact-runtime-type `ModelMethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>` with this fixed priority:
+`CardOnPlayMirrors` uses one exact-runtime-type `MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>` with this fixed priority:
 
 1. An explicitly registered exact handler is `Handled`.
 2. A reviewed non-gameplay mod override is `Ignored`.
-3. `CardOnPlayInferer` may classify an unregistered gameplay override as `Inferred`.
+3. `CardOnPlayInferrer` may classify an unregistered gameplay override as `Inferred`.
 4. Every other gameplay override is `Unsupported`.
 
 Exact handlers always win and are never combined with inferred behavior. `CanMirror` accepts only `Handled`, so the
@@ -25,14 +25,14 @@ movement, exhaust hooks and other supported lifecycle effects still run around t
 explicit registration table directly, so the default root gate does not analyze or cache unregistered types.
 
 The setting is synchronized at runtime. Disabling inference clears resolved Type lookups but preserves exact
-registrations and the registered inferer; enabling it again analyzes and caches encountered unregistered types.
+registrations and the registered inferrer; enabling it again analyzes and caches encountered unregistered types.
 Disabling it also prevents previously cached inferred handlers from running for nested card plays.
 
 ## General inference
 
-The inferer inspects original IL through RitsuLib's `GetOriginalIl()`. Async `OnPlay` methods resolve to their generated `MoveNext` body, and the returned ordered direct call targets form a Type-level classification that the registry caches with its handler. Instance values such as upgrade state, dynamic vars and selected target are resolved only when the cached handler runs.
+The inferrer inspects original IL through RitsuLib's `GetOriginalIl()`. Async `OnPlay` methods resolve to their generated `MoveNext` body, and the returned ordered direct call targets form a Type-level classification that the registry caches with its handler. Instance values such as upgrade state, dynamic vars and selected target are resolved only when the cached handler runs.
 
-The general inferer currently recognizes three direct templates:
+The general inferrer currently recognizes three direct templates:
 
 | Candidate | Recognized IL shape | Mirrored behavior |
 | --- | --- | --- |
@@ -84,7 +84,7 @@ These limits are intentional. Expanding inference should add narrowly named, off
 
 ## Maintenance
 
-Keep exact registrations in `CardOnPlayMirrors.CreateRegistry` and register the single general inferer after them. The
+Keep exact registrations in `CardOnPlayMirrors.CreateRegistry` and register the single general inferrer after them. The
 best-effort setting controls both the root prediction gate and the registry inference policy so nested plays follow the
 same rule. When adding an inferred template, match an unambiguous original command, define conservative instance-time
 parameter and target resolution, preserve call order where RitsuLib exposes it, add positive and negative offline

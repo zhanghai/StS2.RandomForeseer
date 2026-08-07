@@ -8,7 +8,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Orb;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterOrbEvokedMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterOrbEvokedMirrorContext>;
 
 internal static class AfterOrbEvokedMirrors
 {
@@ -48,7 +48,7 @@ internal static class AfterOrbEvokedMirrors
     }
 }
 
-internal sealed class AfterOrbEvokedMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterOrbEvokedMirrorContext : CombatMirrorContext
 {
     public required OrbModel Orb { get; init; }
 

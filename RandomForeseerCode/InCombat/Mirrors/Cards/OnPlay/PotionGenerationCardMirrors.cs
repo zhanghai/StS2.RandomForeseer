@@ -1,7 +1,7 @@
 using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.Models.Cards;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards.OnPlay;
 
 internal static class PotionGenerationCardMirrors
 {

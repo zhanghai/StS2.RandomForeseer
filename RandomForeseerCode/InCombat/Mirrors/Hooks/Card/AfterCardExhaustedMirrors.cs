@@ -11,7 +11,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterCardExhaustedMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterCardExhaustedMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.AfterCardExhausted.
 internal static class AfterCardExhaustedMirrors
@@ -162,7 +162,7 @@ internal sealed class JossPaperPredictionState(JossPaper relic)
     public int CardsExhausted { get; set; } = relic.CardsExhausted;
 }
 
-internal sealed class AfterCardExhaustedMirrorContext : CombatPredictionCardMirrorContext
+internal sealed class AfterCardExhaustedMirrorContext : CombatCardMirrorContext
 {
     public required bool CausedByEthereal { get; init; }
 }

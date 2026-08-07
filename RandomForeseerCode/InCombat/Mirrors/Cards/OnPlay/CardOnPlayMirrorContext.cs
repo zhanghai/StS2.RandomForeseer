@@ -4,9 +4,9 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards.OnPlay;
 
-internal sealed class CardOnPlayMirrorContext : CombatPredictionCardMirrorContext<CardModel>
+internal sealed class CardOnPlayMirrorContext : CombatCardMirrorContext<CardModel>
 {
     public required CardPlay CardPlay { get; init; }
 

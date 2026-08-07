@@ -9,7 +9,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
 
-using Registry = ModelMethodMirrorRegistry<PotionModel, PotionOnUseMirrorContext>;
+using Registry = MethodMirrorRegistry<PotionModel, PotionOnUseMirrorContext>;
 
 /// <summary>Owns exact-runtime-type dispatch for mirrored <see cref="PotionModel.OnUse"/> behavior.</summary>
 internal static class PotionOnUseMirrors

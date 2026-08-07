@@ -6,7 +6,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyShuffleOrderMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, ModifyShuffleOrderMirrorContext>;
 
 internal static class ModifyShuffleOrderMirrors
 {
@@ -39,7 +39,7 @@ internal static class ModifyShuffleOrderMirrors
     }
 }
 
-internal sealed class ModifyShuffleOrderMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyShuffleOrderMirrorContext : CombatMirrorContext
 {
     public required Player Player { get; init; }
 

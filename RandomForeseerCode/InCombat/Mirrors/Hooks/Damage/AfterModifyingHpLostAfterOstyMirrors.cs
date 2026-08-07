@@ -2,11 +2,10 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterModifyingHpLostMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterModifyingHpLostMirrorContext>;
 
 internal static class AfterModifyingHpLostAfterOstyMirrors
 {
@@ -40,6 +39,6 @@ internal static class AfterModifyingHpLostAfterOstyMirrors
     }
 }
 
-internal sealed class AfterModifyingHpLostMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterModifyingHpLostMirrorContext : CombatMirrorContext
 {
 }

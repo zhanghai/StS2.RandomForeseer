@@ -2,7 +2,6 @@ using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Attack;
@@ -58,7 +57,7 @@ internal static class VigorPowerMirrors
         return amountState.Amount;
     }
 
-    private static State GetState(VigorPower power, CombatPredictionMirrorContext context)
+    private static State GetState(VigorPower power, CombatMirrorContext context)
     {
         return context.StateStore.Get<State>(power);
     }

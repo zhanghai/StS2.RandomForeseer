@@ -11,7 +11,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Mirrors.Hooks.CardReward;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, TryModifyCardRewardOptionsMirrorContext, bool>;
+using Registry = MethodMirrorRegistry<AbstractModel, TryModifyCardRewardOptionsMirrorContext, bool>;
 
 // Mirrors the card reward result-modifier half of the original Hook.TryModifyCardRewardOptions chain:
 // first AbstractModel.TryModifyCardRewardOptions, then AbstractModel.TryModifyCardRewardOptionsLate.
@@ -295,7 +295,7 @@ internal static class TryModifyCardRewardOptionsMirrors
     }
 }
 
-internal sealed class TryModifyCardRewardOptionsMirrorContext : IPredictionMirrorContext<AbstractModel>
+internal sealed class TryModifyCardRewardOptionsMirrorContext : IMethodMirrorContext<AbstractModel>
 {
     private readonly PredictionTrace _trace = new();
 
@@ -315,19 +315,19 @@ internal sealed class TryModifyCardRewardOptionsMirrorContext : IPredictionMirro
 
     public bool HasRisk { get; private set; }
 
-    IDisposable IPredictionMirrorContext<AbstractModel>.PushDispatchSource(
+    IDisposable IMethodMirrorContext<AbstractModel>.PushDispatchSource(
         AbstractModel model,
         MirrorMethodSpec method)
     {
         return _trace.Push(model, PredictionInvocation.ForMethod(method.BaseMethod));
     }
 
-    void IPredictionMirrorContext<AbstractModel>.RecordMethodNotMirroredRisk()
+    void IMethodMirrorContext<AbstractModel>.RecordMethodNotMirroredRisk()
     {
         HasRisk = true;
     }
 
-    void IPredictionMirrorContext<AbstractModel>.RecordMethodMirrorIncompleteRisk()
+    void IMethodMirrorContext<AbstractModel>.RecordMethodMirrorIncompleteRisk()
     {
         HasRisk = true;
     }

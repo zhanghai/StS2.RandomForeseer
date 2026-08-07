@@ -9,14 +9,14 @@ using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using STS2RitsuLib.Utils.HarmonyIl;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnPlay;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards.OnPlay;
 
 using CardOnPlayAction = Action<CardModel, CardOnPlayMirrorContext>;
 
 /// <summary>
 /// Infers simple, directly invoked vanilla command templates from an unregistered <see cref="CardModel.OnPlay" />.
 /// </summary>
-internal static class CardOnPlayInferer
+internal static class CardOnPlayInferrer
 {
     public static CardOnPlayAction? Infer(Type runtimeType, MethodInfo overrideMethod)
     {

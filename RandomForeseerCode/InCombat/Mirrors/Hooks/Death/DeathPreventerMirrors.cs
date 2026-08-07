@@ -26,7 +26,7 @@ internal static class FairyInABottleMirrors
         context.Simulator.Heal(context.Creature, Math.Max(1m, context.Creature.MaxHp * 0.3m));
     }
 
-    private static State GetState(FairyInABottle potion, CombatPredictionMirrorContext context)
+    private static State GetState(FairyInABottle potion, CombatMirrorContext context)
     {
         return context.StateStore.Get<State>(potion);
     }
@@ -57,7 +57,7 @@ internal static class LizardTailMirrors
         context.Simulator.Heal(context.Creature, amount);
     }
 
-    private static State GetState(LizardTail relic, CombatPredictionMirrorContext context)
+    private static State GetState(LizardTail relic, CombatMirrorContext context)
     {
         return context.StateStore.Get(relic, () => new State(relic));
     }

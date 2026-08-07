@@ -19,7 +19,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterCardPlayedMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterCardPlayedMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.AfterCardPlayed and its late phase.
 internal static class AfterCardPlayedMirrors
@@ -780,7 +780,7 @@ internal static class AfterCardPlayedMirrors
     }
 }
 
-internal sealed class AfterCardPlayedMirrorContext : CombatPredictionCardMirrorContext
+internal sealed class AfterCardPlayedMirrorContext : CombatCardMirrorContext
 {
     public required CardPlay CardPlay { get; init; }
 }

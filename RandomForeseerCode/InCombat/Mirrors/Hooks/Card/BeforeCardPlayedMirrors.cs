@@ -8,12 +8,11 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, BeforeCardPlayedMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, BeforeCardPlayedMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.BeforeCardPlayed.
 internal static class BeforeCardPlayedMirrors
@@ -351,7 +350,7 @@ internal static class BeforeCardPlayedMirrors
     }
 }
 
-internal sealed class BeforeCardPlayedMirrorContext : CombatPredictionCardMirrorContext
+internal sealed class BeforeCardPlayedMirrorContext : CombatCardMirrorContext
 {
     public required CardPlay CardPlay { get; init; }
 }

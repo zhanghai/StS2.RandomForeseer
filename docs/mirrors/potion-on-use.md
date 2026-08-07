@@ -8,7 +8,7 @@ StS2 v0.109.0 executes `PotionModel.OnUse(PlayerChoiceContext, Creature?)` insid
 
 ## Prediction entry and dispatch
 
-`PotionOnUseMirrors` uses one `ModelMethodMirrorRegistry<PotionModel, PotionOnUseMirrorContext>` for exact-runtime-type dispatch. `CanMirror` is a read-only query; `Invoke` opens a method frame sourced by the original potion, executes a registered handler, or records `MethodNotMirrored` risk for an unsupported gameplay override.
+`PotionOnUseMirrors` uses one `MethodMirrorRegistry<PotionModel, PotionOnUseMirrorContext>` for exact-runtime-type dispatch. `CanMirror` is a read-only query; `Invoke` opens a method frame sourced by the original potion, executes a registered handler, or records `MethodNotMirrored` risk for an unsupported gameplay override.
 
 `CombatPredictionSimulator.ManualUse` mirrors only target completion, target validation, the root `PredictionActionKind.PotionUse` frame and dispatch of the `OnUse` body. It does not call the real virtual method, `OnUseWrapper`, commands or an async choice context, so it cannot remove or queue the real potion, advance real RNG, mutate real combat state or run wrapper hooks. The returned root frame is a stable identity that must be paired only with the same simulator history.
 

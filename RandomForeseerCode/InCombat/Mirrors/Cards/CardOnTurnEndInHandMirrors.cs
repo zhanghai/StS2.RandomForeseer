@@ -7,9 +7,9 @@ using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.CardOnTurnEndInHand;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards;
 
-using Registry = ModelMethodMirrorRegistry<CardModel, CardOnTurnEndInHandMirrorContext>;
+using Registry = MethodMirrorRegistry<CardModel, CardOnTurnEndInHandMirrorContext>;
 
 // Simulation-facing facade and central registration index for mirrored CardModel.OnTurnEndInHand behavior.
 internal static class CardOnTurnEndInHandMirrors
@@ -60,18 +60,33 @@ internal static class CardOnTurnEndInHandMirrors
 
     private static void HandleDamage(CardModel card, CardOnTurnEndInHandMirrorContext context)
     {
-        context.DamageOwner(card.DynamicVars.Damage.BaseValue, card.DynamicVars.Damage.Props);
+        DamageOwner(context, card.DynamicVars.Damage.BaseValue, card.DynamicVars.Damage.Props);
     }
 
     private static void HandleHpLoss(CardModel card, CardOnTurnEndInHandMirrorContext context)
     {
-        context.DamageOwner(card.DynamicVars.HpLoss.BaseValue, DamageProps.cardHpLoss);
+        DamageOwner(context, card.DynamicVars.HpLoss.BaseValue, DamageProps.cardHpLoss);
     }
 
     private static void HandleRegret(Regret card, CardOnTurnEndInHandMirrorContext context)
     {
         var previewCard = (Regret)context.MutablePreviewCard;
-        context.DamageOwner(previewCard.CardsInHand, DamageProps.cardHpLoss);
+        DamageOwner(context, previewCard.CardsInHand, DamageProps.cardHpLoss);
         previewCard.CardsInHand = 0;
     }
+
+    /// <summary>
+    /// Mirrors the shared damage behavior for turn-end-in-hand cards.
+    /// </summary>
+    private static void DamageOwner(CardOnTurnEndInHandMirrorContext context, decimal amount, ValueProp props)
+    {
+        var owner = context.PreviewCard.Owner.Creature;
+        context.Simulator.Damage([owner], amount, props, owner, context.Card, cardPlay: null);
+    }
+}
+
+internal sealed class CardOnTurnEndInHandMirrorContext : CombatCardMirrorContext<CardModel>
+{
+    // The dispatch trace belongs to the real card, not its optional detached preview.
+    protected override AbstractModel GetDispatchSource(CardModel _) => OriginalCard;
 }

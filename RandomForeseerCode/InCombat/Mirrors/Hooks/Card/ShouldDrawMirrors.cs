@@ -6,7 +6,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ShouldDrawMirrorContext, bool>;
+using Registry = MethodMirrorRegistry<AbstractModel, ShouldDrawMirrorContext, bool>;
 
 // Mirrors the prediction-relevant parts of Hook.ShouldDraw.
 internal static class ShouldDrawMirrors
@@ -55,7 +55,7 @@ internal static class ShouldDrawMirrors
     }
 }
 
-internal sealed class ShouldDrawMirrorContext : CombatPredictionMirrorContext
+internal sealed class ShouldDrawMirrorContext : CombatMirrorContext
 {
     public required Player Player { get; init; }
 

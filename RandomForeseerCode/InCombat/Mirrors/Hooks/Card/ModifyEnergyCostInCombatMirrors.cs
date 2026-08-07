@@ -4,12 +4,11 @@ using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyEnergyCostInCombatMirrorContext, decimal>;
+using Registry = MethodMirrorRegistry<AbstractModel, ModifyEnergyCostInCombatMirrorContext, decimal>;
 
 // Mirrors the early and late passes of Hook.ModifyEnergyCostInCombat.
 internal static class ModifyEnergyCostInCombatMirrors
@@ -131,7 +130,7 @@ internal static class ModifyEnergyCostInCombatMirrors
     }
 }
 
-internal sealed class ModifyEnergyCostInCombatMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyEnergyCostInCombatMirrorContext : CombatMirrorContext
 {
     public required PredictedCard Card { get; init; }
 

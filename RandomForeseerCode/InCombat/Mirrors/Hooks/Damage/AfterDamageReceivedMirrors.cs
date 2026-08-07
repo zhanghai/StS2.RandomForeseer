@@ -9,12 +9,11 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Damage;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, AfterDamageReceivedMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, AfterDamageReceivedMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.AfterDamageReceived and its late phase.
 internal static class AfterDamageReceivedMirrors
@@ -252,7 +251,7 @@ internal static class AfterDamageReceivedMirrors
     }
 }
 
-internal sealed class AfterDamageReceivedMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterDamageReceivedMirrorContext : CombatMirrorContext
 {
     public required Creature Target { get; init; }
 

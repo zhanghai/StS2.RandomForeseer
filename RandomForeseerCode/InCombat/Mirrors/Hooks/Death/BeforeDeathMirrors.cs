@@ -6,7 +6,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Death;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, BeforeDeathMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, BeforeDeathMirrorContext>;
 
 // Mirrors the prediction-relevant parts of Hook.BeforeDeath.
 internal static class BeforeDeathMirrors
@@ -35,7 +35,7 @@ internal static class BeforeDeathMirrors
     }
 }
 
-internal sealed class BeforeDeathMirrorContext : CombatPredictionMirrorContext
+internal sealed class BeforeDeathMirrorContext : CombatMirrorContext
 {
     public required Creature Creature { get; init; }
 }

@@ -4,13 +4,12 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
-using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyCardPlayResultLocationMirrorContext, CardLocation>;
-using AfterRegistry = ModelMethodMirrorRegistry<AbstractModel, AfterModifyingCardPlayResultLocationMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, ModifyCardPlayResultLocationMirrorContext, CardLocation>;
+using AfterRegistry = MethodMirrorRegistry<AbstractModel, AfterModifyingCardPlayResultLocationMirrorContext>;
 
 // Mirrors Hook.ModifyCardPlayResultLocation and CardModel.OnPlayWrapper's direct selected-modifier after dispatch.
 internal static class ModifyCardPlayResultLocationMirrors
@@ -153,7 +152,7 @@ internal static class ModifyCardPlayResultLocationMirrors
     }
 }
 
-internal sealed class ModifyCardPlayResultLocationMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyCardPlayResultLocationMirrorContext : CombatMirrorContext
 {
     public required PredictedCard Card { get; init; }
 
@@ -164,7 +163,7 @@ internal sealed class ModifyCardPlayResultLocationMirrorContext : CombatPredicti
     public required CardLocation Location { get; set; }
 }
 
-internal sealed class AfterModifyingCardPlayResultLocationMirrorContext : CombatPredictionMirrorContext
+internal sealed class AfterModifyingCardPlayResultLocationMirrorContext : CombatMirrorContext
 {
     public required PredictedCard Card { get; init; }
 

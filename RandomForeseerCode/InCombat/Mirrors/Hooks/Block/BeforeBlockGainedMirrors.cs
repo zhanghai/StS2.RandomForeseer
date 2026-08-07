@@ -6,7 +6,7 @@ using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Block;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, BeforeBlockGainedMirrorContext>;
+using Registry = MethodMirrorRegistry<AbstractModel, BeforeBlockGainedMirrorContext>;
 
 // Mirrors Hook.BeforeBlockGained.
 internal static class BeforeBlockGainedMirrors
@@ -28,7 +28,7 @@ internal static class BeforeBlockGainedMirrors
     }
 }
 
-internal sealed class BeforeBlockGainedMirrorContext : CombatPredictionMirrorContext
+internal sealed class BeforeBlockGainedMirrorContext : CombatMirrorContext
 {
     public required Creature Creature { get; init; }
 

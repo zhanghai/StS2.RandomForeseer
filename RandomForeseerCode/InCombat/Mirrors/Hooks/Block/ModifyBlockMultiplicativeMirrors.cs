@@ -10,7 +10,7 @@ using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Card;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Hooks.Block;
 
-using Registry = ModelMethodMirrorRegistry<AbstractModel, ModifyBlockMultiplicativeMirrorContext, decimal>;
+using Registry = MethodMirrorRegistry<AbstractModel, ModifyBlockMultiplicativeMirrorContext, decimal>;
 
 /// <summary>
 /// Mirrors the multiplicative listener pass inside <see cref="Hook.ModifyBlock"/>
@@ -72,7 +72,7 @@ internal static class ModifyBlockMultiplicativeMirrors
     }
 }
 
-internal sealed class ModifyBlockMultiplicativeMirrorContext : CombatPredictionMirrorContext
+internal sealed class ModifyBlockMultiplicativeMirrorContext : CombatMirrorContext
 {
     public required Creature Target { get; init; }
 
