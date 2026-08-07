@@ -4,6 +4,9 @@
 
 ### feat
 
+- 拥有送货员时，悬浮商店中可以购买的卡牌、药水或遗物会显示购买后补货的商品。<br>
+  While you have The Courier, hovering merchant cards, potions, or relics you can afford now shows the item that will restock that slot after purchase.
+
 - 战斗卡牌预测现在会按原版顺序模拟卡牌打出前后的支持钩子效果。<br>
   Combat card prediction now simulates supported before/after-play hook effects in vanilla order.
 

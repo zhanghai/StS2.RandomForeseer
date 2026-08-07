@@ -38,9 +38,11 @@ internal static class TheFutureOfPotionsPrediction
             .WithFlags(CardCreationFlags.NoRarityModification |
                 CardCreationFlags.NoCardPoolModifications |
                 CardCreationFlags.IsCardReward);
-        var cards = CardRewardPrediction.PredictCards(player, 3, options)
-            .Select(PredictionUtils.ToUpgradedCard)
-            .ToList();
+        var cards = CardRewardPrediction.PredictCards(player, 3, options);
+        foreach (var card in cards)
+        {
+            PredictionUtils.UpgradeCard(card);
+        }
 
         return [.. cards.ToPredictionHoverTips()];
     }

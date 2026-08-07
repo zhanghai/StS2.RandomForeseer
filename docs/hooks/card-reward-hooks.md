@@ -2,9 +2,10 @@
 
 Simulation-facing hook facade: `OutOfCombat/Mirrors/HookMirrors.cs`.
 
-Mirror file:
+Mirror files:
 
-- `OutOfCombat/Mirrors/Hooks/CardReward/TryModifyCardRewardOptionsMirrors.cs`
+- `OutOfCombat/Mirrors/Hooks/CardCreation/TryModifyCardRewardOptionsMirrors.cs`
+- `OutOfCombat/Mirrors/Hooks/CardCreation/CardCreationResultUtils.cs`
 
 ## Hook specs
 
@@ -81,7 +82,7 @@ No vanilla non-mock listeners were found in StS2 v0.108.0 for:
 - `ModifyCardRewardCreationOptions` listeners are delegated to the original hook because vanilla treats them as option transforms. They may mutate `CardCreationOptions`; prediction callers protect parity by passing a fresh options instance and not reusing it.
 - StS2 v0.108.0 moved `LastingCandy` from `AfterCombatEnd` / `CombatsSeen` to `BeforeCombatRewardOffered` / `CombatRewardsSeen`. Combat reward option factories must include `CardCreationFlags.IsFromCombat` for this mirror to trigger.
 - `AfterModifyingCardRewardOptions` is not called during prediction. This intentionally avoids mutating live relic state, but leaves `SilverCrucible`/`SilkenTress` usage state unshadowed across chained reward previews.
-- `OutOfCombat.Mirrors.HookMirrors` owns context construction and rebuilds the modifier sequence for the Early and Late phases. `TryModifyCardRewardOptionsMirrors` owns both exact-method registries, their handlers, and shared helpers.
+- `OutOfCombat.Mirrors.HookMirrors` owns context construction and rebuilds the modifier sequence for the Early and Late phases. `TryModifyCardRewardOptionsMirrors` owns both exact-method registries and their hook-specific gates; result upgrade/enchantment operations shared with merchant card creation live in `CardCreationResultUtils`.
 - Both registries mirror the original bool-returning model methods. The facade executes every modifier and ORs the Early/Late results without short-circuiting. Models that return true are appended to the returned modifier list in phase/invocation order, matching vanilla without deduplication. The current prediction caller explicitly discards both outputs because `AfterModifyingCardRewardOptions` is still omitted.
 - `TryModifyCardRewardAlternatives` is separate from card option generation. `PaelsWing` sacrifice prediction works from the generated button and should be maintained with the alternative UI patches rather than the card-reward result mirrors.
 - `TryModifyCardRewardOptionsMirrorContext` records whether an unsupported listener was encountered, but card-reward prediction still has no public risk projection path, so that state is not surfaced to callers.

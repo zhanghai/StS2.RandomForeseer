@@ -200,11 +200,11 @@ internal static class RelicPickupPrediction
 
     private static IReadOnlyList<IReadOnlyList<CardModel>> PredictAstrolabeBundles(Player player)
     {
-        return OutOfCombatPredictionUtils.PredictDistinctDeckTransformResultBundles(
+        var bundles = OutOfCombatPredictionUtils.PredictDistinctDeckTransformResultBundles(
             player,
             player.RunState.Rng.Niche,
-            3,
-            upgradeResults: true);
+            3);
+        return [.. bundles.Select(cards => cards.Select(PredictionUtils.CreateUpgradedCard).ToArray())];
     }
 
     private static IReadOnlyList<IReadOnlyList<CardModel>> PredictGlassEyeBundles(RunPredictionContext context)
@@ -329,10 +329,11 @@ internal static class RelicPickupPrediction
         return curses;
     }
 
-    private static void FastForwardRelicPickup(RunPredictionContext context, RelicModel relic)
+    /// <summary>
+    /// Mirrors supported immediate pickup RNG so callers can continue predicting from the state after acquisition.
+    /// </summary>
+    internal static void FastForwardRelicPickup(RunPredictionContext context, RelicModel relic)
     {
-        // Mirrors only immediate pickup RNG that can occur before NeowsBones adds curses.
-        // TODO: Streamline this with generic relic pickup prediction logic using RunPredictionContext
         switch (relic)
         {
             case ArcaneScroll:
@@ -379,6 +380,19 @@ internal static class RelicPickupPrediction
                     relic.DynamicVars.Cards.IntValue,
                     card => card.Type == CardType.Attack && card.IsUpgradable,
                     context.SharedRng.Niche);
+                break;
+            case Cauldron:
+                PredictionUtils.PredictPotionRewards(
+                    context.Player,
+                    relic.DynamicVars[Cauldron._potionsKey].IntValue,
+                    context.Rng.Rewards);
+                break;
+            case Orrery:
+                for (var i = 0; i < relic.DynamicVars.Cards.IntValue; i++)
+                {
+                    var options = OutOfCombatPredictionUtils.CreateCharacterCardRewardOptions(context.Player);
+                    CardRewardPrediction.PredictCards(context, 3, options);
+                }
                 break;
         }
     }

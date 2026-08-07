@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.Models;
@@ -14,36 +15,77 @@ internal static class PredictionUtils
         return card;
     }
 
-    public static void UpgradeCardInPlace(CardModel previewCard)
+    /// <summary>
+    /// Mirrors <see cref="CardCmd.Upgrade(CardModel, MegaCrit.Sts2.Core.Nodes.CommonUi.CardPreviewStyle)"/>.
+    /// Does nothing if the card is not upgradable.
+    /// </summary>
+    public static void UpgradeCard(CardModel card)
     {
-        if (previewCard.IsUpgradable)
+        if (!card.IsUpgradable)
         {
-            previewCard.UpgradeInternal();
-            previewCard.FinalizeUpgradeInternal();
+            return;
         }
+
+        card.UpgradeInternal();
+        card.FinalizeUpgradeInternal();
     }
 
-    public static CardModel ToUpgradedCard(CardModel card)
+    /// <summary>
+    /// Same as <see cref="UpgradeCard"/>, but returns a new upgraded card instead of modifying the original card.
+    /// Returns the original card if it is not upgradable.
+    /// </summary>
+    public static CardModel CreateUpgradedCard(CardModel card)
     {
+        if (!card.IsUpgradable)
+        {
+            return card;
+        }
+
         var previewCard = (CardModel)card.MutableClone();
-        UpgradeCardInPlace(previewCard);
+        UpgradeCard(previewCard);
         return previewCard;
     }
 
-    public static CardModel ToUpgradedCardIf(CardModel card, bool shouldUpgrade)
+    /// <summary>
+    /// Mirrors <see cref="CardCmd.Enchant(EnchantmentModel, CardModel, decimal)"/>.
+    /// Does nothing if the card cannot be enchanted by the given enchantment.
+    /// </summary>
+    public static void EnchantCard(EnchantmentModel enchantment, CardModel card, decimal amount)
     {
-        return shouldUpgrade
-            ? ToUpgradedCard(card)
-            : card;
+        if (!enchantment.CanEnchant(card))
+        {
+            return;
+        }
+
+        if (card.Enchantment is null)
+        {
+            card.EnchantInternal(enchantment, amount);
+            enchantment.ModifyCard();
+        }
+        else
+        {
+            // The CanEnchant check above ensures that the existing enchantment is the same type as the new enchantment.
+            card.Enchantment.Amount += (int)amount;
+        }
+
+        card.FinalizeUpgradeInternal();
     }
 
-    public static IReadOnlyList<CardModel> ToUpgradedCardsIf(
-        IReadOnlyList<CardModel> cards,
-        bool shouldUpgrade)
+    /// <summary>
+    /// Same as <see cref="EnchantCard"/>, but returns a new enchanted card instead of modifying the original card.
+    /// Returns the original card if it cannot be enchanted by the given enchantment.
+    /// </summary>
+    /// <returns></returns>
+    public static CardModel CreateEnchantedCard(EnchantmentModel enchantment, CardModel card, decimal amount)
     {
-        return shouldUpgrade
-            ? cards.Select(ToUpgradedCard).ToList()
-            : cards;
+        if (!enchantment.CanEnchant(card))
+        {
+            return card;
+        }
+
+        var previewCard = (CardModel)card.MutableClone();
+        EnchantCard(enchantment, previewCard, amount);
+        return previewCard;
     }
 
     public static RelicModel CreateRelic(RelicModel relic, Player player)

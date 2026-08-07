@@ -32,6 +32,8 @@
   "next_act_ancient_prediction.description": "在下一阶段的起点，你将遇到[gold]{Ancient}[/gold]。",
   "next_act_boss_prediction.title": "预测",
   "next_act_boss_prediction.description": "在下一阶段的终点，你将和\n{BossNames:[gold]{}[/gold]|、|与|与}战斗。",
+  "merchant_restock.title": "预测",
+  "merchant_restock.description": "购买后，当前位置将会补货为[gold]{Model}[/gold]（[blue]{Cost}[/blue]金币）。",
   "neows_bones_pickup_order.title": "预测",
   "neows_bones_pickup_order.description": "[gold]{FirstRelic}[/gold]和[gold]{SecondRelic}[/gold]的拾起顺序会影响[gold]{NeowsBones}[/gold]加入的随机[red]诅咒[/red]。\n ·先拾起[gold]{FirstRelic}[/gold]：{FirstCurses:[red]{}[/red]|、|和|和}\n ·先拾起[gold]{SecondRelic}[/gold]：{SecondCurses:[red]{}[/red]|、|和|和}",
   "silken_tress_reward_offset.title": "提示",

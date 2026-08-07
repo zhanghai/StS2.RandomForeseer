@@ -232,8 +232,10 @@ internal static class CardRewardPrediction
         return rarity;
     }
 
-    // Mirrors CardFactory.RollForUpgrade, mutating only the preview card.
-    private static void RollForUpgrade(Player player, CardModel card, decimal baseChance, Rng rng)
+    /// <summary>
+    /// Mirrors <see cref="CardFactory.RollForUpgrade(Player, CardModel, decimal, Rng)"/>.
+    /// </summary>
+    internal static void RollForUpgrade(Player player, CardModel card, decimal baseChance, Rng rng)
     {
         var roll = (decimal)rng.NextFloat();
         if (!card.IsUpgradable)
@@ -244,14 +246,14 @@ internal static class CardRewardPrediction
         var originalOdds = baseChance;
         if (card.Rarity != CardRarity.Rare)
         {
-            originalOdds += (decimal)player.RunState.CurrentActIndex *
-                (decimal)AscensionHelper.GetValueIfAscension(AscensionLevel.Scarcity, 0.125m, 0.25m);
+            originalOdds += player.RunState.CurrentActIndex *
+                AscensionHelper.GetValueIfAscension(AscensionLevel.Scarcity, 0.125m, 0.25m);
         }
 
         originalOdds = Hook.ModifyCardRewardUpgradeOdds(player.RunState, player, card, originalOdds);
         if (roll <= originalOdds)
         {
-            PredictionUtils.UpgradeCardInPlace(card);
+            PredictionUtils.UpgradeCard(card);
         }
     }
 
@@ -292,13 +294,9 @@ internal static class CardRewardPrediction
     // Mirrors TheFutureOfPotions' UpgradeCardsInReward callback.
     private static void UpgradeAllValidCards(List<CardCreationResult> results)
     {
-        foreach (var result in results)
+        foreach (var result in results.Where(result => result.Card.IsUpgradable))
         {
-            if (result.Card.IsUpgradable)
-            {
-                var upgradedCard = PredictionUtils.ToUpgradedCard(result.Card);
-                result.ModifyCard(upgradedCard);
-            }
+            result.ModifyCard(PredictionUtils.CreateUpgradedCard(result.Card));
         }
     }
 }

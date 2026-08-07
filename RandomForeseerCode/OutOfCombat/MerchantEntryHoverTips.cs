@@ -12,11 +12,20 @@ internal static class MerchantEntryHoverTips
     {
         return owner switch
         {
+            NMerchantCard { Entry: MerchantCardEntry cardEntry } =>
+                MerchantRestockPrediction.GetHoverTips(cardEntry),
+
             NMerchantRelic { Entry: MerchantRelicEntry { Model: { } relic } relicEntry } =>
-                RelicPickupPrediction.GetHoverTips(relicEntry._player, relic),
+            [
+                .. RelicPickupPrediction.GetHoverTips(relicEntry._player, relic),
+                .. MerchantRestockPrediction.GetHoverTips(relicEntry)
+            ],
 
             NMerchantPotion { Entry: MerchantPotionEntry { Model: { } potion } potionEntry } =>
-                PotionPrediction.GetHoverTips(potionEntry._player, potion),
+            [
+                .. PotionPrediction.GetHoverTips(potionEntry._player, potion),
+                .. MerchantRestockPrediction.GetHoverTips(potionEntry)
+            ],
 
             _ => []
         };

@@ -57,6 +57,7 @@
 - `energy-hooks.md`
 - `orb-hooks.md`
 - `shuffle-hooks.md`
+- `merchant-card-creation-results.md`
 - `card-reward-hooks.md`
 - `card-play-count-hooks.md`
 - `card-play-hooks.md`

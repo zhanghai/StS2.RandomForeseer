@@ -131,11 +131,14 @@ internal sealed class RunPredictionPlayerRngSet
 {
     public required Rng Rewards { get; init; }
 
+    public required Rng Shops { get; init; }
+
     public static RunPredictionPlayerRngSet From(PlayerRngSet rng)
     {
         return new RunPredictionPlayerRngSet
         {
-            Rewards = rng.Rewards.Clone()
+            Rewards = rng.Rewards.Clone(),
+            Shops = rng.Shops.Clone()
         };
     }
 
@@ -143,7 +146,8 @@ internal sealed class RunPredictionPlayerRngSet
     {
         return new RunPredictionPlayerRngSet
         {
-            Rewards = Rewards.Clone()
+            Rewards = Rewards.Clone(),
+            Shops = Shops.Clone()
         };
     }
 }

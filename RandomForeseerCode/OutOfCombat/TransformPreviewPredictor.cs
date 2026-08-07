@@ -41,7 +41,7 @@ internal sealed class TransformPreviewPredictor(Rng realRng, bool upgradePreview
             maxSelect,
             realRng,
             isInCombat: false,
-            mapReplacement: replacement => PredictionUtils.ToUpgradedCardIf(replacement, upgradePreview));
+            upgradePreview ? PredictionUtils.CreateUpgradedCard : null);
     }
 
     private CardTransformation PredictNext(CardModel original)
@@ -50,6 +50,6 @@ internal sealed class TransformPreviewPredictor(Rng realRng, bool upgradePreview
 
         return new CardTransformation(
             original,
-            PredictionUtils.ToUpgradedCardIf(predicted, upgradePreview));
+            upgradePreview ? PredictionUtils.CreateUpgradedCard(predicted) : predicted);
     }
 }

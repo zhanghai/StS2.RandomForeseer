@@ -32,6 +32,8 @@
   "slider.slippery_bridge_reroll_preview_count.description": "Controls how many future reroll results are previewed for [gold]Slippery Bridge[/gold]'s Hold On option.",
   "toggle.crystal_sphere_clairvoyance_enabled.label": "Enable Crystal Sphere clairvoyance",
   "toggle.crystal_sphere_clairvoyance_enabled.description": "When enabled, items beneath unrevealed fog become visible in the [gold]Crystal Sphere[/gold] event minigame.",
+  "toggle.merchant_restock_prediction_enabled.label": "Predict Courier restocks",
+  "toggle.merchant_restock_prediction_enabled.description": "When enabled, while you have [gold]The Courier[/gold], hovering merchant cards, potions, or relics you can afford shows the item that will restock that slot after purchase.",
   "toggle.driftwood_reroll_prediction_enabled.label": "Predict Driftwood's reroll reward",
   "toggle.driftwood_reroll_prediction_enabled.description": "When enabled, hovering [gold]Driftwood[/gold]'s reroll button shows the rerolled card reward.",
   "toggle.paels_wing_sacrifice_prediction_enabled.label": "Predict Pael's Wing sacrifice reward",

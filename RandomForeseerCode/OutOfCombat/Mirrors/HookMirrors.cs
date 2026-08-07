@@ -1,7 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
-using RandomForeseer.RandomForeseerCode.OutOfCombat.Mirrors.Hooks.CardReward;
+using RandomForeseer.RandomForeseerCode.OutOfCombat.Mirrors.Hooks.CardCreation;
 
 namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Mirrors;
 
@@ -9,6 +9,23 @@ namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Mirrors;
 // modifier enumeration, and hook phase order while registries remain implementation details.
 internal static class HookMirrors
 {
+    // Mirrors Hook.ModifyMerchantCardCreationResults.
+    public static void ModifyMerchantCardCreationResults(
+        RunPredictionContext runContext,
+        List<CardCreationResult> results)
+    {
+        var context = new ModifyMerchantCardCreationResultsMirrorContext
+        {
+            RunContext = runContext,
+            Results = results
+        };
+
+        foreach (var listener in runContext.RunState.IterateHookListeners(null))
+        {
+            ModifyMerchantCardCreationResultsMirrors.Invoke(listener, context);
+        }
+    }
+
     // Mirrors Hook.TryModifyCardRewardOptions followed by its Late phase.
     public static bool TryModifyCardRewardOptions(
         RunPredictionContext runContext,

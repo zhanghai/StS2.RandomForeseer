@@ -34,6 +34,9 @@ internal static class SettingsUiBindings
     public static IModSettingsValueBinding<bool> CrystalSphereClairvoyanceEnabled { get; } =
         Binding(s => s.CrystalSphereClairvoyanceEnabled, (s, v) => s.CrystalSphereClairvoyanceEnabled = v);
 
+    public static IModSettingsValueBinding<bool> MerchantRestockPredictionEnabled { get; } =
+        Binding(s => s.MerchantRestockPredictionEnabled, (s, v) => s.MerchantRestockPredictionEnabled = v);
+
     public static IModSettingsValueBinding<bool> DriftwoodRerollPredictionEnabled { get; } =
         Binding(s => s.DriftwoodRerollPredictionEnabled, (s, v) => s.DriftwoodRerollPredictionEnabled = v);
 

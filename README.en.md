@@ -28,6 +28,7 @@ The Workshop package automatically loads the newest compatible Mod version for t
 - **Driftwood reroll prediction**: shows the cards that a card reward reroll will offer when hovering the Reroll button.
 - **Pael's Wing sacrifice prediction**: shows the relic awarded by an activating Sacrifice button.
 - **Relic pickup effect prediction**: relic tooltips (including Ancient options) show random cards, relics, potions, curses, and transform results that happen immediately on pickup.
+- **Courier restock prediction**: while you have The Courier, hovering merchant cards, potions, or relics you can afford shows the item that will restock that slot after purchase.
 - **Rest-site result prediction**: shows random results from relics such as Dream Catcher, Tiny Mailbox, and Shovel when hovering rest-site options.
 - **Event option prediction**: shows immediate random rewards, random upgrades/downgrades, and random follow-up options when hovering non-Ancient event options.
 - **Crystal Sphere clairvoyance**: shows item locations and types through unrevealed fog in the Crystal Sphere minigame.
@@ -192,6 +193,10 @@ Each feature can be toggled independently from the mod settings page, and predic
 - Immediate random results from relic rewards
 - Immediate random results from merchant relics
 - Immediate random results from relics received in the Relic Trader event
+
+### Merchant Restocks
+
+- Cards, potions, and relics restocked by The Courier; Cauldron and Orrery account for RNG advanced by their pickup effects first
 
 ## Integrations
 

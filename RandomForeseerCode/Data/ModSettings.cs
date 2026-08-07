@@ -28,6 +28,7 @@ internal sealed class ModSettings
         set => field = Math.Clamp(value, 1, 10);
     } = 5;
     public bool CrystalSphereClairvoyanceEnabled { get; set; } = true;
+    public bool MerchantRestockPredictionEnabled { get; set; } = true;
     public bool DriftwoodRerollPredictionEnabled { get; set; } = true;
     public bool PaelsWingSacrificePredictionEnabled { get; set; } = true;
     public bool RestSitePredictionEnabled { get; set; } = true;

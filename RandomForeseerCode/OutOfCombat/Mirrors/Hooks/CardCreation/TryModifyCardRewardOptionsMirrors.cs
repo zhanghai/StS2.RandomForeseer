@@ -9,14 +9,10 @@ using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 
-namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Mirrors.Hooks.CardReward;
+namespace RandomForeseer.RandomForeseerCode.OutOfCombat.Mirrors.Hooks.CardCreation;
 
 using Registry = MethodMirrorRegistry<AbstractModel, TryModifyCardRewardOptionsMirrorContext, bool>;
 
-// Mirrors the card reward result-modifier half of the original Hook.TryModifyCardRewardOptions chain:
-// first AbstractModel.TryModifyCardRewardOptions, then AbstractModel.TryModifyCardRewardOptionsLate.
-// Card reward creation-option hooks and upgrade-odds hooks are pure enough for prediction callers to
-// keep using the original Hook.ModifyCardRewardCreationOptions and Hook.ModifyCardRewardUpgradeOdds.
 internal static class TryModifyCardRewardOptionsMirrors
 {
     private static readonly MirrorMethodSpec TryModifyCardRewardOptions = MirrorMethodSpec.Hook(
@@ -61,9 +57,9 @@ internal static class TryModifyCardRewardOptionsMirrors
     {
         var registry = new Registry(TryModifyCardRewardOptionsLate);
 
-        registry.Register<FrozenEgg>(HandleFrozenEgg);
-        registry.Register<MoltenEgg>(HandleMoltenEgg);
-        registry.Register<ToxicEgg>(HandleToxicEgg);
+        registry.Register<FrozenEgg>((relic, context) => HandleEggRelic(relic, context, CardType.Power));
+        registry.Register<MoltenEgg>((relic, context) => HandleEggRelic(relic, context, CardType.Attack));
+        registry.Register<ToxicEgg>((relic, context) => HandleEggRelic(relic, context, CardType.Skill));
         registry.Register<SilverCrucible>(HandleSilverCrucible);
         registry.Register<LavaLamp>(HandleLavaLamp);
         registry.Register<Glitter>(HandleGlitter);
@@ -129,82 +125,68 @@ internal static class TryModifyCardRewardOptionsMirrors
         return true;
     }
 
-    private static bool HandleFrozenEgg(FrozenEgg relic, TryModifyCardRewardOptionsMirrorContext context)
-    {
-        return HandleEggRelic(relic, context, CardType.Power);
-    }
-
-    private static bool HandleMoltenEgg(MoltenEgg relic, TryModifyCardRewardOptionsMirrorContext context)
-    {
-        return HandleEggRelic(relic, context, CardType.Attack);
-    }
-
-    private static bool HandleToxicEgg(ToxicEgg relic, TryModifyCardRewardOptionsMirrorContext context)
-    {
-        return HandleEggRelic(relic, context, CardType.Skill);
-    }
-
     private static bool HandleSilverCrucible(
         SilverCrucible relic,
         TryModifyCardRewardOptionsMirrorContext context)
     {
-        if (relic.Owner == context.Player &&
-            relic.TimesUsed < relic.DynamicVars.Cards.IntValue &&
-            context.Options.Flags.HasFlag(CardCreationFlags.IsCardReward))
+        if (relic.Owner != context.Player ||
+            relic.TimesUsed >= relic.DynamicVars.Cards.IntValue ||
+            !context.Options.Flags.HasFlag(CardCreationFlags.IsCardReward))
         {
-            UpgradeAllCards(relic, context.Results);
-            return true;
+            return false;
         }
 
-        return false;
+        CardCreationResultUtils.UpgradeValidCards(context.Results, relic);
+        return true;
     }
 
     private static bool HandleLavaLamp(LavaLamp relic, TryModifyCardRewardOptionsMirrorContext context)
     {
-        if (relic.Owner == context.Player &&
-            context.Player.RunState.CurrentRoom is CombatRoom &&
-            !relic.TookDamageThisCombat)
+        if (relic.Owner != context.Player ||
+            context.Player.RunState.CurrentRoom is not CombatRoom ||
+            relic.TookDamageThisCombat)
         {
-            UpgradeAllCards(relic, context.Results);
-            return true;
+            return false;
         }
 
-        return false;
+        CardCreationResultUtils.UpgradeValidCards(context.Results, relic);
+        return true;
     }
 
     private static bool HandleGlitter(Glitter relic, TryModifyCardRewardOptionsMirrorContext context)
     {
-        if (relic.Owner == context.Player)
+        if (relic.Owner != context.Player)
         {
-            EnchantAllCards<Glam>(relic, context, 1m);
-            return true;
+            return false;
         }
 
-        return false;
+        CardCreationResultUtils.EnchantValidCards<Glam>(context.Results, relic, 1m);
+        return true;
     }
 
     private static bool HandleFresnelLens(FresnelLens relic, TryModifyCardRewardOptionsMirrorContext context)
     {
-        if (relic.Owner == context.Player)
+        if (relic.Owner != context.Player)
         {
-            EnchantAllCards<Nimble>(relic, context, relic.DynamicVars[FresnelLens._nimbleAmountKey].BaseValue);
-            return true;
+            return false;
         }
 
-        return false;
+        var amount = relic.DynamicVars[FresnelLens._nimbleAmountKey].BaseValue;
+        CardCreationResultUtils.EnchantValidCards<Nimble>(context.Results, relic, amount);
+        return true;
     }
 
     private static bool HandleSilkenTress(SilkenTress relic, TryModifyCardRewardOptionsMirrorContext context)
     {
-        if (relic.Owner == context.Player &&
-            !relic.IsUsedUp &&
-            context.Options.Flags.HasFlag(CardCreationFlags.IsCardReward))
+        if (relic.Owner != context.Player ||
+            relic.IsUsedUp ||
+            !context.Options.Flags.HasFlag(CardCreationFlags.IsCardReward))
         {
-            EnchantAllCards<Glam>(relic, context, 1m);
-            return true;
+            return false;
         }
 
-        return false;
+        CardCreationResultUtils.EnchantValidCards<Glam>(context.Results, relic, 1m);
+        return true;
     }
 
     private static bool HandleWingCharm(WingCharm relic, TryModifyCardRewardOptionsMirrorContext context)
@@ -222,8 +204,8 @@ internal static class TryModifyCardRewardOptionsMirrors
             return false;
         }
 
-        var modified = EnchantPreview<Swift>(selected.Card, relic.DynamicVars[WingCharm._swiftAmountKey].BaseValue);
-        selected.ModifyCard(modified, relic);
+        var amount = relic.DynamicVars[WingCharm._swiftAmountKey].BaseValue;
+        selected.ModifyCard(PredictionUtils.CreateEnchantedCard(swift.ToMutable(), selected.Card, amount), relic);
         return true;
     }
 
@@ -237,98 +219,18 @@ internal static class TryModifyCardRewardOptionsMirrors
             return false;
         }
 
-        foreach (var result in context.Results)
-        {
-            if (result.Card.Type == type && result.Card.IsUpgradable)
-            {
-                result.ModifyCard(PredictionUtils.ToUpgradedCard(result.Card), relic);
-            }
-        }
-
+        CardCreationResultUtils.UpgradeCardsOfType(context.Results, relic, type);
         return true;
-    }
-
-    private static void UpgradeAllCards(RelicModel relic, List<CardCreationResult> results)
-    {
-        foreach (var result in results)
-        {
-            if (result.Card.IsUpgradable)
-            {
-                result.ModifyCard(PredictionUtils.ToUpgradedCard(result.Card), relic);
-            }
-        }
-    }
-
-    private static void EnchantAllCards<T>(
-        RelicModel relic,
-        TryModifyCardRewardOptionsMirrorContext context,
-        decimal amount)
-        where T : EnchantmentModel
-    {
-        var enchantment = ModelDb.Enchantment<T>();
-        foreach (var result in context.Results)
-        {
-            if (enchantment.CanEnchant(result.Card))
-            {
-                result.ModifyCard(EnchantPreview<T>(result.Card, amount), relic);
-            }
-        }
-    }
-
-    private static CardModel EnchantPreview<T>(CardModel card, decimal amount)
-        where T : EnchantmentModel
-    {
-        var preview = (CardModel)card.MutableClone();
-        var enchantment = ModelDb.Enchantment<T>().ToMutable();
-        if (preview.Enchantment is null)
-        {
-            preview.EnchantInternal(enchantment, amount);
-            enchantment.ModifyCard();
-        }
-        else if (preview.Enchantment.GetType() == enchantment.GetType())
-        {
-            preview.Enchantment.Amount += (int)amount;
-        }
-
-        preview.FinalizeUpgradeInternal();
-        return preview;
     }
 }
 
-internal sealed class TryModifyCardRewardOptionsMirrorContext : IMethodMirrorContext<AbstractModel>
+internal sealed class TryModifyCardRewardOptionsMirrorContext : CardCreationMirrorContext
 {
-    private readonly PredictionTrace _trace = new();
-
-    public required RunPredictionContext RunContext { get; init; }
-
-    public required List<CardCreationResult> Results { get; init; }
-
     public required CardCreationOptions Options { get; init; }
-
-    public Player Player => RunContext.Player;
 
     public RunPredictionPlayerRngSet Rng => RunContext.Rng;
 
     public RunPredictionSharedRngSet SharedRng => RunContext.SharedRng;
 
     public CardRarityOdds RarityOdds => RunContext.CardRarityOdds;
-
-    public bool HasRisk { get; private set; }
-
-    IDisposable IMethodMirrorContext<AbstractModel>.PushDispatchSource(
-        AbstractModel model,
-        MirrorMethodSpec method)
-    {
-        return _trace.Push(model, PredictionInvocation.ForMethod(method.BaseMethod));
-    }
-
-    void IMethodMirrorContext<AbstractModel>.RecordMethodNotMirroredRisk()
-    {
-        HasRisk = true;
-    }
-
-    void IMethodMirrorContext<AbstractModel>.RecordMethodMirrorIncompleteRisk()
-    {
-        HasRisk = true;
-    }
 }

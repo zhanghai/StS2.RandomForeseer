@@ -58,6 +58,7 @@ internal static class SettingsBootstrap
                     "slippery_bridge_reroll_preview_count",
                     () => SettingsUiBindings.EventOptionPredictionEnabled.Read())
                 .AddToggle("crystal_sphere_clairvoyance_enabled", SettingsUiBindings.CrystalSphereClairvoyanceEnabled)
+                .AddToggle("merchant_restock_prediction_enabled", SettingsUiBindings.MerchantRestockPredictionEnabled)
                 .AddToggle("driftwood_reroll_prediction_enabled", SettingsUiBindings.DriftwoodRerollPredictionEnabled)
                 .AddToggle("paels_wing_sacrifice_prediction_enabled", SettingsUiBindings.PaelsWingSacrificePredictionEnabled)
                 .AddToggle("rest_site_prediction_enabled", SettingsUiBindings.RestSitePredictionEnabled)

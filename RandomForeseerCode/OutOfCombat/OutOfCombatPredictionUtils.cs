@@ -19,7 +19,6 @@ internal static class OutOfCombatPredictionUtils
     public static IReadOnlyList<CardModel> PredictDistinctDeckTransformResults(
         Player player,
         Rng realRng,
-        bool upgradeResults = false,
         int rngCounterOffset = 0,
         IEnumerable<CardModel>? extraTransformableCards = null)
     {
@@ -37,7 +36,6 @@ internal static class OutOfCombatPredictionUtils
                 return PredictionUtils.PredictTransformResult(card, rng, isInCombat: false);
             })
             .DistinctBy(card => card.Id)
-            .Select(card => PredictionUtils.ToUpgradedCardIf(card, upgradeResults))
             .ToList();
     }
 
@@ -45,14 +43,12 @@ internal static class OutOfCombatPredictionUtils
         Player player,
         Rng realRng,
         int transformCount,
-        bool upgradeResults = false,
         IEnumerable<CardModel>? extraTransformableCards = null)
     {
         return Enumerable.Range(0, transformCount)
             .Select(slot => PredictDistinctDeckTransformResults(
                 player,
                 realRng,
-                upgradeResults,
                 rngCounterOffset: slot,
                 extraTransformableCards))
             .ToList();
@@ -113,7 +109,7 @@ internal static class OutOfCombatPredictionUtils
             .ToList()
             .StableShuffle(rng)
             .Take(count)
-            .Select(PredictionUtils.ToUpgradedCard)
+            .Select(PredictionUtils.CreateUpgradedCard)
             .ToList();
     }
 
@@ -137,7 +133,7 @@ internal static class OutOfCombatPredictionUtils
             }
 
             candidates.Remove(card);
-            cards.Add(PredictionUtils.ToUpgradedCard(card));
+            cards.Add(PredictionUtils.CreateUpgradedCard(card));
         }
 
         return cards;
