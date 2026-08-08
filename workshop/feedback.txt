@@ -6,6 +6,8 @@
 [b]如何找到日志：[/b]游戏内按 [b]~[/b] 打开控制台，输入 [b]open logs[/b] 打开日志文件夹，附上 [b]godot.log[/b]。
 [b]如何找到存档：[/b]游戏内按 [b]~[/b] 打开控制台，输入 [b]open saves[/b] 打开存档文件夹，附上 [b]current_run.save[/b]（单人）或 [b]current_run_mp.save[/b]（多人，仅房主）。
 
+日志和存档文件可以使用网盘等方式分享，或发送到邮箱 [b]hotwords123@outlook.com[/b]。发送后请在讨论区或 Issues 中留言告知。
+
 [b]如果没有日志或准确的信息，将很难排查你遇到的问题。[/b]
 
 [hr][/hr]
@@ -16,5 +18,7 @@ For incorrect prediction results, please make sure you can reproduce the issue a
 
 [b]How to find logs:[/b] Press [b]~[/b] in the game to open the console, enter [b]open logs[/b] to open the log folder, and attach [b]godot.log[/b].
 [b]How to find saves:[/b] Press [b]~[/b] in the game to open the console, enter [b]open saves[/b] to open the save folder, and attach [b]current_run.save[/b] for singleplayer, or [b]current_run_mp.save[/b] for multiplayer if you are the host.
+
+You can share logs and save files through a cloud storage service or email them to [b]hotwords123@outlook.com[/b]. After emailing them, please post a message in the Steam discussions or on GitHub Issues to let me know.
 
 [b]Without logs or precise information, it will be difficult to investigate the issue.[/b]

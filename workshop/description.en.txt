@@ -65,6 +65,8 @@ Here are some common questions. [b]Please try these solutions before reporting a
 
 [h2]Reporting Issues[/h2]
 
-If none of the above solves your issue, you can report it in the [url=https://steamcommunity.com/workshop/filedetails/discussion/3747531952/567037949153327700/]Steam discussions[/url] or [url=https://github.com/hotwords123/StS2.RandomForeseer/issues]GitHub Issues[/url]. [b]Please do not report issues in the Steam comments below.[/b]
+If none of the above solves your issue, you can report it in the [url=https://steamcommunity.com/workshop/filedetails/discussion/3747531952/567037949153327700/]Steam discussions[/url] or [url=https://github.com/hotwords123/StS2.RandomForeseer/issues]GitHub Issues[/url].
 
-[b]Reports without useful information, as well as issues already covered above, may be deleted directly.[/b]
+For mod loading failures, broken functionality, conflict errors, and similar issues, please include the complete game log. ([url=https://steamcommunity.com/workshop/filedetails/discussion/3747531952/567037949153327700/]How do I find the log?[/url])
+
+You can share the log through a cloud storage service or email it to [b]hotwords123@outlook.com[/b]. After emailing it, please post a message in the Steam discussions or on GitHub Issues to let me know.
