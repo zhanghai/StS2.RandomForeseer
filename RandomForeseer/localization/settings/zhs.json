@@ -110,6 +110,13 @@
   "toggle.auto_play_from_draw_pile_prediction_enabled.label": "预测抽牌堆自动出牌",
   "toggle.auto_play_from_draw_pile_prediction_enabled.description": "预测[gold]破灭[/gold]、[gold]倾泻[/gold]和[gold]精炼混沌[/gold]将从抽牌堆打出的牌。",
 
+  "section.card_resolution_scope.title": "卡牌结算范围",
+  "section.card_resolution_scope.description": "配置战斗预测中卡牌结算的预测范围。也适用于通过药水等其它效果自动打出的卡牌。",
+  "toggle.infer_card_on_play_effects_enabled.label": "自动推断卡牌效果",
+  "toggle.infer_card_on_play_effects_enabled.description": "启用后，战斗预测会尝试推断未单独适配卡牌的打出效果，包括攻击、格挡、抽牌等。",
+  "toggle.chained_card_effect_prediction_enabled.label": "预测连锁出牌效果",
+  "toggle.chained_card_effect_prediction_enabled.description": "启用后，卡牌和药水预测会展示其自动打出的卡牌所产生的后续效果。当前来源自身及其直接触发的效果不受此开关影响。",
+
   "section.damage_prediction.title": "伤害预测",
   "section.damage_prediction.description": "配置战斗预测中显示哪些伤害效果，以及显示方式。",
   "toggle.combat_damage_prediction_enabled.label": "预测伤害效果",
@@ -123,10 +130,7 @@
 
   "section.experimental_features.title": "实验性功能",
   "section.experimental_features.description": "这些功能还在测试中，可能产生不完整或不准确的结果。默认关闭。",
-  "toggle.experimental_best_effort_card_play_prediction_enabled.label": "预测未完整支持的卡牌",
-  "toggle.experimental_best_effort_card_play_prediction_enabled.description": "启用后，战斗预测会尝试推断未完整支持的卡牌的打出效果，并显示相关预测。",
-  "toggle.experimental_chained_card_effect_prediction_enabled.label": "预测连锁出牌效果",
-  "toggle.experimental_chained_card_effect_prediction_enabled.description": "启用后，卡牌和药水预测会展示其自动打出的卡牌所产生的后续效果。当前来源自身及其直接触发的效果不受此开关影响。",
+  "paragraph.no_experimental_features.text": "当前没有可用的实验性设置。",
 
   "page.debug.title": "调试",
   "page.debug.description": "[red]警告：[/red]这些工具仅用于开发和验证，可能改变游戏内容；正常游玩请保持关闭。",

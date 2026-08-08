@@ -104,6 +104,13 @@ internal static class SettingsUiBindings
     public static IModSettingsValueBinding<bool> AutoPlayFromDrawPilePredictionEnabled { get; } =
         Binding(s => s.AutoPlayFromDrawPilePredictionEnabled, (s, v) => s.AutoPlayFromDrawPilePredictionEnabled = v);
 
+    // Card resolution prediction
+    public static IModSettingsValueBinding<bool> InferCardOnPlayEffectsEnabled { get; } =
+        Binding(s => s.InferCardOnPlayEffectsEnabled, (s, v) => s.InferCardOnPlayEffectsEnabled = v);
+
+    public static IModSettingsValueBinding<bool> ChainedCardEffectPredictionEnabled { get; } =
+        Binding(s => s.ChainedCardEffectPredictionEnabled, (s, v) => s.ChainedCardEffectPredictionEnabled = v);
+
     // Damage prediction
     public static IModSettingsValueBinding<bool> CombatDamagePredictionEnabled { get; } =
         Binding(s => s.CombatDamagePredictionEnabled, (s, v) => s.CombatDamagePredictionEnabled = v);
@@ -116,17 +123,6 @@ internal static class SettingsUiBindings
 
     public static IModSettingsValueBinding<string> DamagePredictionHealthBarColor { get; } =
         Binding(s => s.DamagePredictionHealthBarColor, (s, v) => s.DamagePredictionHealthBarColor = v);
-
-    // Experimental features
-    public static IModSettingsValueBinding<bool> ExperimentalBestEffortCardPlayPredictionEnabled { get; } =
-        Binding(
-            s => s.ExperimentalBestEffortCardPlayPredictionEnabled,
-            (s, v) => s.ExperimentalBestEffortCardPlayPredictionEnabled = v);
-
-    public static IModSettingsValueBinding<bool> ExperimentalChainedCardEffectPredictionEnabled { get; } =
-        Binding(
-            s => s.ExperimentalChainedCardEffectPredictionEnabled,
-            (s, v) => s.ExperimentalChainedCardEffectPredictionEnabled = v);
 
     // Debug settings
     public static IModSettingsValueBinding<bool> DebugSettingsEnabled { get; } =

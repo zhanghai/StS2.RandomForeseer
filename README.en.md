@@ -37,11 +37,6 @@ The Workshop package automatically loads the newest compatible Mod version for t
 
 Each feature can be toggled independently from the mod settings page, and predictions can also be disabled globally for singleplayer or multiplayer. Fair mode is enabled by default and limits predictions to information obtainable through Save & Load.
 
-### Experimental Features
-
-- **Experimental card prediction**: combat prediction can use general rules to recognize attack, block, and card-draw behavior for more cards without dedicated support, and show related effects triggered by those cards. Disabled by default.
-- **Chained card-effect prediction**: combat card prediction can show supported card and combat effects indirectly triggered by the current card, with causal explanations. Disabled by default.
-
 ## Currently Supported Predictions
 
 ### Transform Sources

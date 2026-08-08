@@ -110,6 +110,13 @@
   "toggle.auto_play_from_draw_pile_prediction_enabled.label": "Predict cards played from the Draw Pile",
   "toggle.auto_play_from_draw_pile_prediction_enabled.description": "Shows which cards [gold]Havoc[/gold], [gold]Cascade[/gold], and [gold]Distilled Chaos[/gold] will play from the Draw Pile.",
 
+  "section.card_resolution_scope.title": "Card resolution scope",
+  "section.card_resolution_scope.description": "Configure the prediction scope for card resolution in combat predictions. This also applies to cards automatically played by potions and other effects.",
+  "toggle.infer_card_on_play_effects_enabled.label": "Auto-infer card effects",
+  "toggle.infer_card_on_play_effects_enabled.description": "When enabled, combat predictions attempt to infer play effects for cards without dedicated support, including attacks, block, card draw, and more.",
+  "toggle.chained_card_effect_prediction_enabled.label": "Predict chained card-play effects",
+  "toggle.chained_card_effect_prediction_enabled.description": "When enabled, card and potion predictions include downstream effects from cards automatically played by the source card or potion. Effects produced by the source itself, or triggered directly by it, are unaffected by this setting.",
+
   "section.damage_prediction.title": "Damage prediction",
   "section.damage_prediction.description": "Configure which damage predictions are shown and how they appear.",
   "toggle.combat_damage_prediction_enabled.label": "Predict damage",
@@ -123,10 +130,7 @@
 
   "section.experimental_features.title": "Experimental features",
   "section.experimental_features.description": "These features are still being tested and may produce incomplete or inaccurate results. They are disabled by default.",
-  "toggle.experimental_best_effort_card_play_prediction_enabled.label": "Predict partially supported cards",
-  "toggle.experimental_best_effort_card_play_prediction_enabled.description": "When enabled, combat prediction attempts to infer what partially supported cards will do when played and shows any resulting predictions.",
-  "toggle.experimental_chained_card_effect_prediction_enabled.label": "Predict chained card-play effects",
-  "toggle.experimental_chained_card_effect_prediction_enabled.description": "When enabled, card and potion predictions include downstream effects from cards automatically played by the source card or potion. Effects produced by the source itself, or triggered directly by it, are unaffected by this setting.",
+  "paragraph.no_experimental_features.text": "There are currently no experimental settings available.",
 
   "page.debug.title": "Debug",
   "page.debug.description": "[red]Warning:[/red] these tools are intended only for development and testing and may alter your run. Avoid using them during normal play.",

@@ -7,6 +7,9 @@
 - 局外预测设置现在按通用、事件和遗物分组，并将遗物拾起效果拆分为一般遗物和先古遗物开关；事件遗物改由事件预测开关控制。<br>
   Out-of-combat prediction settings are now grouped into general, event, and relic categories, with separate pickup-effect toggles for regular and Ancient relics; Event relics are now controlled by event prediction.
 
+- 卡牌打出效果推断和连锁出牌预测现在默认启用，并移入卡牌结算范围设置；移除原实验性设置项。<br>
+  Card-play effect inference and chained card-play prediction are now enabled by default and moved into the card resolution scope settings; the original experimental settings have been removed.
+
 - 拥有送货员时，悬浮商店中可以购买的卡牌、药水或遗物会显示购买后补货的商品。<br>
   While you have The Courier, hovering merchant cards, potions, or relics you can afford now shows the item that will restock that slot after purchase.
 

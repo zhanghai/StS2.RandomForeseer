@@ -26,7 +26,7 @@ internal static class CombatCardPredictionSettingsController
 
     private static void OnSettingsValueWritten(IModSettingsBinding binding)
     {
-        if (ReferenceEquals(binding, SettingsUiBindings.ExperimentalBestEffortCardPlayPredictionEnabled))
+        if (ReferenceEquals(binding, SettingsUiBindings.InferCardOnPlayEffectsEnabled))
         {
             SyncPredictionSettings();
         }
@@ -34,6 +34,6 @@ internal static class CombatCardPredictionSettingsController
 
     private static void SyncPredictionSettings()
     {
-        CardOnPlayMirrors.AllowInference = ModData.Settings.ExperimentalBestEffortCardPlayPredictionEnabled;
+        CardOnPlayMirrors.AllowInference = ModData.Settings.InferCardOnPlayEffectsEnabled;
     }
 }

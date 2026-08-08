@@ -185,8 +185,7 @@ internal sealed class CombatPredictionProjector
             return;
         }
 
-        if (!ModData.Settings.ExperimentalChainedCardEffectPredictionEnabled &&
-            actionFrame != _rootFrame)
+        if (!ModData.Settings.ChainedCardEffectPredictionEnabled && actionFrame != _rootFrame)
         {
             _projectionTruncated = true;
             return;

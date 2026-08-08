@@ -73,8 +73,7 @@ internal static class CombatCardPrediction
     /// <remarks>Simulation and projection exceptions are intentionally handled by the calling UI injection boundary.</remarks>
     public static CombatPredictionProjection? Predict(CardModel card, Creature? target)
     {
-        if (!ModData.Settings.ExperimentalBestEffortCardPlayPredictionEnabled && !CardOnPlayMirrors.CanMirror(card) ||
-            !card.TryResolveTarget(ref target))
+        if (!card.TryResolveTarget(ref target))
         {
             return null;
         }

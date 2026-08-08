@@ -123,6 +123,20 @@ internal static class SettingsBootstrap
                     SettingsUiBindings.PotionPredictionEnabled.Read())
                 .AddToggle("potion_generation_prediction_enabled", SettingsUiBindings.PotionGenerationPredictionEnabled)
                 .AddToggle("auto_play_from_draw_pile_prediction_enabled", SettingsUiBindings.AutoPlayFromDrawPilePredictionEnabled))
+            .AddSection("card_resolution_scope", section => section
+                .WithTitle(T("section.card_resolution_scope.title"))
+                .WithDescription(T("section.card_resolution_scope.description"))
+                .WithEnabledWhen(() =>
+                    SettingsUiBindings.CardPlayPredictionEnabled.Read() ||
+                    SettingsUiBindings.PotionPredictionEnabled.Read() ||
+                    SettingsUiBindings.EndTurnPredictionEnabled.Read())
+                .AddToggle("infer_card_on_play_effects_enabled", SettingsUiBindings.InferCardOnPlayEffectsEnabled)
+                .AddToggle("chained_card_effect_prediction_enabled", SettingsUiBindings.ChainedCardEffectPredictionEnabled)
+                .WithEntryEnabledWhen(
+                    "chained_card_effect_prediction_enabled",
+                    () =>
+                        SettingsUiBindings.CardPlayPredictionEnabled.Read() ||
+                        SettingsUiBindings.PotionPredictionEnabled.Read()))
             .AddSection("damage_prediction", section => section
                 .WithTitle(T("section.damage_prediction.title"))
                 .WithDescription(T("section.damage_prediction.description"))
@@ -153,23 +167,8 @@ internal static class SettingsBootstrap
                 .WithTitle(T("section.experimental_features.title"))
                 .WithDescription(T("section.experimental_features.description"))
                 .Collapsible(startCollapsed: true)
-                .AddToggle(
-                    "experimental_best_effort_card_play_prediction_enabled",
-                    SettingsUiBindings.ExperimentalBestEffortCardPlayPredictionEnabled)
-                .AddToggle(
-                    "experimental_chained_card_effect_prediction_enabled",
-                    SettingsUiBindings.ExperimentalChainedCardEffectPredictionEnabled)
-                .WithEntryEnabledWhen(
-                    "experimental_best_effort_card_play_prediction_enabled",
-                    () =>
-                        SettingsUiBindings.CardPlayPredictionEnabled.Read() ||
-                        SettingsUiBindings.PotionPredictionEnabled.Read() ||
-                        SettingsUiBindings.EndTurnPredictionEnabled.Read())
-                .WithEntryEnabledWhen(
-                    "experimental_chained_card_effect_prediction_enabled",
-                    () =>
-                        SettingsUiBindings.CardPlayPredictionEnabled.Read() ||
-                        SettingsUiBindings.PotionPredictionEnabled.Read())),
+                // RitsuLib rejects empty sections; keep a placeholder until another experimental setting is added.
+                .AddParagraph("no_experimental_features")),
             "in_combat_prediction");
     }
 
@@ -207,57 +206,60 @@ internal static class SettingsBootstrap
         return ModSettingsText.I18N(ModLocalization.SettingsLocalization, key, key);
     }
 
-    private static ModSettingsSectionBuilder AddToggle(
-        this ModSettingsSectionBuilder section,
-        string id,
-        IModSettingsValueBinding<bool> binding)
+    extension(ModSettingsSectionBuilder section)
     {
-        return section.AddToggle(id, T($"toggle.{id}.label"), binding, T($"toggle.{id}.description"));
-    }
+        private ModSettingsSectionBuilder AddToggle(string id, IModSettingsValueBinding<bool> binding)
+        {
+            return section.AddToggle(id, T($"toggle.{id}.label"), binding, T($"toggle.{id}.description"));
+        }
 
-    private static ModSettingsSectionBuilder AddSubPage(this ModSettingsSectionBuilder section, string pageId)
-    {
-        return section.AddSubpage(
-            $"open_{pageId}_page",
-            T($"page.{pageId}.title"),
-            pageId,
-            T("button.open_page.text"),
-            T($"page.{pageId}.description"));
-    }
+        private ModSettingsSectionBuilder AddSubPage(string pageId)
+        {
+            return section.AddSubpage(
+                $"open_{pageId}_page",
+                T($"page.{pageId}.title"),
+                pageId,
+                T("button.open_page.text"),
+                T($"page.{pageId}.description"));
+        }
 
-    private static ModSettingsSectionBuilder AddHeader(this ModSettingsSectionBuilder section, string id)
-    {
-        return section.AddHeader(id, T($"header.{id}.label"));
-    }
+        private ModSettingsSectionBuilder AddHeader(string id)
+        {
+            return section.AddHeader(id, T($"header.{id}.label"));
+        }
 
-    private static ModSettingsSectionBuilder AddEnumChoice<TValue>(
-        this ModSettingsSectionBuilder section,
-        string id,
-        IModSettingsValueBinding<TValue> binding,
-        ModSettingsChoicePresentation presentation = ModSettingsChoicePresentation.Dropdown)
-        where TValue : struct, Enum
-    {
-        return section.AddEnumChoice(
-            id,
-            T($"choice.{id}.label"),
-            binding,
-            value => T($"choice.{id}.option.{value}"),
-            T($"choice.{id}.description"),
-            presentation);
-    }
+        private ModSettingsSectionBuilder AddEnumChoice<TValue>(
+            string id,
+            IModSettingsValueBinding<TValue> binding,
+            ModSettingsChoicePresentation presentation = ModSettingsChoicePresentation.Dropdown)
+            where TValue : struct, Enum
+        {
+            return section.AddEnumChoice(
+                id,
+                T($"choice.{id}.label"),
+                binding,
+                value => T($"choice.{id}.option.{value}"),
+                T($"choice.{id}.description"),
+                presentation);
+        }
 
-    private static ModSettingsSectionBuilder AddButton(
-        this ModSettingsSectionBuilder section,
-        string id,
-        Action action,
-        ModSettingsButtonTone tone = ModSettingsButtonTone.Normal)
-    {
-        return section.AddButton(
-            id,
-            T($"button.{id}.label"),
-            T($"button.{id}.text"),
-            action,
-            tone,
-            T($"button.{id}.description"));
+        private ModSettingsSectionBuilder AddButton(
+            string id,
+            Action action,
+            ModSettingsButtonTone tone = ModSettingsButtonTone.Normal)
+        {
+            return section.AddButton(
+                id,
+                T($"button.{id}.label"),
+                T($"button.{id}.text"),
+                action,
+                tone,
+                T($"button.{id}.description"));
+        }
+
+        private ModSettingsSectionBuilder AddParagraph(string id)
+        {
+            return section.AddParagraph(id, T($"paragraph.{id}.text"));
+        }
     }
 }

@@ -65,15 +65,15 @@ internal sealed class ModSettings
     public bool PotionGenerationPredictionEnabled { get; set; } = true;
     public bool AutoPlayFromDrawPilePredictionEnabled { get; set; } = true;
 
+    // Card resolution prediction
+    public bool InferCardOnPlayEffectsEnabled { get; set; } = true;
+    public bool ChainedCardEffectPredictionEnabled { get; set; } = true;
+
     // Damage prediction
     public bool CombatDamagePredictionEnabled { get; set; } = true;
     public bool OrbDamagePredictionEnabled { get; set; } = true;
     public bool RandomTargetAttackPredictionEnabled { get; set; } = true;
     public string DamagePredictionHealthBarColor { get; set; } = "#E8C91A";
-
-    // Experimental features
-    public bool ExperimentalBestEffortCardPlayPredictionEnabled { get; set; }
-    public bool ExperimentalChainedCardEffectPredictionEnabled { get; set; }
 
     // Debug settings
     public bool DebugSettingsEnabled { get; set; }
