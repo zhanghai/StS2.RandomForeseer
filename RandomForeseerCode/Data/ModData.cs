@@ -37,7 +37,11 @@ internal static class ModData
                     CurrentDataVersion = ModSettings.CurrentSchemaVersion,
                     MinimumSupportedDataVersion = 0,
                 },
-                migrations: [new ModSettingsV0ToV1Migration()]);
+                migrations:
+                [
+                    new ModSettingsV0ToV1Migration(),
+                    new ModSettingsV1ToV2Migration()
+                ]);
         }
 
         _isRegistered = true;

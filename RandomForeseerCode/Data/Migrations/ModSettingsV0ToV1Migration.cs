@@ -69,20 +69,20 @@ internal sealed class ModSettingsV0ToV1Migration : IMigration
 
         foreach (var (legacyName, currentName) in RenamedProperties)
         {
-            MoveProperty(data, legacyName, currentName);
+            data.MoveProperty(legacyName, currentName);
         }
 
         SplitOrbPredictionSetting(data);
 
-        SetIfMissing(data, nameof(ModSettings.CardPlayPredictionEnabled), cardPlayPredictionEnabled);
-        SetIfMissing(data, nameof(ModSettings.PotionPredictionEnabled), potionPredictionEnabled);
+        data.SetIfMissing(nameof(ModSettings.CardPlayPredictionEnabled), cardPlayPredictionEnabled);
+        data.SetIfMissing(nameof(ModSettings.PotionPredictionEnabled), potionPredictionEnabled);
 
         return true;
     }
 
     private static bool HasAnyLegacyFeatureEnabled(JsonObject data, IEnumerable<string> propertyNames)
     {
-        return propertyNames.Any(propertyName => GetBoolean(data, propertyName) ?? true);
+        return propertyNames.Any(propertyName => data.GetBoolean(propertyName) ?? true);
     }
 
     private static void SplitOrbPredictionSetting(JsonObject data)
@@ -90,41 +90,9 @@ internal sealed class ModSettingsV0ToV1Migration : IMigration
         const string legacyName = "EnableOrbPrediction";
         if (data.TryGetPropertyValue(legacyName, out var value))
         {
-            SetIfMissing(data, nameof(ModSettings.CombatOrbGenerationPredictionEnabled), value);
-            SetIfMissing(data, nameof(ModSettings.OrbDamagePredictionEnabled), value);
+            data.SetIfMissing(nameof(ModSettings.CombatOrbGenerationPredictionEnabled), value);
+            data.SetIfMissing(nameof(ModSettings.OrbDamagePredictionEnabled), value);
             data.Remove(legacyName);
-        }
-    }
-
-    private static bool? GetBoolean(JsonObject data, string propertyName)
-    {
-        return data.TryGetPropertyValue(propertyName, out var value)
-            ? value?.GetValue<bool>()
-            : null;
-    }
-
-    private static void MoveProperty(JsonObject data, string legacyName, string currentName)
-    {
-        if (data.TryGetPropertyValue(legacyName, out var value))
-        {
-            SetIfMissing(data, currentName, value);
-            data.Remove(legacyName);
-        }
-    }
-
-    private static void SetIfMissing(JsonObject data, string propertyName, JsonNode? value)
-    {
-        if (!data.ContainsKey(propertyName))
-        {
-            data[propertyName] = value?.DeepClone();
-        }
-    }
-
-    private static void SetIfMissing(JsonObject data, string propertyName, bool value)
-    {
-        if (!data.ContainsKey(propertyName))
-        {
-            data[propertyName] = value;
         }
     }
 }

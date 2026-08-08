@@ -24,8 +24,7 @@ internal static class RelicPickupPrediction
 
     public static IReadOnlyList<IHoverTip> GetHoverTips(Player player, RelicModel relic)
     {
-        var settings = ModData.Settings;
-        if (!settings.IsPredictionEnabled || !settings.RelicPickupPredictionEnabled)
+        if (!IsPredictionEnabled(relic))
         {
             return [];
         }
@@ -128,6 +127,22 @@ internal static class RelicPickupPrediction
             WarnOnce(relic.GetType(), $"Could not predict relic pickup effect for {relic.Id}: {ex}");
             return [];
         }
+    }
+
+    private static bool IsPredictionEnabled(RelicModel relic)
+    {
+        var settings = ModData.Settings;
+        if (!settings.IsPredictionEnabled)
+        {
+            return false;
+        }
+
+        return relic.Rarity switch
+        {
+            RelicRarity.Ancient => settings.AncientRelicPickupPredictionEnabled,
+            RelicRarity.Event => settings.EventOptionPredictionEnabled,
+            _ => settings.RelicPickupPredictionEnabled
+        };
     }
 
     private static IReadOnlyList<CardModel> PredictRareCharacterCards(RunPredictionContext context, int count)

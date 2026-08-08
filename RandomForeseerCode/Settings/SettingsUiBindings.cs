@@ -37,6 +37,9 @@ internal static class SettingsUiBindings
     public static IModSettingsValueBinding<bool> RelicPickupPredictionEnabled { get; } =
         Binding(s => s.RelicPickupPredictionEnabled, (s, v) => s.RelicPickupPredictionEnabled = v);
 
+    public static IModSettingsValueBinding<bool> AncientRelicPickupPredictionEnabled { get; } =
+        Binding(s => s.AncientRelicPickupPredictionEnabled, (s, v) => s.AncientRelicPickupPredictionEnabled = v);
+
     public static IModSettingsValueBinding<bool> MerchantRestockPredictionEnabled { get; } =
         Binding(s => s.MerchantRestockPredictionEnabled, (s, v) => s.MerchantRestockPredictionEnabled = v);
 

@@ -5,7 +5,7 @@ namespace RandomForeseer.RandomForeseerCode.Data;
 
 internal sealed class ModSettings
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 
     public static ModSettings Default { get; } = new();
 
@@ -31,6 +31,7 @@ internal sealed class ModSettings
     public bool CrystalSphereClairvoyanceEnabled { get; set; } = true;
 
     public bool RelicPickupPredictionEnabled { get; set; } = true;
+    public bool AncientRelicPickupPredictionEnabled { get; set; } = true;
     public bool MerchantRestockPredictionEnabled { get; set; } = true;
     public bool DriftwoodRerollPredictionEnabled { get; set; } = true;
     public bool PaelsWingSacrificePredictionEnabled { get; set; } = true;

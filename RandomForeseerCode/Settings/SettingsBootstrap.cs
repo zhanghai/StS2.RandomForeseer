@@ -63,6 +63,7 @@ internal static class SettingsBootstrap
                 .AddToggle("crystal_sphere_clairvoyance_enabled", SettingsUiBindings.CrystalSphereClairvoyanceEnabled)
                 .AddHeader("relic_predictions")
                 .AddToggle("relic_pickup_prediction_enabled", SettingsUiBindings.RelicPickupPredictionEnabled)
+                .AddToggle("ancient_relic_pickup_prediction_enabled", SettingsUiBindings.AncientRelicPickupPredictionEnabled)
                 .AddToggle("merchant_restock_prediction_enabled", SettingsUiBindings.MerchantRestockPredictionEnabled)
                 .AddToggle("driftwood_reroll_prediction_enabled", SettingsUiBindings.DriftwoodRerollPredictionEnabled)
                 .AddToggle("paels_wing_sacrifice_prediction_enabled", SettingsUiBindings.PaelsWingSacrificePredictionEnabled)

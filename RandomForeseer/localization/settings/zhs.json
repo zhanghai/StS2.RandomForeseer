@@ -41,7 +41,9 @@
 
   "header.relic_predictions.label": "遗物预测",
   "toggle.relic_pickup_prediction_enabled.label": "预测遗物拾起效果",
-  "toggle.relic_pickup_prediction_enabled.description": "启用后，悬浮待拾起的[gold]磨刀石[/gold]、[gold]星系仪[/gold]等遗物以及先古遗物选项时，会显示拾起时将触发的随机效果。",
+  "toggle.relic_pickup_prediction_enabled.description": "启用后，悬浮待拾起的[gold]磨刀石[/gold]、[gold]星系仪[/gold]等一般遗物时，会显示拾起时将触发的随机效果。",
+  "toggle.ancient_relic_pickup_prediction_enabled.label": "预测先古遗物拾起效果",
+  "toggle.ancient_relic_pickup_prediction_enabled.description": "启用后，悬浮[gold]涅奥骨骰[/gold]、[gold]玩具盒[/gold]等先古遗物选项时，会显示拾起时将触发的随机效果。",
   "toggle.merchant_restock_prediction_enabled.label": "预测送货员补货",
   "toggle.merchant_restock_prediction_enabled.description": "启用后，拥有[gold]送货员[/gold]时，悬浮商店中可以购买的卡牌、药水或遗物会显示购买后补货的商品。",
   "toggle.driftwood_reroll_prediction_enabled.label": "预测浮木重掷",
