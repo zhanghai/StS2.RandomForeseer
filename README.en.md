@@ -212,7 +212,7 @@ Current manifest targets:
 
 | Item | Value |
 |---|---|
-| Current version | `0.13.0` |
+| Current version | `0.13.1` |
 | Minimum game version | `0.110.0` |
 | RitsuLib dependency | `0.5.0` |
 

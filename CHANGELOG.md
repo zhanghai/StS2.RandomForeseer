@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.13.1
+
+### fix
+
+- 修复公平模式下战斗奖励页面会显示随机印牌药水结果的问题。<br>
+  Fixed combat reward screens revealing random-card-generation potion results in fair mode.
+
 ## v0.13.0
 
 ### feat
