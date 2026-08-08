@@ -1,4 +1,5 @@
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
@@ -21,7 +22,7 @@ internal static class PotionPrediction
             return [];
         }
 
-        if (potion.Owner.Creature.CombatState is not null)
+        if (CombatManager.Instance.IsInProgress && potion.Owner.Creature.CombatState is not null)
         {
             return CombatPotionPrediction.GetHoverTips(potion);
         }
