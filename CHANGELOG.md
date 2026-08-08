@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.13.0
 
 ### feat
 
@@ -33,8 +33,8 @@
 - 修复连续卡牌预测未正确消费额外打出次数效果的问题，包括爆发、复制、连环拳、信号增强、多人组队和投斧；回响形态现在也会计入预测内已打出的牌。<br>
   Fixed chained card predictions not consuming replay effects from Burst, Duplication, One-Two Punch, Signal Boost, Tag Team, and Throwing Axe; Echo Form now also counts cards played within the prediction.
 
-- 模组设置页现在会根据卡牌、药水和回合结束预测入口正确启用战斗伤害及实验性通用卡牌预测设置。<br>
-  The mod settings page now correctly enables combat damage and experimental best-effort card prediction settings based on the card, potion, and end-turn prediction entry points.
+- 模组设置页现在会根据卡牌、药水和回合结束预测入口正确启用战斗伤害及自动推断卡牌效果设置。<br>
+  The mod settings page now correctly enables combat damage and automatic card-effect inference settings based on the card, potion, and end-turn prediction entry points.
 
 ## v0.12.1
 
