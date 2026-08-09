@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
@@ -25,22 +24,6 @@ internal static class TransformPreviewPatchShared
             nameof(CardSelectCmd.FromDeckForTransformation),
             [typeof(Player), typeof(CardSelectorPrefs), typeof(Func<CardModel, CardTransformation>)])
         ?? throw new MissingMethodException(nameof(CardSelectCmd), nameof(CardSelectCmd.FromDeckForTransformation));
-
-    // Use this from a [HarmonyPatch] TargetMethod() for async transform methods. Harmony must patch
-    // the compiler-generated MoveNext body, because the original async method only starts the state machine.
-    public static MethodBase TargetMoveNext(MethodInfo? asyncMethod)
-    {
-        if (asyncMethod == null)
-        {
-            throw new MissingMethodException("Could not find async patch target.");
-        }
-
-        var attribute = asyncMethod.GetCustomAttribute<AsyncStateMachineAttribute>()
-            ?? throw new InvalidOperationException($"{asyncMethod.FullDescription()} is not async.");
-
-        return AccessTools.Method(attribute.StateMachineType, "MoveNext")
-            ?? throw new MissingMethodException(attribute.StateMachineType.FullName, "MoveNext");
-    }
 
     // Replaces the default preview factory argument:
     //   ldnull
@@ -109,11 +92,12 @@ internal static class DeckTransformSelectScreenResetPredictionPatch
 internal static class AstrolabeTransformPreviewPatch
 {
     private static MethodBase TargetMethod() =>
-        TransformPreviewPatchShared.TargetMoveNext(AccessTools.Method(typeof(Astrolabe), nameof(Astrolabe.AfterObtained)));
+        AccessTools.AsyncMoveNext(AccessTools.Method(typeof(Astrolabe), nameof(Astrolabe.AfterObtained)));
 
     // Patch the omitted optional preview factory argument and provide a predictor using Astrolabe's
     // actual transform RNG. Astrolabe's predictor upgrades the preview card to match the real result.
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions,
+        MethodBase original) =>
         TransformPreviewPatchShared.AddPredictor(
             instructions,
             original,
@@ -130,9 +114,10 @@ internal static class AstrolabeTransformPreviewPatch
 internal static class NewLeafTransformPreviewPatch
 {
     private static MethodBase TargetMethod() =>
-        TransformPreviewPatchShared.TargetMoveNext(AccessTools.Method(typeof(NewLeaf), nameof(NewLeaf.AfterObtained)));
+        AccessTools.AsyncMoveNext(AccessTools.Method(typeof(NewLeaf), nameof(NewLeaf.AfterObtained)));
 
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions,
+        MethodBase original) =>
         TransformPreviewPatchShared.AddPredictor(
             instructions,
             original,
@@ -149,9 +134,10 @@ internal static class NewLeafTransformPreviewPatch
 internal static class AromaOfChaosTransformPreviewPatch
 {
     private static MethodBase TargetMethod() =>
-        TransformPreviewPatchShared.TargetMoveNext(AccessTools.Method(typeof(AromaOfChaos), "LetGo"));
+        AccessTools.AsyncMoveNext(AccessTools.Method(typeof(AromaOfChaos), nameof(AromaOfChaos.LetGo)));
 
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions,
+        MethodBase original) =>
         TransformPreviewPatchShared.AddPredictor(
             instructions,
             original,
@@ -165,9 +151,10 @@ internal static class AromaOfChaosTransformPreviewPatch
 internal static class EndlessConveyorTransformPreviewPatch
 {
     private static MethodBase TargetMethod() =>
-        TransformPreviewPatchShared.TargetMoveNext(AccessTools.Method(typeof(EndlessConveyor), "JellyLiver"));
+        AccessTools.AsyncMoveNext(AccessTools.Method(typeof(EndlessConveyor), nameof(EndlessConveyor.JellyLiver)));
 
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions,
+        MethodBase original) =>
         TransformPreviewPatchShared.AddPredictor(
             instructions,
             original,
@@ -181,9 +168,10 @@ internal static class EndlessConveyorTransformPreviewPatch
 internal static class MorphicGroveTransformPreviewPatch
 {
     private static MethodBase TargetMethod() =>
-        TransformPreviewPatchShared.TargetMoveNext(AccessTools.Method(typeof(MorphicGrove), "Group"));
+        AccessTools.AsyncMoveNext(AccessTools.Method(typeof(MorphicGrove), nameof(MorphicGrove.Group)));
 
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions,
+        MethodBase original) =>
         TransformPreviewPatchShared.AddPredictor(
             instructions,
             original,
@@ -197,9 +185,10 @@ internal static class MorphicGroveTransformPreviewPatch
 internal static class SymbioteTransformPreviewPatch
 {
     private static MethodBase TargetMethod() =>
-        TransformPreviewPatchShared.TargetMoveNext(AccessTools.Method(typeof(Symbiote), "KillWithFire"));
+        AccessTools.AsyncMoveNext(AccessTools.Method(typeof(Symbiote), nameof(Symbiote.KillWithFire)));
 
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions,
+        MethodBase original) =>
         TransformPreviewPatchShared.AddPredictor(
             instructions,
             original,
@@ -213,9 +202,10 @@ internal static class SymbioteTransformPreviewPatch
 internal static class TrialTransformPreviewPatch
 {
     private static MethodBase TargetMethod() =>
-        TransformPreviewPatchShared.TargetMoveNext(AccessTools.Method(typeof(Trial), "NondescriptInnocent"));
+        AccessTools.AsyncMoveNext(AccessTools.Method(typeof(Trial), nameof(Trial.NondescriptInnocent)));
 
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions,
+        MethodBase original) =>
         TransformPreviewPatchShared.AddPredictor(
             instructions,
             original,
@@ -229,9 +219,10 @@ internal static class TrialTransformPreviewPatch
 internal static class WhisperingHollowTransformPreviewPatch
 {
     private static MethodBase TargetMethod() =>
-        TransformPreviewPatchShared.TargetMoveNext(AccessTools.Method(typeof(WhisperingHollow), "Hug"));
+        AccessTools.AsyncMoveNext(AccessTools.Method(typeof(WhisperingHollow), nameof(WhisperingHollow.Hug)));
 
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions,
+        MethodBase original) =>
         TransformPreviewPatchShared.AddPredictor(
             instructions,
             original,
