@@ -73,7 +73,7 @@ internal sealed class RunPredictionPlayerContext(
 
     public RelicGrabBag RelicGrabBag => relicGrabBag ??= player.RelicGrabBag.Clone();
 
-    public SimCardPile Deck => deck ??= SimCardPile.FromPlayerPile(PileType.Deck, player);
+    public SimCardPile Deck => deck ??= new SimCardPile(player.Deck);
 
     public CardRarityOdds CardRarityOdds => cardRarityOdds;
 

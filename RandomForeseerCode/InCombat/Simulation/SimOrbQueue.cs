@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Entities.Orbs;
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Orbs;
 
@@ -8,18 +7,16 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 /// <summary>
 /// Mirrors <see cref="OrbQueue"/> without mutating real orb queue.
 /// </summary>
-internal sealed class SimOrbQueue(Player player)
+internal sealed class SimOrbQueue(OrbQueue liveOrbQueue)
 {
     // The simulator clones the real orb queue at the start of a prediction and mutates the clone
     // during simulation. Since the number of orbs is typically small, this is not likely to be a
     // performance concern.
-    private readonly List<OrbModel> _orbs = player.PlayerCombatState?.OrbQueue.Orbs
-        .Select(orb => (OrbModel)orb.MutableClone())
-        .ToList() ?? [];
+    private readonly List<OrbModel> _orbs = [.. liveOrbQueue.Orbs.Select(orb => (OrbModel)orb.MutableClone())];
 
     public IReadOnlyList<OrbModel> Orbs => _orbs;
 
-    public int Capacity { get; private set; } = player.PlayerCombatState?.OrbQueue.Capacity ?? 0;
+    public int Capacity { get; private set; } = liveOrbQueue.Capacity;
 
     public void Clear()
     {

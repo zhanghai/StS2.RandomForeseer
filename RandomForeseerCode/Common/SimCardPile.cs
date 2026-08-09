@@ -1,58 +1,54 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 
 namespace RandomForeseer.RandomForeseerCode.Common;
 
-internal sealed class SimCardPile(PileType type, List<PredictedCard> cards)
+internal sealed class SimCardPile(PileType type, IEnumerable<PredictedCard> cards)
 {
-    public PileType Type => type;
+    private readonly List<PredictedCard> _cards = [.. cards];
 
-    public IReadOnlyList<PredictedCard> Cards => cards;
+    public PileType Type { get; } = type;
 
-    public bool IsEmpty => cards.Count == 0;
+    public IReadOnlyList<PredictedCard> Cards => _cards;
 
-    public PredictedCard? TopCard => IsEmpty ? null : cards[0];
+    public bool IsEmpty => _cards.Count == 0;
 
-    public PredictedCard? BottomCard => IsEmpty ? null : cards[^1];
+    public PredictedCard? TopCard => IsEmpty ? null : _cards[0];
 
-    public static SimCardPile FromPlayerPile(PileType type, Player player)
+    public PredictedCard? BottomCard => IsEmpty ? null : _cards[^1];
+
+    public SimCardPile(CardPile pile)
+        : this(pile.Type, pile.Cards.Select(card => new PredictedCard(card)))
     {
-        return new(type, PredictedCard.FromCards(type.GetPile(player).Cards));
     }
 
     public void Add(PredictedCard card)
     {
-        cards.Add(card);
+        _cards.Add(card);
     }
 
     public void Insert(int index, PredictedCard card)
     {
-        cards.Insert(index, card);
-    }
-
-    public void AddRange(IEnumerable<PredictedCard> cardsToAdd)
-    {
-        cards.AddRange(cardsToAdd);
+        _cards.Insert(index, card);
     }
 
     public bool Remove(PredictedCard card)
     {
-        return cards.Remove(card);
+        return _cards.Remove(card);
     }
 
     public void Clear()
     {
-        cards.Clear();
+        _cards.Clear();
     }
 
     public SimCardPile Clone()
     {
-        return new(type, cards.Select(card => card.Clone()).ToList());
+        return new SimCardPile(Type, _cards.Select(card => card.Clone()));
     }
 
     public PredictedCard? Find(CardModel card)
     {
-        return cards.FirstOrDefault(predicted => predicted.References(card));
+        return _cards.Find(predicted => predicted.References(card));
     }
 }

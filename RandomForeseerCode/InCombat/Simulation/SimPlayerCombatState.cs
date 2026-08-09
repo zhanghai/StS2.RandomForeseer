@@ -5,35 +5,27 @@ using RandomForeseer.RandomForeseerCode.Common;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
-internal sealed class SimPlayerCombatState(Player player)
+internal sealed class SimPlayerCombatState(PlayerCombatState liveState)
 {
-    private SimOrbQueue? _orbQueue;
+    public SimOrbQueue OrbQueue => field ??= new SimOrbQueue(liveState.OrbQueue);
 
-    private SimCardPile? _hand;
-    private SimCardPile? _drawPile;
-    private SimCardPile? _discardPile;
-    private SimCardPile? _exhaustPile;
-    private SimCardPile? _playPile;
+    public SimCardPile Hand => field ??= new SimCardPile(liveState.Hand);
 
-    public SimOrbQueue OrbQueue => _orbQueue ??= new SimOrbQueue(player);
+    public SimCardPile DrawPile => field ??= new SimCardPile(liveState.DrawPile);
 
-    public SimCardPile Hand => _hand ??= SimCardPile.FromPlayerPile(PileType.Hand, player);
+    public SimCardPile DiscardPile => field ??= new SimCardPile(liveState.DiscardPile);
 
-    public SimCardPile DrawPile => _drawPile ??= SimCardPile.FromPlayerPile(PileType.Draw, player);
+    public SimCardPile ExhaustPile => field ??= new SimCardPile(liveState.ExhaustPile);
 
-    public SimCardPile DiscardPile => _discardPile ??= SimCardPile.FromPlayerPile(PileType.Discard, player);
-
-    public SimCardPile ExhaustPile => _exhaustPile ??= SimCardPile.FromPlayerPile(PileType.Exhaust, player);
-
-    public SimCardPile PlayPile => _playPile ??= SimCardPile.FromPlayerPile(PileType.Play, player);
+    public SimCardPile PlayPile => field ??= new SimCardPile(liveState.PlayPile);
 
     public IReadOnlyList<SimCardPile> AllPiles => [Hand, DrawPile, DiscardPile, ExhaustPile, PlayPile];
 
     public IEnumerable<PredictedCard> AllCards => AllPiles.SelectMany(pile => pile.Cards);
 
-    public int Energy { get; private set; } = player.PlayerCombatState?.Energy ?? 0;
+    public int Energy { get; private set; } = liveState.Energy;
 
-    public int Stars { get; private set; } = player.PlayerCombatState?.Stars ?? 0;
+    public int Stars { get; private set; } = liveState.Stars;
 
     public PredictedCard? FindCard(CardModel card)
     {
