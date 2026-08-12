@@ -78,6 +78,7 @@ internal static class CombatPredictionOverlay
 
             var indicatorSize = indicator.GetGlobalRect().Size;
             indicator.GlobalPosition = GetIndicatorPosition(creatureNode, indicatorSize);
+            indicator.Modulate = creatureNode.Visuals.Modulate with { A = indicator.Modulate.A };
         }
     }
 

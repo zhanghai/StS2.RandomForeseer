@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### fix
+
+- 修复多人战斗中后排角色变暗时，其伤害预测指示器仍保持原亮度的问题。<br>
+  Fixed damage prediction indicators remaining at full brightness when back-row characters are dimmed in multiplayer combat.
+
 ## v0.13.1
 
 ### fix
