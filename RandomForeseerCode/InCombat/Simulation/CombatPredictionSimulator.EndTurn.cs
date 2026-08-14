@@ -2,7 +2,6 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Hooks;
-using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards;
@@ -74,28 +73,28 @@ internal sealed partial class CombatPredictionSimulator
             Exhaust(card, causedByEthereal: true);
         }
 
-        foreach (var card in turnEndCards)
-        {
-            OnTurnEndInHandWrapper(card);
-        }
+        DoTurnEndCards(turnEndCards);
     }
 
     /// <summary>
-    /// Mirrors the prediction-relevant parts of <see cref="CardModel.OnTurnEndInHandWrapper"/>.
+    /// Mirrors the prediction-relevant parts of <see cref="CombatManager.DoTurnEndCards"/>.
     /// </summary>
-    private void OnTurnEndInHandWrapper(PredictedCard card)
+    private void DoTurnEndCards(IEnumerable<PredictedCard> cards)
     {
-        AddToPile(card, PileType.Play);
-        CardOnTurnEndInHandMirrors.Invoke(this, card);
+        foreach (var card in cards)
+        {
+            AddToPile(card, PileType.Play);
+            CardOnTurnEndInHandMirrors.Invoke(this, card);
 
-        // Vanilla does not check Hook.ShouldEtherealTrigger here, so we keep the same behavior.
-        if (card.GetKeywords(State).Contains(CardKeyword.Ethereal))
-        {
-            Exhaust(card, causedByEthereal: true);
-        }
-        else
-        {
-            AddToPile(card, PileType.Discard);
+            // Vanilla does not check Hook.ShouldEtherealTrigger here, so we keep the same behavior.
+            if (card.GetKeywords(State).Contains(CardKeyword.Ethereal))
+            {
+                Exhaust(card, causedByEthereal: true);
+            }
+            else
+            {
+                AddToPile(card, PileType.Discard);
+            }
         }
     }
 }

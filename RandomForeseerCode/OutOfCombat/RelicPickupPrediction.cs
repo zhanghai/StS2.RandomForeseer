@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Models.Enchantments;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs;
@@ -77,6 +78,10 @@ internal static class RelicPickupPrediction
                     [RelicRarity.Common, RelicRarity.Uncommon, RelicRarity.Rare]).ToPredictionHoverTips()],
                 PandorasBox when IsSingleplayerUnfairPredictionAllowed() =>
                     [.. PredictPandorasBox(player).ToPredictionHoverTips()],
+
+                // Nonupeipe
+                BeautifulBracelet beautifulBracelet when IsSingleplayerUnfairPredictionAllowed() =>
+                    [.. PredictBeautifulBracelet(context, beautifulBracelet).ToPredictionHoverTips()],
 
                 // Orobas
                 AlchemicalCoffer when IsSingleplayerUnfairPredictionAllowed() =>
@@ -548,6 +553,19 @@ internal static class RelicPickupPrediction
         }
 
         return relics;
+    }
+
+    private static IReadOnlyList<CardModel> PredictBeautifulBracelet(
+        RunPredictionContext context,
+        BeautifulBracelet relic)
+    {
+        var swift = ModelDb.Enchantment<Swift>();
+
+        return [..context.Deck.Cards
+            .Where(card => swift.CanEnchant(card.Preview))
+            .TakeRandom(relic.DynamicVars.Cards.IntValue, context.SharedRng.Niche)
+            .Select(card => card.Enchant(swift.ToMutable(), relic.DynamicVars["Swift"].IntValue))
+            .SelectPreviews()];
     }
 
     private static void WarnOnce(Type relicType, string message)

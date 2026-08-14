@@ -65,11 +65,15 @@ Mirror files:
   `DiamondDiademPower`. The relic now grants block and Blur at the first side-turn start, outside
   the current end-turn prediction surface, so it is no longer registered here.
 - `Regret` records the shadow hand size on its mutable preview before ethereal cards are exhausted and before
-  turn-end-in-hand wrappers move cards to the play pile, matching vanilla timing without mutating the real card's
+  turn-end card resolution moves cards to the play pile, matching vanilla timing without mutating the real card's
   private counter.
-- The end-turn simulator follows the prediction-relevant ordering of StS2 v0.110.0
+- StS2 v0.111.0 moved play-pile and result-pile transitions for cards with turn-end-in-hand effects out of
+  `CardModel.OnTurnEndInHandWrapper` and into `CombatManager.DoTurnEndCards` / `ResolveTurnEndCardEffects`.
+  Effects remain serialized in hand order; only their presentation tweens overlap. The simulator already follows the
+  same shadow-pile order and now documents the new ownership explicitly.
+- The end-turn simulator follows the prediction-relevant ordering of StS2 v0.111.0
   `CombatManager.EndPlayerTurnPhaseOneInternal`: auto-post-play hooks, `BeforeSideTurnEnd`, per-player orb triggers,
-  ethereal exhaust, then turn-end-in-hand wrappers. The win-condition boundary after `BeforeSideTurnEnd` and the
+  ethereal exhaust, then turn-end card resolution. The win-condition boundary after `BeforeSideTurnEnd` and the
   combat-ending check after each player's orb triggers are not yet mirrored; their call sites retain TODO markers for
   the planned centralized combat-ending checks.
 - Vanilla next calls `BeforeFlush` for each ending player. Its only vanilla listener is `SlumberingEssence` (沉眠精华),

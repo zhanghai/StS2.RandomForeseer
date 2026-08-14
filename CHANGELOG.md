@@ -2,7 +2,15 @@
 
 ## Unreleased
 
+### feat
+
+- 遗物拾起预测现在支持华美手镯，会显示随机获得迅捷附魔的卡牌。<br>
+  Relic pickup prediction now supports Beautiful Bracelet, showing which cards will randomly receive the Swift enchantment.
+
 ### fix
+
+- 适配《杀戮尖塔 2》0.111.0。<br>
+  Adapted to Slay the Spire 2 0.111.0.
 
 - 修复多人战斗中后排角色变暗时，其伤害预测指示器仍保持原亮度的问题。<br>
   Fixed damage prediction indicators remaining at full brightness when back-row characters are dimmed in multiplayer combat.

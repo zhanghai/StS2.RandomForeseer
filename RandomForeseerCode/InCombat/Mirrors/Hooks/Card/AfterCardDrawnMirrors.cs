@@ -182,13 +182,16 @@ internal static class AfterCardDrawnMirrors
         if (state.CardsDrawn <= 0)
         {
             var target = context.Rng.CombatTargets.NextItem(context.State.HittableEnemies);
+
+            // StS2 v0.111.0 resets the counter before dealing damage so nested draws caused by damage hooks
+            // count toward the next trigger instead of retriggering Cacophony immediately.
+            // Use the canonical value to avoid hard-coding the number threshold in case it changes in the future.
+            state.CardsDrawn = power.CanonicalInstance.DynamicVars.Cards.IntValue;
+
             if (target is not null)
             {
                 context.Simulator.Damage(target, power.Amount, ValueProp.Unpowered, power.Owner);
             }
-
-            // Use the canonical value to avoid hard-coding the number threshold in case it changes in the future.
-            state.CardsDrawn = power.CanonicalInstance.DynamicVars.Cards.IntValue;
         }
     }
 

@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Models;
 
 namespace RandomForeseer.RandomForeseerCode.Common;
@@ -12,6 +13,19 @@ internal static class PredictedCardExtensions
             var previewCard = card.MutablePreview;
             previewCard.UpgradeInternal();
             previewCard.FinalizeUpgradeInternal();
+        }
+
+        return card;
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="CardCmd.Enchant(EnchantmentModel, CardModel, decimal)"/>.
+    /// </summary>
+    public static PredictedCard Enchant(this PredictedCard card, EnchantmentModel enchantment, decimal amount)
+    {
+        if (enchantment.CanEnchant(card.Preview))
+        {
+            PredictionUtils.EnchantCard(enchantment, card.MutablePreview, amount);
         }
 
         return card;

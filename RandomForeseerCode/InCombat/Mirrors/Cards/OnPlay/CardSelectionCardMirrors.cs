@@ -197,7 +197,7 @@ internal static class CardSelectionCardMirrors
 
         context.Simulator.History.CardsSelected([cardToExhaust]);
 
-        var damage = default(decimal);
+        var damage = 0m;
         var dynamicVars = cardToExhaust.Preview.DynamicVars;
         if (dynamicVars.ContainsKey("CalculatedDamage"))
         {

@@ -7,7 +7,9 @@ Combat prediction never invokes the real protected virtual method. After moving 
 to the shadow play pile, `CardOnTurnEndInHandMirrors` dispatches an exact-runtime-type handler against its current
 preview. Read-only handlers can therefore keep using the original model; `Regret` explicitly creates and mutates a
 detached mutable preview for its private counter. The registry records `MethodNotMirrored` risk for unregistered
-gameplay overrides. The wrapper then applies vanilla's Ethereal-or-discard result using shadow piles.
+gameplay overrides. The simulator then applies vanilla's Ethereal-or-discard result using shadow piles. Since StS2
+v0.111.0, these pile transitions belong to `CombatManager.ResolveTurnEndCardEffects`; the model wrapper only invokes
+the protected effect body.
 
 ## Method spec
 
@@ -34,6 +36,8 @@ gameplay overrides. The wrapper then applies vanilla's Ethereal-or-discard resul
 - Card damage passes both the owner creature as dealer and the predicted card as `cardSource`, matching vanilla's
   card-source `CreatureCmd.Damage` overload while leaving `CardPlay` null.
 - Unsupported modded overrides are risk-marked rather than invoking live card behavior.
+- StS2 v0.111.0 moved turn-end card pile transitions from the model wrapper to `CombatManager`, but kept effect
+  resolution serialized in hand order. The simulator mirrors this semantic order and omits only overlapping tweens.
 - Waits, VFX, SFX, real pile mutation, and real card-local state mutation are intentionally omitted. `Regret`'s
   `CardsInHand` mutation is reproduced only on its detached mutable preview.
 
