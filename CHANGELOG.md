@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.13.2
 
 ### feat
 
@@ -14,6 +14,11 @@
 
 - 修复多人战斗中后排角色变暗时，其伤害预测指示器仍保持原亮度的问题。<br>
   Fixed damage prediction indicators remaining at full brightness when back-row characters are dimmed in multiplayer combat.
+
+### misc
+
+- 更新 RitsuLib 依赖到 0.5.12。<br>
+  Updated the RitsuLib dependency to 0.5.12.
 
 ## v0.13.1
 
