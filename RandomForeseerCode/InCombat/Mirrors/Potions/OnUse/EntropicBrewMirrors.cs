@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Random;
 using RandomForeseer.RandomForeseerCode.Common;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Potions.OnUse;
 
 internal static class EntropicBrewMirrors
 {

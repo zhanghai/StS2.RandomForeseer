@@ -7,7 +7,7 @@ using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Common.Mirrors;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Potions.OnUse;
 
 using Registry = MethodMirrorRegistry<PotionModel, PotionOnUseMirrorContext>;
 
@@ -45,7 +45,7 @@ internal static class PotionOnUseMirrors
         PotionModel potion,
         Creature? target)
     {
-        return Registry.Invoke(potion, new()
+        return Registry.Invoke(potion, new PotionOnUseMirrorContext
         {
             Simulator = simulator,
             Potion = potion,

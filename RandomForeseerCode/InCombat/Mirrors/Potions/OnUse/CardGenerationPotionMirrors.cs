@@ -8,7 +8,7 @@ using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
-namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
+namespace RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Potions.OnUse;
 
 /// <summary>
 /// Contains the generated card snapshots shared by combat simulation and out-of-combat potion previews.

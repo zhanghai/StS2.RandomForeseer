@@ -1,8 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
-using RandomForeseer.RandomForeseerCode.Data;
-using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Potions.OnUse;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;

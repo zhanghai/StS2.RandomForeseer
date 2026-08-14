@@ -8,7 +8,7 @@ using MegaCrit.Sts2.Core.Runs;
 using RandomForeseer.RandomForeseerCode.Common.HoverTips;
 using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat;
-using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.PotionOnUse;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Potions.OnUse;
 
 namespace RandomForeseer.RandomForeseerCode.Common;
 
