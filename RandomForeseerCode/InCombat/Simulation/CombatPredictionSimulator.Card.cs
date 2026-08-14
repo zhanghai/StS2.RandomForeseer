@@ -7,8 +7,10 @@ using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Afflictions.OnPlay;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards;
 using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards.OnPlay;
+using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Enchantments.OnPlay;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
@@ -270,12 +272,22 @@ internal sealed partial class CombatPredictionSimulator
 
             if (previewCard.Enchantment is { } enchantment)
             {
-                // TODO: Simulate enchantment effects
+                EnchantmentOnPlayMirrors.Invoke(this, card, cardPlay, enchantment);
+
+                if (ownerCreature.IsDead)
+                {
+                    return;
+                }
             }
 
             if (previewCard.Affliction is { } affliction)
             {
-                // TODO: Simulate affliction effects
+                AfflictionOnPlayMirrors.Invoke(this, card, target, affliction);
+
+                if (ownerCreature.IsDead)
+                {
+                    return;
+                }
             }
 
             History.CardPlayFinished(

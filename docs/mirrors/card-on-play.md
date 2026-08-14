@@ -6,6 +6,8 @@ StS2 v0.109.0 runs each concrete `CardModel.OnPlay(PlayerChoiceContext, CardPlay
 
 Combat prediction never invokes the real virtual method. `CombatPredictionSimulator.ManualPlay` creates a shadow `CardPlay`, then `CardOnPlayMirrors` dispatches the exact or inferred mirror against the mutable predicted card without mutating the real card, piles, creatures or RNG.
 
+After that dispatch, the simulator invokes the mutable preview's `EnchantmentModel.OnPlay` and `AfflictionModel.OnPlay` mirrors in vanilla order, including the owner-death boundary after each method. Their registrations and limitations are documented in [enchantment-on-play.md](enchantment-on-play.md) and [affliction-on-play.md](affliction-on-play.md).
+
 ## Dispatch priority
 
 `CardOnPlayMirrors` uses one exact-runtime-type `MethodMirrorRegistry<CardModel, CardOnPlayMirrorContext>` with this fixed priority:

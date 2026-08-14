@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### feat
+
+- 战斗卡牌预测现在会按原版顺序模拟已支持附魔的打出效果。<br>
+  Combat card prediction now simulates supported enchantment play effects in vanilla order.
+
 ## v0.13.2
 
 ### feat
