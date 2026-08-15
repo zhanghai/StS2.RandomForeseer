@@ -40,7 +40,8 @@ internal static class ModData
                 migrations:
                 [
                     new ModSettingsV0ToV1Migration(),
-                    new ModSettingsV1ToV2Migration()
+                    new ModSettingsV1ToV2Migration(),
+                    new ModSettingsV2ToV3Migration()
                 ]);
         }
 

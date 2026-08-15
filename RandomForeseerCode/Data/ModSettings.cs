@@ -5,7 +5,7 @@ namespace RandomForeseer.RandomForeseerCode.Data;
 
 internal sealed class ModSettings
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
 
     public static ModSettings Default { get; } = new();
 
@@ -16,7 +16,7 @@ internal sealed class ModSettings
     public bool SingleplayerPredictionEnabled { get; set; } = true;
     public bool MultiplayerPredictionEnabled { get; set; } = true;
     public bool FairModeEnabled { get; set; } = true;
-    public bool ShowDriftWarnings { get; set; } = true;
+    public bool ShowDriftWarnings { get; set; }
 
     // Out-of-combat prediction settings
     public bool DeckTransformPredictionEnabled { get; set; } = true;

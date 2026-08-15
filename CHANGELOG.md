@@ -9,6 +9,9 @@
 
 ### fix
 
+- 预测偏移警告现在默认关闭以减少打扰；仍可手动在设置中重新开启。<br>
+  Prediction drift warnings are now disabled by default to reduce interruptions and can still be manually re-enabled in settings.
+
 - 现在当公平模式启用时，战斗中不满足打出条件的手牌不会显示出牌预测；支持的战斗选牌界面也会按选中后的手牌状态模拟出牌。<br>
   When fair mode is enabled, cards in hand that cannot be played no longer show play predictions; supported combat card-choice screens now also simulate plays using the selected card's resulting hand state.
 
