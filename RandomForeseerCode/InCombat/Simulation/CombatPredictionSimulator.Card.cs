@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions;
@@ -16,12 +15,6 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 internal sealed partial class CombatPredictionSimulator
 {
-    private delegate bool IsPlayableDelegate(CardModel card);
-    private static readonly IsPlayableDelegate IsPlayableGetter = (IsPlayableDelegate)Delegate.CreateDelegate(
-        typeof(IsPlayableDelegate),
-        AccessTools.PropertyGetter(typeof(CardModel), "IsPlayable")
-            ?? throw new UnreachableException("Could not find CardModel.IsPlayable method."));
-
     // Mirrors CardPileCmd.AddDuringManualCardPlay, which is called when a card is manually played
     // from hand and is added to the play pile.
     public void AddDuringManualCardPlay(PredictedCard card)
@@ -165,7 +158,7 @@ internal sealed partial class CombatPredictionSimulator
             return false;
         }
 
-        if (!IsPlayableGetter(card.Preview))
+        if (!CardIsPlayableMirrors.Invoke(this, card))
         {
             return false;
         }
