@@ -12,185 +12,34 @@ The Workshop package automatically loads the newest compatible Mod version for t
 
 ## Features
 
+### Out-of-combat prediction
+
 - **Transform prediction**: shows the exact card that the current RNG state will produce in transform selection grid hover tips and confirmation previews.
-- **Random-card-generation potion prediction**: adds the predicted generated cards to random-card-generation potion hover tips.
-- **Potion generation prediction**: shows the potions that Entropic Brew and Alchemize will generate.
-- **Combat card generation prediction**: shows predicted generated cards when hovering supported random-card generators in hand during combat.
-- **Combat card selection prediction**: shows or highlights existing cards that supported combat card-selection effects will select when hovering cards in hand or card-play targets; predictions that may be shifted by side effects show a warning that can be disabled.
-- **Random-target attack prediction**: shows targets that supported random-enemy attack cards will hit during combat, with health bar forecasts.
-- **Orb effect prediction**: shows targets that supported orb-triggering cards and potions will hit when hovering those sources or their targets during combat, with health bar forecasts.
-- **End-turn effect prediction**: shows aggregated supported end-turn damage for all players ending their turn; overlay indicators and health bar forecasts can be configured separately for End Turn button hover or always during the player turn; hovering a target creature or prediction indicator shows per-hit damage source details.
-- **Draw-pile autoplay prediction**: shows the cards that Havoc, Cascade, and Distilled Chaos will play from the draw pile.
-- **Potion draw prediction**: shows the cards that supported draw potions will draw, including cards after shuffle.
-- **Card draw prediction**: shows cards drawn by supported card-play effects, including cards after shuffle.
-- **Combat transform prediction**: shows the cards that Entropy will transform selected hand cards into during combat.
-- **Driftwood reroll prediction**: shows the cards that a card reward reroll will offer when hovering the Reroll button.
-- **Pael's Wing sacrifice prediction**: shows the relic awarded by an activating Sacrifice button.
-- **Relic pickup effect prediction**: relic tooltips (including Ancient options) show random cards, relics, potions, curses, and transform results that happen immediately on pickup.
-- **Courier restock prediction**: while you have The Courier, hovering merchant cards, potions, or relics you can afford shows the item that will restock that slot after purchase.
-- **Rest-site result prediction**: shows random results from relics such as Dream Catcher, Tiny Mailbox, and Shovel when hovering rest-site options.
+- **Next Act Ancient and boss prediction**: the top bar on boss reward screens in the first two Acts shows the next Act's starting Ancient and ending boss.
 - **Event option prediction**: shows immediate random rewards, random upgrades/downgrades, and random follow-up options when hovering non-Ancient event options.
 - **Crystal Sphere clairvoyance**: shows item locations and types through unrevealed fog in the Crystal Sphere minigame.
-- **Next Act Ancient and boss prediction**: the top bar on boss reward screens in the first two Acts shows the next Act's starting Ancient and ending boss.
+- **Relic pickup effect prediction**: relic tooltips (including Ancient options) show random cards, relics, potions, curses, and transform results that happen immediately on pickup.
+- **Courier restock prediction**: while you have The Courier, hovering merchant cards, potions, or relics you can afford shows the item that will restock that slot after purchase.
+- **Driftwood reroll prediction**: shows the cards that a card reward reroll will offer when hovering the Reroll button.
+- **Pael's Wing sacrifice prediction**: shows the relic awarded by an activating Sacrifice button.
+- **Rest-site result prediction**: shows random results from relics such as Dream Catcher, Tiny Mailbox, and Shovel when hovering rest-site options.
+
+### In-combat prediction
+
+- **Combat transform prediction**: shows the cards that Entropy will transform selected hand cards into during combat.
+- **End-turn effect prediction**: shows aggregated supported end-turn damage for all players ending their turn; overlay indicators and health bar forecasts can be configured separately for End Turn button hover or always during the player turn; hovering a target creature or prediction indicator shows per-hit damage source details.
 - **Frozen Eye**: shows the combat draw pile in actual draw order when opened, and previews the discard pile order after shuffle during the player's turn.
+- **Combat card generation prediction**: shows predicted generated cards when hovering supported random-card generators in hand during combat.
+- **Card draw prediction**: shows cards drawn by supported card-play effects, including cards after shuffle.
+- **Combat card selection prediction**: shows or highlights existing cards that supported combat card-selection effects will select when hovering cards in hand or card-play targets; predictions that may be shifted by side effects show a warning that can be disabled.
+- **Orb effect prediction**: shows targets that supported orb-triggering cards and potions will hit when hovering those sources or their targets during combat, with health bar forecasts.
+- **Random-card-generation potion prediction**: adds the predicted generated cards to random-card-generation potion hover tips.
+- **Potion draw prediction**: shows the cards that supported draw potions will draw, including cards after shuffle.
+- **Potion generation prediction**: shows the potions that Entropic Brew and Alchemize will generate.
+- **Draw-pile autoplay prediction**: shows the cards that Havoc, Cascade, and Distilled Chaos will play from the draw pile.
+- **Random-target attack prediction**: shows targets that supported random-enemy attack cards will hit during combat, with health bar forecasts.
 
 Each feature can be toggled independently from the mod settings page, and predictions can also be disabled globally for singleplayer or multiplayer. Fair mode is enabled by default and limits predictions to information obtainable through Save & Load.
-
-## Currently Supported Predictions
-
-### Transform Sources
-
-- Astrolabe
-- New Leaf
-- Aroma of Chaos
-- Endless Conveyor
-- Morphic Grove
-- Symbiote
-- The Trial
-- Whispering Hollow
-
-### Random-Card-Generation Potions
-
-- Attack Potion
-- Skill Potion
-- Power Potion
-- Colorless Potion
-- Cosmic Concoction
-- Orobic Acid
-
-### Potion Generation
-
-- Entropic Brew (in and out of combat, including merchant stock)
-- Alchemize
-
-### Combat Card Generation
-
-- Abundance
-- Bundle of Joy
-- Discovery
-- Distraction
-- Infernal Blade
-- Jack of All Trades
-- Jackpot
-- Largesse
-- Manifest Authority
-- Metamorphosis
-- Quasar
-- Splash
-- Stoke
-- White Noise
-- Mad Science (Chaos rider only)
-
-### Combat Card Selection
-
-- True Grit (unupgraded)
-- Cinder
-- Thrash
-- Hidden Gem
-- Drain Power
-- Anointed
-- Seeker Strike (random candidates)
-- Uproar
-- Catastrophe
-- Beat Down
-
-### Random-Target Attacks
-
-- Flak Cannon
-- Ricochet
-- Rip and Tear
-- Stardust
-- Sweeping Gaze
-- Sword Boomerang
-- Volley
-
-### Orb Effects
-
-- Ball Lightning
-- Chaos
-- Chill
-- Cold Snap
-- Consuming Shadow
-- Coolheaded
-- Darkness
-- Dualcast
-- Essence of Darkness
-- Fusion
-- Glacier
-- Glasswork
-- Ice Lance
-- Ignition
-- Meteor Strike
-- Multi-Cast
-- Null
-- Quadcast
-- Rainbow
-- Refract
-- Shadow Shield
-- Shatter
-- Spinner (upgraded)
-- Tempest
-- Tesla Coil
-- Voltaic
-- Zap
-
-### Draw-Pile Autoplay
-
-- Havoc
-- Cascade
-- Distilled Chaos
-
-### Potion Draw
-
-- Swift Potion
-- Clarity Extract
-- Cure All
-- Glowwater Potion
-- Snecko Oil (full hand and randomized costs)
-- Bottled Potential
-
-### Card Draw
-
-- Reboot
-- Calculated Gamble
-- Coolheaded
-- Constellation
-- Compile Driver
-- Escape Plan
-- Expertise
-- Fetch
-- FTL
-- Huddle Up
-- Impatience
-- Pillage
-- Restlessness
-- Scrape
-- Scrawl
-
-### Combat Transform
-
-- Entropy
-
-### Card Rewards
-
-- Driftwood reroll
-- Pael's Wing Sacrifice rewards
-
-### Non-Ancient Events
-
-- Immediate random results for event options in Aroma of Chaos, Battleworn Dummy, Brain Leech, Colorful Philosophers, Dense Vegetation, Doll Room, Doors of Light and Dark, Endless Conveyor, Infested Automaton, Luminous Choir, Morphic Grove, Potion Courier, Punch Off, Ranwid the Elder, Reflections snoitcelfeR, Room Full of Cheese, The Round Tea Party, Slippery Bridge, Symbiote, Tablet of Truth, The Future of Potions?, The Legends Were True, This or That?, Tinker Time, Trash Heap, The Trial, Unrest Site, War Historian, Repy, Welcome to Wongo's, Wellspring, Whispering Hollow, and similar events.
-
-### Relic Pickup Effects
-
-- Immediate random results from Neow and other Ancient relic options
-- Upon-pickup results for Beautiful Bracelet, Cauldron, Orrery, Fragrant Mushroom, War Paint, Whetstone, and similar relics
-- Immediate random results from relic rewards
-- Immediate random results from merchant relics
-- Immediate random results from relics received in the Relic Trader event
-
-### Merchant Restocks
-
-- Cards, potions, and relics restocked by The Courier; Cauldron and Orrery account for RNG advanced by their pickup effects first
 
 ## Integrations
 
