@@ -7,6 +7,11 @@
 - 战斗卡牌预测现在会按原版顺序模拟已支持附魔的打出效果。<br>
   Combat card prediction now simulates supported enchantment play effects in vanilla order.
 
+### fix
+
+- 现在当公平模式启用时，战斗中不满足打出条件的手牌不会显示出牌预测；支持的战斗选牌界面也会按选中后的手牌状态模拟出牌。<br>
+  When fair mode is enabled, cards in hand that cannot be played no longer show play predictions; supported combat card-choice screens now also simulate plays using the selected card's resulting hand state.
+
 ## v0.13.2
 
 ### feat

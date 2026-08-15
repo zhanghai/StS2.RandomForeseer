@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions;
@@ -16,6 +16,12 @@ namespace RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 internal sealed partial class CombatPredictionSimulator
 {
+    private delegate bool IsPlayableDelegate(CardModel card);
+    private static readonly IsPlayableDelegate IsPlayableGetter = (IsPlayableDelegate)Delegate.CreateDelegate(
+        typeof(IsPlayableDelegate),
+        AccessTools.PropertyGetter(typeof(CardModel), "IsPlayable")
+            ?? throw new UnreachableException("Could not find CardModel.IsPlayable method."));
+
     // Mirrors CardPileCmd.AddDuringManualCardPlay, which is called when a card is manually played
     // from hand and is added to the play pile.
     public void AddDuringManualCardPlay(PredictedCard card)
@@ -110,29 +116,60 @@ internal sealed partial class CombatPredictionSimulator
     /// </summary>
     /// <param name="card">The prediction-owned card wrapper to play.</param>
     /// <param name="target">The already-resolved target, if required.</param>
-    /// <param name="frame">The exact root card-play frame when the play starts successfully.</param>
-    /// <returns><see langword="true"/> when the simulated play starts; otherwise <see langword="false"/>.</returns>
+    /// <param name="frame">The exact root card-play frame.</param>
     /// <remarks>
     /// The returned frame has <see cref="PredictedCard.Original"/> as its source and
     /// <see cref="PredictionActionKind.CardPlay"/> as its action. It remains a stable identity after its trace scope is
-    /// disposed and must be paired only with this simulator's history. Resource affordability,
-    /// <see cref="Hook.ShouldPlay"/>, and general playability checks are outside this entry point; callers must perform
-    /// any required UI/target gating before invocation.
+    /// disposed and must be paired only with this simulator's history. Card playability and target validation checks
+    /// are outside this entry point; callers must perform any required UI/target gating before invocation.
     /// </remarks>
-    public bool ManualPlay(
-        PredictedCard card,
-        Creature? target,
-        [NotNullWhen(true)] out PredictionTraceFrame? frame)
+    public void ManualPlay(PredictedCard card, Creature? target, out PredictionTraceFrame frame)
     {
-        if (card.GetKeywords(State).Contains(CardKeyword.Unplayable) ||
-            !card.Preview.IsValidTarget(target))
+        var resources = SpendResources(card, isAutoPlay: false);
+        OnPlayWrapper(card, target, isAutoPlay: false, resources, out frame);
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="CardModel.CanPlay()"/>.
+    /// </summary>
+    /// <remarks>
+    /// Unlike <see cref="CardModel.CanPlay()"/>, this mirror does not check whether there are living allies
+    /// for <see cref="TargetType.AnyAlly"/> cards, since <see cref="CardModel.IsValidTarget(Creature?)"/>
+    /// already rejects null or dead ally targets.
+    /// </remarks>
+    public bool CanPlay(PredictedCard card)
+    {
+        if (card.GetKeywords(State).Contains(CardKeyword.Unplayable))
         {
-            frame = null;
             return false;
         }
 
-        var resources = SpendResources(card, isAutoPlay: false);
-        OnPlayWrapper(card, target, isAutoPlay: false, resources, out frame);
+        var ownerState = State.GetPlayerCombatState(card.Preview.Owner);
+        var energyCost = card.GetEnergyCostWithModifiers(this, ownerState);
+        var starCost = card.GetStarCostWithModifiers(this, ownerState);
+
+        if (energyCost > ownerState.Energy &&
+            Hook.ShouldPayExcessEnergyCostWithStars(State.CombatState, card.Preview.Owner))
+        {
+            starCost += 2 * (energyCost - ownerState.Energy);
+            energyCost = ownerState.Energy;
+        }
+
+        if (energyCost > ownerState.Energy || starCost > ownerState.Stars)
+        {
+            return false;
+        }
+
+        if (!HookMirrors.ShouldPlay(this, card, out _, AutoPlayType.None))
+        {
+            return false;
+        }
+
+        if (!IsPlayableGetter(card.Preview))
+        {
+            return false;
+        }
+
         return true;
     }
 
@@ -145,10 +182,11 @@ internal sealed partial class CombatPredictionSimulator
         var energyValue = card.GetEnergyCostWithModifiers(this, playerCombatState);
         var starValue = card.GetStarCostWithModifiers(this, playerCombatState);
 
-        if (!isAutoPlay)
+        if (!isAutoPlay && energyValue > playerCombatState.Energy &&
+            Hook.ShouldPayExcessEnergyCostWithStars(State.CombatState, card.Preview.Owner))
         {
-            // Vanilla checks Hook.ShouldPayExcessEnergyCostWithStars here, but there are no known consumers
-            // of this hook, so it is skipped for now.
+            starValue += 2 * (energyValue - playerCombatState.Energy);
+            energyValue = playerCombatState.Energy;
         }
 
         if (!skipXCapture)

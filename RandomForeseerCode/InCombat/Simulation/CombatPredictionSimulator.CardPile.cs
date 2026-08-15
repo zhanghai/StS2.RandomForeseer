@@ -107,8 +107,7 @@ internal sealed partial class CombatPredictionSimulator
     }
 
     /// <summary>
-    /// Mirrors <see cref="CardPileCmd.AddToCombatAndPreview{T}"/>, excluding preview UI.
-    /// It resolves the receiving player from the target and skips generation when that player is dead.
+    /// Mirrors <see cref="CardPileCmd.AddToCombatAndPreview{T}(Creature, PileType, int, Player?, CardPilePosition)"/>.
     /// </summary>
     public void AddToCombat<TCard>(
         Creature target,
@@ -153,9 +152,6 @@ internal sealed partial class CombatPredictionSimulator
     /// Mirrors <see cref="CardPileCmd.AddGeneratedCardToCombat"/>.
     /// Adds one generated card while preserving how its result should be projected.
     /// </summary>
-    /// <param name="resultKind">
-    /// How the card result itself is determined. Random pile placement alone does not make a fixed card random.
-    /// </param>
     public SimCardPileAddResult AddGeneratedCardToCombat(
         PredictedCard card,
         PileType newPileType,
@@ -259,7 +255,7 @@ internal sealed partial class CombatPredictionSimulator
         }
 
         var owner = cards[0].Preview.Owner
-            ?? throw new InvalidOperationException($"Cannot add cards with no owner to a pile.");
+            ?? throw new InvalidOperationException("Cannot add cards with no owner to a pile.");
         var playerCombatState = State.GetPlayerCombatState(owner);
 
         List<SimCardPileAddResult> results = [];
@@ -352,13 +348,12 @@ internal sealed partial class CombatPredictionSimulator
         foreach (var card in cards)
         {
             var pile = card.GetPile(State)
-                ?? throw new InvalidOperationException(
-                    $"Cannot remove card {card} from combat because it is not in a pile.");
-            pile?.Remove(card);
-            removedCards.Add((card, pile?.Type ?? PileType.None));
+                ?? throw new InvalidOperationException("Cannot remove card from combat because it is not in a pile.");
+            pile.Remove(card);
+            removedCards.Add((card, pile.Type));
         }
 
-        foreach (var (card, oldPileType) in removedCards)
+        foreach (var (card, _) in removedCards)
         {
             // Vanilla dispatches Hook.AfterCardChangedPiles here, which is not mirrored for the same reasons
             // as in AddToPile.

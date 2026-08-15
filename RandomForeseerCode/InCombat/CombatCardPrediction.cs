@@ -1,14 +1,17 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Potions;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using RandomForeseer.RandomForeseerCode.Common;
 using RandomForeseer.RandomForeseerCode.Data;
 using RandomForeseer.RandomForeseerCode.InCombat.Extensions;
-using RandomForeseer.RandomForeseerCode.InCombat.Mirrors.Cards.OnPlay;
 using RandomForeseer.RandomForeseerCode.InCombat.Simulation;
 
 namespace RandomForeseer.RandomForeseerCode.InCombat;
@@ -18,6 +21,21 @@ namespace RandomForeseer.RandomForeseerCode.InCombat;
 /// </summary>
 internal static class CombatCardPrediction
 {
+    private static readonly Dictionary<Type, ChoiceSourceBehavior> ChoiceSourceBehaviors = new()
+    {
+        [typeof(Abundance)] = new(SetsCardToFreeThisTurn: true),
+        [typeof(Discovery)] = new(SetsCardToFreeThisTurn: true),
+        [typeof(Quasar)] = new(),
+        [typeof(Splash)] = new(SetsCardToFreeThisTurn: true),
+
+        [typeof(AttackPotion)] = new(SetsCardToFreeThisTurn: true),
+        [typeof(ColorlessPotion)] = new(SetsCardToFreeThisTurn: true),
+        [typeof(PowerPotion)] = new(SetsCardToFreeThisTurn: true),
+        [typeof(SkillPotion)] = new(SetsCardToFreeThisTurn: true),
+
+        [typeof(Toolbox)] = new()
+    };
+
     /// <summary>
     /// Builds prediction HoverTips for an in-combat card without requiring a selected target.
     /// </summary>
@@ -73,17 +91,31 @@ internal static class CombatCardPrediction
     /// <remarks>Simulation and projection exceptions are intentionally handled by the calling UI injection boundary.</remarks>
     public static CombatPredictionProjection? Predict(CardModel card, Creature? target)
     {
-        if (!card.TryResolveTarget(ref target))
+        if (card.Owner.Creature.CombatState is not { } combatState ||
+            !card.TryResolveTarget(ref target))
         {
             return null;
         }
 
-        var simulator = new CombatPredictionSimulator(card.Owner.Creature.CombatState!);
+        var simulator = new CombatPredictionSimulator(combatState);
         var predictedCard = simulator.State.FindCard(card) ?? new PredictedCard(card);
 
-        return simulator.ManualPlay(predictedCard, target, out var frame)
-            ? CombatPredictionProjector.Project(simulator.History, frame)
-            : null;
+        if (TryGetChoiceSimulationPlan(card, out var choiceSimulation))
+        {
+            FastForwardChoiceResult(simulator, predictedCard, choiceSimulation);
+        }
+
+        var shouldPredict = ModData.Settings.FairModeEnabled
+            ? predictedCard.GetPile(simulator.State) is { Type: PileType.Hand } &&
+              simulator.CanPlay(predictedCard)
+            : !predictedCard.GetKeywords(simulator.State).Contains(CardKeyword.Unplayable);
+        if (!shouldPredict)
+        {
+            return null;
+        }
+
+        simulator.ManualPlay(predictedCard, target, out var frame);
+        return CombatPredictionProjector.Project(simulator.History, frame);
     }
 
     private static bool ShouldShowCombatPlayPrediction(CardModel card)
@@ -94,10 +126,10 @@ internal static class CombatCardPrediction
             return false;
         }
 
-        if (ChooseACardPredictionContext.Contains(card))
+        if (TryGetChoiceSimulationPlan(card, out _))
         {
-            // Cards shown by NChooseACardSelectionScreen are generated mutable cards with an owner,
-            // but they are not in any combat pile yet. Treat them like cards that will enter hand
+            // Cards registered from supported FromChooseACardScreen callers are generated cards with
+            // an owner, but they are not in any combat pile yet. Treat them like cards that will enter hand
             // after the player chooses them, so they can show the same play predictions as hand cards.
             return true;
         }
@@ -118,6 +150,55 @@ internal static class CombatCardPrediction
         // behavior for non-local or integration-provided hand card views.
         return true;
     }
+
+    private static bool TryGetChoiceSimulationPlan(CardModel card, out ChoiceSimulationPlan plan)
+    {
+        plan = default;
+        if (!ChooseACardPredictionContext.TryGet(card, out var source) ||
+            !ChoiceSourceBehaviors.TryGetValue(source.GetType(), out var behavior))
+        {
+            return false;
+        }
+
+        var creator = source switch
+        {
+            CardModel sourceCard => sourceCard.Owner,
+            PotionModel sourcePotion => sourcePotion.Owner,
+            RelicModel sourceRelic => sourceRelic.Owner,
+            _ => null
+        };
+        if (creator is null)
+        {
+            return false;
+        }
+
+        plan = new ChoiceSimulationPlan(creator, behavior);
+        return true;
+    }
+
+    private static void FastForwardChoiceResult(
+        CombatPredictionSimulator simulator,
+        PredictedCard selectedCard,
+        ChoiceSimulationPlan plan)
+    {
+        // Mirrors the post-selection branches of the supported CardModel.OnPlay, PotionModel.OnUse, and
+        // Toolbox.BeforeHandDraw callers. Vanilla mutates the live selected card and adds it to live combat piles;
+        // the prediction applies those effects only to its detached card and shadow piles.
+        if (plan.Behavior.SetsCardToFreeThisTurn)
+        {
+            selectedCard.SetToFreeThisTurn();
+        }
+
+        simulator.AddGeneratedCardToCombat(
+            selectedCard,
+            PileType.Hand,
+            plan.Creator,
+            resultKind: CardGenerationResultKind.Fixed);
+    }
+
+    private readonly record struct ChoiceSimulationPlan(Player Creator, ChoiceSourceBehavior Behavior);
+
+    private readonly record struct ChoiceSourceBehavior(bool SetsCardToFreeThisTurn = false);
 }
 
 [HarmonyPatch(typeof(CardModel), nameof(CardModel.HoverTips), MethodType.Getter)]

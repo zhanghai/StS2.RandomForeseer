@@ -6,6 +6,7 @@ Mirror files: `InCombat/Simulation/SimPlayerCombatState.cs`, `InCombat/Simulatio
 
 - `AbstractModel.ModifyEnergyGain(Player, decimal)`
 - `AbstractModel.AfterModifyingEnergyGain()`
+- `AbstractModel.ShouldPayExcessEnergyCostWithStars(Player)`
 
 ## Current mirror behavior
 
@@ -20,6 +21,10 @@ Mirror files: `InCombat/Simulation/SimPlayerCombatState.cs`, `InCombat/Simulatio
 | Model | 中文名 | Original effect | Current mirror status |
 | --- | --- | --- | --- |
 | `NoEnergyGainPower` | 无法获得能量 | Sets owner energy gain to 0. | Implemented by original `Hook.ModifyEnergyGain`. The after hook is intentionally omitted because it only flashes UI. |
+
+There are currently no vanilla overrides of `ShouldPayExcessEnergyCostWithStars`. Calling the original read-only hook
+preserves listener order and supports Mod overrides whose decision depends only on live listener/player state; a future
+listener that consumes prediction-local model state will require a selective mirror.
 
 ## Energy state callers
 
