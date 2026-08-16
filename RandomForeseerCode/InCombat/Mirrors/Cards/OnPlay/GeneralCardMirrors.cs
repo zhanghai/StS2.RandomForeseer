@@ -44,29 +44,35 @@ internal static class GeneralCardMirrors
         AttackCommand? command;
         if (card.DynamicVars.ContainsKey("CalculatedDamage"))
         {
-            command = DamageCmd.Attack(card.DynamicVars.CalculatedDamage)
-                .FromCard(card, context.CardPlay);
+            command = DamageCmd.Attack(card.DynamicVars.CalculatedDamage);
         }
         else if (card.DynamicVars.ContainsKey("Damage"))
         {
-            command = DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
-                .FromCard(card, context.CardPlay);
+            command = DamageCmd.Attack(card.DynamicVars.Damage.BaseValue);
         }
         else if (card.DynamicVars.ContainsKey("OstyDamage"))
         {
-            if (card.Owner.Osty is not { } osty || !context.State.GetCreature(osty).IsAlive)
-            {
-                return;
-            }
-
-            command = DamageCmd.Attack(card.DynamicVars.OstyDamage.BaseValue)
-                .FromOsty(osty, card, context.CardPlay);
+            command = DamageCmd.Attack(card.DynamicVars.OstyDamage.BaseValue);
         }
         else
         {
             Entry.Logger.Warn($"Card {card.Title} has no damage var to simulate an attack command.");
             context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
             return;
+        }
+
+        if (card.Tags.Contains(CardTag.OstyAttack))
+        {
+            if (card.Owner.Osty is not { } osty || !context.State.GetCreature(osty).IsAlive)
+            {
+                return;
+            }
+
+            command.FromOsty(osty, card, context.CardPlay);
+        }
+        else
+        {
+            command.FromCard(card, context.CardPlay);
         }
 
         if (card.DynamicVars.ContainsKey("Repeat"))

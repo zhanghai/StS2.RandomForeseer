@@ -1,18 +1,19 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 
 namespace RandomForeseer.RandomForeseerCode.Common;
 
 internal static class PredictedCardExtensions
 {
-    // Mirrors CardCmd.Upgrade.
+    /// <summary>
+    /// Mirrors <see cref="CardCmd.Upgrade(CardModel, CardPreviewStyle)"/>.
+    /// </summary>
     public static PredictedCard Upgrade(this PredictedCard card)
     {
         if (card.Preview.IsUpgradable)
         {
-            var previewCard = card.MutablePreview;
-            previewCard.UpgradeInternal();
-            previewCard.FinalizeUpgradeInternal();
+            PredictionUtils.UpgradeCard(card.MutablePreview);
         }
 
         return card;

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### fix
+
+- 修复战斗卡牌预测将使用动态伤害值的奥斯提攻击牌错误按角色本体结算的问题。<br>
+  Fixed combat card predictions treating Osty attack cards that use calculated damage values as attacks by the player.
+
 ## v0.13.3
 
 ### feat
