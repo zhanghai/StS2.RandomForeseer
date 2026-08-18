@@ -64,13 +64,41 @@ runs:
         [System.IO.File]::WriteAllBytes($out, [byte[]]@())
         Write-Host "Created placeholder $out"
 
+    - name: Download MegaDot
+      shell: pwsh
+      run: |
+        $url = 'https://megadot.megacrit.com/4.5.1-m.14/megadot-4.5.1-m.14-windows-x86_64-llvm-editor-csharp.zip'
+        $zip = "$env:GITHUB_WORKSPACE\megadot.zip"
+        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+        if (!(Test-Path $zip)) {
+          Write-Error "Download failed: $zip not found"
+          exit 1
+        }
+        $expected = 'BD42D2C8E41653B451A1EE714447C333C738A515AD2F554673B8960A364E5829'
+        $actual = (Get-FileHash -Algorithm SHA256 -Path $zip).Hash.ToUpper()
+        Write-Host "Computed SHA256: $actual"
+        if ($actual -ne $expected) {
+          Write-Error "MegaDot checksum mismatch. Expected $expected but got $actual"
+          exit 1
+        }
+        $megadotDir = "$env:GITHUB_WORKSPACE\MegaDot"
+        Expand-Archive -LiteralPath $zip -DestinationPath $megadotDir -Force
+        $godotExe = "$megadotDir\MegaDot_v4.5.1-stable_mono_win64.exe"
+        if (!(Test-Path $godotExe)) {
+          Write-Error "Godot executable not found: $godotExe"
+          exit 1
+        }
+        Write-Host "MegaDot extracted to $megadotDir"
+
     - name: Restore
       shell: pwsh
       run: dotnet restore RandomForeseer.csproj
 
     - name: Build
       shell: pwsh
-      run: dotnet build RandomForeseer.csproj -c Release -p:Sts2Dir="$env:GITHUB_WORKSPACE\Sts2Dir" -p:RunPckExport=false
+      run: |
+        $godotExe = "$env:GITHUB_WORKSPACE\MegaDot\MegaDot_v4.5.1-stable_mono_win64.exe"
+        dotnet build RandomForeseer.csproj -c Release -p:Sts2Dir="$env:GITHUB_WORKSPACE\Sts2Dir" -p:GodotExe="$godotExe"
 
     - name: Package
       id: package
