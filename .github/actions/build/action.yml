@@ -116,16 +116,18 @@ runs:
       run: |
         $nugetConfig = "$env:RUNNER_TEMP\NuGet.Config"
         $publicizerSource = "${{ steps.publicizer.outputs.nuget_source }}"
-        @"
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <packageSources>
-    <clear />
-    <add key="Publicizer" value="$publicizerSource" />
-    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-  </packageSources>
-</configuration>
-"@ | Set-Content -Path $nugetConfig -Encoding utf8
+        $xml = New-Object System.Xml.XmlDocument
+        $xml.AppendChild($xml.CreateXmlDeclaration('1.0', 'utf-8', $null)) | Out-Null
+        $config = $xml.AppendChild($xml.CreateElement('configuration'))
+        $sources = $config.AppendChild($xml.CreateElement('packageSources'))
+        $sources.AppendChild($xml.CreateElement('clear')) | Out-Null
+        $addPublicizer = $sources.AppendChild($xml.CreateElement('add'))
+        $addPublicizer.SetAttribute('key', 'Publicizer')
+        $addPublicizer.SetAttribute('value', $publicizerSource)
+        $addNuget = $sources.AppendChild($xml.CreateElement('add'))
+        $addNuget.SetAttribute('key', 'nuget.org')
+        $addNuget.SetAttribute('value', 'https://api.nuget.org/v3/index.json')
+        $xml.Save($nugetConfig)
         dotnet restore RandomForeseer.csproj --configfile $nugetConfig
 
     - name: Build
