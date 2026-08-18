@@ -57,32 +57,6 @@ runs:
           exit 1
         }
 
-    - name: Patch csproj
-      shell: pwsh
-      run: |
-        $csproj = "$env:GITHUB_WORKSPACE\RandomForeseer.csproj"
-        [xml]$xml = Get-Content $csproj -Raw
-        $nodesToRemove = $xml.SelectNodes(
-          "//PackageReference[@Include='Nothing.STS2RitsuLib.ModAnalyzers'] | " +
-          "//PackageReference[@Include='Krafs.Publicizer'] | " +
-          "//Reference[@Include='Steamworks.NET'] | " +
-          "//Publicize"
-        )
-        foreach ($node in $nodesToRemove) {
-          Write-Host "Removing: $($node.OuterXml)"
-          $node.ParentNode.RemoveChild($node) | Out-Null
-        }
-        # Redirect the sts2 reference to the publicized copy
-        $sts2Ref = $xml.SelectSingleNode("//Reference[@Include='sts2']")
-        if ($sts2Ref -ne $null) {
-          $hintPath = $sts2Ref.SelectSingleNode("HintPath")
-          if ($hintPath -ne $null) {
-            $hintPath.InnerText = "$env:GITHUB_WORKSPACE\Sts2Dir\data_sts2_windows_x86_64\sts2.public.dll"
-          }
-        }
-        $xml.Save($csproj)
-        Write-Host "csproj patched"
-
     - name: Publicize sts2.dll
       shell: pwsh
       run: |
@@ -121,6 +95,38 @@ runs:
           exit 1
         }
         Write-Host "MegaDot extracted to $megadotDir"
+
+    - name: Patch csproj
+      shell: pwsh
+      run: |
+        $csproj = "$env:GITHUB_WORKSPACE\RandomForeseer.csproj"
+        [xml]$xml = Get-Content $csproj -Raw
+        $nodesToRemove = $xml.SelectNodes(
+          "//PackageReference[@Include='Nothing.STS2RitsuLib.ModAnalyzers'] | " +
+          "//PackageReference[@Include='Krafs.Publicizer'] | " +
+          "//Reference[@Include='Steamworks.NET'] | " +
+          "//Publicize"
+        )
+        foreach ($node in $nodesToRemove) {
+          Write-Host "Removing: $($node.OuterXml)"
+          $node.ParentNode.RemoveChild($node) | Out-Null
+        }
+        # Pin RitsuLib to a specific version
+        $ritsuLib = $xml.SelectSingleNode("//PackageReference[@Include='STS2.RitsuLib']")
+        if ($ritsuLib -ne $null) {
+          $ritsuLib.SetAttribute("Version", "0.5.13")
+          Write-Host "Pinned STS2.RitsuLib to 0.5.13"
+        }
+        # Redirect the sts2 reference to the publicized copy
+        $sts2Ref = $xml.SelectSingleNode("//Reference[@Include='sts2']")
+        if ($sts2Ref -ne $null) {
+          $hintPath = $sts2Ref.SelectSingleNode("HintPath")
+          if ($hintPath -ne $null) {
+            $hintPath.InnerText = "$env:GITHUB_WORKSPACE\Sts2Dir\data_sts2_windows_x86_64\sts2.public.dll"
+          }
+        }
+        $xml.Save($csproj)
+        Write-Host "csproj patched"
 
     - name: Restore
       shell: pwsh
