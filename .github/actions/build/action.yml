@@ -57,19 +57,6 @@ runs:
           exit 1
         }
 
-    - name: Publicize sts2.dll
-      shell: pwsh
-      run: |
-        $publicizeDir = "$env:GITHUB_WORKSPACE\.github\actions\build\Publicize"
-        $inputDll = "$env:GITHUB_WORKSPACE\Sts2Dir\data_sts2_windows_x86_64\sts2.dll"
-        $outputDll = "$env:GITHUB_WORKSPACE\Sts2Dir\data_sts2_windows_x86_64\sts2.public.dll"
-        dotnet run --project "$publicizeDir\Publicize.csproj" -- $inputDll $outputDll
-        if (!(Test-Path $outputDll)) {
-          Write-Error "Publicize failed: $outputDll not found"
-          exit 1
-        }
-        Write-Host "Publicized sts2.dll -> sts2.public.dll"
-
     - name: Download MegaDot
       shell: pwsh
       run: |
@@ -103,9 +90,7 @@ runs:
         [xml]$xml = Get-Content $csproj -Raw
         $nodesToRemove = $xml.SelectNodes(
           "//PackageReference[@Include='Nothing.STS2RitsuLib.ModAnalyzers'] | " +
-          "//PackageReference[@Include='Krafs.Publicizer'] | " +
-          "//Reference[@Include='Steamworks.NET'] | " +
-          "//Publicize"
+          "//Reference[@Include='Steamworks.NET']"
         )
         foreach ($node in $nodesToRemove) {
           Write-Host "Removing: $($node.OuterXml)"
@@ -116,14 +101,6 @@ runs:
         if ($ritsuLib -ne $null) {
           $ritsuLib.SetAttribute("Version", "0.5.13")
           Write-Host "Pinned STS2.RitsuLib to 0.5.13"
-        }
-        # Redirect the sts2 reference to the publicized copy
-        $sts2Ref = $xml.SelectSingleNode("//Reference[@Include='sts2']")
-        if ($sts2Ref -ne $null) {
-          $hintPath = $sts2Ref.SelectSingleNode("HintPath")
-          if ($hintPath -ne $null) {
-            $hintPath.InnerText = "$env:GITHUB_WORKSPACE\Sts2Dir\data_sts2_windows_x86_64\sts2.public.dll"
-          }
         }
         $xml.Save($csproj)
         Write-Host "csproj patched"

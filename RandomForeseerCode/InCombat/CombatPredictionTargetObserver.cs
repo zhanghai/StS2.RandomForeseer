@@ -130,7 +130,7 @@ internal sealed class CombatPredictionTargetObserver : IDisposable
     [HarmonyPatch(typeof(NTargetManager))]
     internal static class NTargetManagerPatches
     {
-        [HarmonyPatch("FinishTargeting")]
+        [HarmonyPatch(nameof(NTargetManager.FinishTargeting))]
         [HarmonyPrefix]
         private static void OnTargetingFinishing(NTargetManager __instance)
         {

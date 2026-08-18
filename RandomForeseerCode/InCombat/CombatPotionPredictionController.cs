@@ -200,7 +200,7 @@ internal static class CombatPotionPredictionHolderPatches
 
     // A prefix is required before TargetNode calls StartTargeting: StartTargeting re-emits an already-focused
     // creature, and TargetNode may synchronously focus a creature or multiplayer nameplate immediately afterward.
-    [HarmonyPatch("TargetNode")]
+    [HarmonyPatch(nameof(NPotionHolder.TargetNode))]
     [HarmonyPrefix]
     private static void BeginTargetPrediction(NPotionHolder __instance)
     {

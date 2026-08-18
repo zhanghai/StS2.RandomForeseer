@@ -6,8 +6,10 @@ internal static class CombatManagerExtensions
 {
     extension(CombatManager combatManager)
     {
-        public CombatState? LiveCombatState => combatManager._turnState is { IsInProgress: true } turnState
-            ? turnState.State
+        public CombatTurnState? LiveTurnState => combatManager._turnState is { IsInProgress: true } turnState
+            ? turnState
             : null;
+
+        public CombatState? LiveCombatState => combatManager.LiveTurnState?.State;
     }
 }

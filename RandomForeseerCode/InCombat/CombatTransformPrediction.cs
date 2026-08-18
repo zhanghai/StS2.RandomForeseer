@@ -97,7 +97,7 @@ internal static class CombatTransformPredictionPlayerHandPatch
         CombatTransformPrediction.BeginSession(__instance, source);
     }
 
-    [HarmonyPatch("AfterCardsSelected")]
+    [HarmonyPatch(nameof(NPlayerHand.AfterCardsSelected))]
     [HarmonyPrefix]
     private static void EndSession(NPlayerHand __instance)
     {
