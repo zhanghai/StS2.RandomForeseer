@@ -35,13 +35,13 @@ runs:
         if ($LASTEXITCODE -ne 0) {
           exit $LASTEXITCODE
         }
-        dotnet pack $csproj -c Release --no-build -p:Version=$publicizerVersion -p:OutDir="$packageRoot\" -p:PackageOutputPath="$packageRoot" --output "$packageRoot"
+        dotnet pack $csproj -c Release --no-build -p:Version=$publicizerVersion -p:OutDir="$packageRoot\" --output "$packageRoot"
         if ($LASTEXITCODE -ne 0) {
           exit $LASTEXITCODE
         }
-        $nupkg = "$packageRoot\Krafs.Publicizer.$publicizerVersion.nupkg"
-        if (!(Test-Path $nupkg)) {
-          Write-Error "Built package not found: $nupkg"
+        $nupkg = Get-ChildItem -Path $packageRoot -Filter '*.nupkg' | Select-Object -First 1
+        if ($nupkg -eq $null) {
+          Write-Error "Built package not found under $packageRoot"
           exit 1
         }
         "nuget_source=$packageRoot" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
