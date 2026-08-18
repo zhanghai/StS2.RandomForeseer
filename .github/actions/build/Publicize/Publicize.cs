@@ -18,7 +18,9 @@ string outputPath = args[1];
 
 const string CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute";
 
-using var assembly = AssemblyDefinition.ReadAssembly(inputPath);
+var resolver = new DefaultAssemblyResolver();
+resolver.AddSearchDirectory(Path.GetDirectoryName(Path.GetFullPath(inputPath))!);
+using var assembly = AssemblyDefinition.ReadAssembly(inputPath, new ReaderParameters { AssemblyResolver = resolver });
 
 foreach (var type in assembly.MainModule.GetTypes())
 {
