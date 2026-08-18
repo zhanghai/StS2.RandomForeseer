@@ -1,7 +1,6 @@
 // Publicize.cs
-// Reads an assembly and rewrites all non-public types and members to public,
-// mirroring Krafs.Publicizer with IncludeVirtualMembers=false and
-// IncludeCompilerGeneratedMembers=false.
+// Reads an assembly and rewrites all non-public types and members to public.
+// The output is used only as a compile-time reference assembly.
 //
 // Usage: Publicize <input.dll> <output.dll>
 
@@ -52,9 +51,6 @@ static bool IsCompilerGenerated(ICustomAttributeProvider member) =>
 
 static void PublicizeType(TypeDefinition type)
 {
-    if (IsCompilerGenerated(type))
-        return;
-
     if (!type.IsPublic && !type.IsNestedPublic)
     {
         if (type.IsNested)
@@ -73,9 +69,6 @@ static void PublicizeType(TypeDefinition type)
     {
         if (method.IsPublic || IsCompilerGenerated(method))
             continue;
-        // Skip virtual/abstract members (IncludeVirtualMembers=false)
-        if (method.IsVirtual || method.IsAbstract)
-            continue;
         method.IsPublic = true;
     }
 
@@ -83,9 +76,9 @@ static void PublicizeType(TypeDefinition type)
     {
         if (IsCompilerGenerated(prop))
             continue;
-        if (prop.GetMethod is { IsPublic: false } getter && !getter.IsVirtual && !getter.IsAbstract && !IsCompilerGenerated(getter))
+        if (prop.GetMethod is { IsPublic: false } getter && !IsCompilerGenerated(getter))
             getter.IsPublic = true;
-        if (prop.SetMethod is { IsPublic: false } setter && !setter.IsVirtual && !setter.IsAbstract && !IsCompilerGenerated(setter))
+        if (prop.SetMethod is { IsPublic: false } setter && !IsCompilerGenerated(setter))
             setter.IsPublic = true;
     }
 
@@ -93,9 +86,9 @@ static void PublicizeType(TypeDefinition type)
     {
         if (IsCompilerGenerated(ev))
             continue;
-        if (ev.AddMethod is { IsPublic: false } add && !add.IsVirtual && !add.IsAbstract && !IsCompilerGenerated(add))
+        if (ev.AddMethod is { IsPublic: false } add && !IsCompilerGenerated(add))
             add.IsPublic = true;
-        if (ev.RemoveMethod is { IsPublic: false } remove && !remove.IsVirtual && !remove.IsAbstract && !IsCompilerGenerated(remove))
+        if (ev.RemoveMethod is { IsPublic: false } remove && !IsCompilerGenerated(remove))
             remove.IsPublic = true;
     }
 }
