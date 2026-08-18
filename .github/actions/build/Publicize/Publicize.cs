@@ -18,9 +18,7 @@ string outputPath = args[1];
 
 const string CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute";
 
-var resolver = new LenientAssemblyResolver();
-resolver.AddSearchDirectory(Path.GetDirectoryName(Path.GetFullPath(inputPath))!);
-using var assembly = AssemblyDefinition.ReadAssembly(inputPath, new ReaderParameters { AssemblyResolver = resolver });
+using var assembly = AssemblyDefinition.ReadAssembly(inputPath, new ReaderParameters { AssemblyResolver = new LenientAssemblyResolver() });
 
 foreach (var type in assembly.MainModule.GetTypes())
 {
@@ -33,21 +31,6 @@ return 0;
 
 static bool IsCompilerGenerated(ICustomAttributeProvider member) =>
     member.CustomAttributes.Any(a => a.AttributeType.FullName == CompilerGeneratedAttribute);
-
-class LenientAssemblyResolver : DefaultAssemblyResolver
-{
-    public override AssemblyDefinition Resolve(AssemblyNameReference name)
-    {
-        try { return base.Resolve(name); }
-        catch (AssemblyResolutionException) { return null!; }
-    }
-
-    public override AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
-    {
-        try { return base.Resolve(name, parameters); }
-        catch (AssemblyResolutionException) { return null!; }
-    }
-}
 
 static void PublicizeType(TypeDefinition type)
 {
@@ -96,5 +79,20 @@ static void PublicizeType(TypeDefinition type)
             add.IsPublic = true;
         if (ev.RemoveMethod is { IsPublic: false } remove && !remove.IsVirtual && !remove.IsAbstract && !IsCompilerGenerated(remove))
             remove.IsPublic = true;
+    }
+}
+
+class LenientAssemblyResolver : DefaultAssemblyResolver
+{
+    public override AssemblyDefinition Resolve(AssemblyNameReference name)
+    {
+        try { return base.Resolve(name); }
+        catch (AssemblyResolutionException) { return null!; }
+    }
+
+    public override AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
+    {
+        try { return base.Resolve(name, parameters); }
+        catch (AssemblyResolutionException) { return null!; }
     }
 }
