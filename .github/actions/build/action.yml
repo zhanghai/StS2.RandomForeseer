@@ -9,10 +9,44 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Setup .NET 9
+    - name: Setup .NET SDKs
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: |
+          10.0.x
+          9.0.x
+
+    - name: Build local Publicizer package
+      shell: pwsh
+      run: |
+        $publicizerRef = 'f42da0dad8e01e60a9eddcdd228ba20eafc6190a'
+        $publicizerVersion = '2.2.1'
+        $archive = "$env:RUNNER_TEMP\Publicizer-$publicizerRef.zip"
+        $sourceRoot = "$env:RUNNER_TEMP\Publicizer-src"
+        $packageRoot = "$env:RUNNER_TEMP\Publicizer-packages"
+        $url = "https://codeload.github.com/krafs/Publicizer/zip/$publicizerRef"
+        Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing
+        if (!(Test-Path $archive)) {
+          Write-Error "Download failed: $archive not found"
+          exit 1
+        }
+        Expand-Archive -LiteralPath $archive -DestinationPath $sourceRoot -Force
+        $csproj = "$sourceRoot\Publicizer-$publicizerRef\src\Publicizer\Publicizer.csproj"
+        if (!(Test-Path $csproj)) {
+          Write-Error "Publicizer project not found: $csproj"
+          exit 1
+        }
+        New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
+        dotnet build $csproj -c Release -p:Version=$publicizerVersion -p:OutDir="$packageRoot\"
+        if ($LASTEXITCODE -ne 0) {
+          exit $LASTEXITCODE
+        }
+        $nupkg = "$packageRoot\Krafs.Publicizer.$publicizerVersion.nupkg"
+        if (!(Test-Path $nupkg)) {
+          Write-Error "Built package not found: $nupkg"
+          exit 1
+        }
+        "PUBLICIZER_NUGET_SOURCE=$packageRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Ensure Sts2Dir
       shell: pwsh
@@ -107,7 +141,7 @@ runs:
 
     - name: Restore
       shell: pwsh
-      run: dotnet restore RandomForeseer.csproj
+      run: dotnet restore RandomForeseer.csproj --source "$env:PUBLICIZER_NUGET_SOURCE" --source https://api.nuget.org/v3/index.json
 
     - name: Build
       shell: pwsh
