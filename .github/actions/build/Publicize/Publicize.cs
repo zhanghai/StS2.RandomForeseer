@@ -25,6 +25,24 @@ foreach (var type in assembly.MainModule.GetTypes())
     PublicizeType(type);
 }
 
+// Strip default values for parameters whose type can't be resolved.
+// Cecil needs to resolve enum types to determine their underlying integer type
+// when writing constants, so unresolvable defaults would cause a ResolutionException.
+foreach (var type in assembly.MainModule.GetTypes())
+{
+    foreach (var method in type.Methods)
+    {
+        foreach (var param in method.Parameters)
+        {
+            if (param.HasConstant && param.ParameterType.Resolve() is null)
+            {
+                param.Constant = null;
+                param.HasConstant = false;
+            }
+        }
+    }
+}
+
 assembly.Write(outputPath);
 Console.WriteLine($"Publicized {inputPath} -> {outputPath}");
 return 0;
