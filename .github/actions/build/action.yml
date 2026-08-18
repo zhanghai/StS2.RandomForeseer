@@ -57,12 +57,21 @@ runs:
           exit 1
         }
 
-    - name: Create placeholder Steamworks.NET.dll
+    - name: Patch csproj
       shell: pwsh
       run: |
-        $out = "$env:GITHUB_WORKSPACE\Sts2Dir\data_sts2_windows_x86_64\Steamworks.NET.dll"
-        [System.IO.File]::WriteAllBytes($out, [byte[]]@())
-        Write-Host "Created placeholder $out"
+        $csproj = "$env:GITHUB_WORKSPACE\RandomForeseer.csproj"
+        [xml]$xml = Get-Content $csproj -Raw
+        $ns = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
+        $nodesToRemove = $xml.SelectNodes(
+          "//PackageReference[@Include='Nothing.STS2RitsuLib.ModAnalyzers'] | //Reference[@Include='Steamworks.NET']"
+        )
+        foreach ($node in $nodesToRemove) {
+          Write-Host "Removing: $($node.OuterXml)"
+          $node.ParentNode.RemoveChild($node) | Out-Null
+        }
+        $xml.Save($csproj)
+        Write-Host "csproj patched"
 
     - name: Download MegaDot
       shell: pwsh
