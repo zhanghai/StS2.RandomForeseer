@@ -6,7 +6,7 @@ using MegaCrit.Sts2.Core.Nodes.HoverTips;
 
 namespace RandomForeseer.RandomForeseerCode.Common.HoverTips;
 
-[HarmonyPatch(typeof(NHoverTipSet), nameof(NHoverTipSet.Init))]
+[HarmonyPatch(typeof(NHoverTipSet), "Init")]
 internal static class PredictionHoverTipInitPatch
 {
     private static readonly ConditionalWeakTable<NHoverTipSet, List<bool>> PredictionTextTipMasks = [];

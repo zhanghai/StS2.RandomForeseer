@@ -179,7 +179,7 @@ internal static class CombatCardPredictionHandPatches
 [HarmonyPatch(typeof(NPlayerHand))]
 internal static class CombatCardPredictionPlayerHandPatches
 {
-    [HarmonyPatch(nameof(NPlayerHand.StartCardPlay))]
+    [HarmonyPatch("StartCardPlay")]
     [HarmonyPrefix]
     private static void UpdatePredictionsOnCardPlayStarted(NHandCardHolder holder)
     {
