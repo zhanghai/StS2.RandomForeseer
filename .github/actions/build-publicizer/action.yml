@@ -31,7 +31,7 @@ runs:
           exit 1
         }
         New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
-        dotnet build $csproj -c Release -p:Version=$publicizerVersion -p:OutDir="$packageRoot\"
+        dotnet build $csproj -c Release -p:Version=$publicizerVersion -p:OutDir="$packageRoot\" -p:PackageOutputPath="$packageRoot\" -p:GeneratePackageOnBuild=true
         if ($LASTEXITCODE -ne 0) {
           exit $LASTEXITCODE
         }
