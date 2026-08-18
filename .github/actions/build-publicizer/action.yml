@@ -40,7 +40,7 @@ runs:
           exit $LASTEXITCODE
         }
         $nupkg = Get-ChildItem -Path $packageRoot -Filter '*.nupkg' | Select-Object -First 1
-        if ($nupkg -eq $null) {
+        if ($null -eq $nupkg) {
           Write-Error "Built package not found under $packageRoot"
           exit 1
         }
