@@ -113,20 +113,7 @@ runs:
 
     - name: Restore
       shell: pwsh
-      run: |
-        $nugetConfig = "$env:RUNNER_TEMP\NuGet.Config"
-        $publicizerSource = "${{ steps.publicizer.outputs.nuget_source }}"
-        @"
-        <?xml version="1.0" encoding="utf-8"?>
-        <configuration>
-          <packageSources>
-            <clear />
-            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-            <add key="Publicizer" value="$publicizerSource" />
-          </packageSources>
-        </configuration>
-        "@ | Set-Content -Path $nugetConfig -Encoding utf8
-        dotnet restore RandomForeseer.csproj --configfile $nugetConfig
+      run: dotnet restore RandomForeseer.csproj --source https://api.nuget.org/v3/index.json --source "${{ steps.publicizer.outputs.nuget_source }}"
 
     - name: Build
       shell: pwsh
