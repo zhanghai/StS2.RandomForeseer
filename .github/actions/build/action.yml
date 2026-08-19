@@ -16,7 +16,7 @@ runs:
           10.0.x
           9.0.x
 
-    - name: Build local Publicizer package
+    - name: Build Publicizer
       id: publicizer
       uses: ./.github/actions/build-publicizer
 
