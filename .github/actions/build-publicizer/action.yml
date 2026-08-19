@@ -1,0 +1,52 @@
+name: Build Publicizer
+description: Build a local Krafs.Publicizer package from an upstream release source zip
+
+inputs:
+  tag:
+    description: Krafs.Publicizer release tag to build
+    required: true
+
+outputs:
+  nuget_source:
+    description: Directory containing the built Krafs.Publicizer package
+    value: ${{ steps.build.outputs.nuget_source }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build Publicizer
+      id: build
+      shell: pwsh
+      run: |
+        $publicizerTag = '${{ inputs.tag }}'
+        $publicizerVersion = $publicizerTag.TrimStart('v')
+        $archive = "$env:RUNNER_TEMP\Publicizer-$publicizerTag.zip"
+        $sourceRoot = "$env:RUNNER_TEMP\Publicizer-src"
+        $packageRoot = "$env:RUNNER_TEMP\Publicizer-packages"
+        $url = "https://github.com/krafs/Publicizer/archive/refs/tags/$publicizerTag.zip"
+        Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing
+        if (!(Test-Path $archive)) {
+          Write-Error "Download failed: $archive not found"
+          exit 1
+        }
+        Expand-Archive -LiteralPath $archive -DestinationPath $sourceRoot -Force
+        $csproj = Get-ChildItem -Path $sourceRoot -Recurse -Filter Publicizer.csproj | Select-Object -First 1 -ExpandProperty FullName
+        if ([string]::IsNullOrWhiteSpace($csproj) -or !(Test-Path $csproj)) {
+          Write-Error "Publicizer project not found under $sourceRoot"
+          exit 1
+        }
+        New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
+        dotnet build $csproj -c Release -p:Version=$publicizerVersion -p:OutDir="$packageRoot\"
+        if ($LASTEXITCODE -ne 0) {
+          exit $LASTEXITCODE
+        }
+        dotnet pack $csproj -c Release --no-build -p:Version=$publicizerVersion -p:OutDir="$packageRoot\" --output "$packageRoot"
+        if ($LASTEXITCODE -ne 0) {
+          exit $LASTEXITCODE
+        }
+        $nupkg = Get-ChildItem -Path $packageRoot -Filter '*.nupkg' | Select-Object -First 1
+        if ($null -eq $nupkg) {
+          Write-Error "Built package not found under $packageRoot"
+          exit 1
+        }
+        "nuget_source=$packageRoot" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
