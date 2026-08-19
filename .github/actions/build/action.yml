@@ -1,0 +1,158 @@
+name: Build
+description: Build RandomForeseer and output a ZIP artifact path
+
+outputs:
+  zip_path:
+    description: Full path to the generated ZIP file
+    value: ${{ steps.package.outputs.zip_path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET SDKs
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          10.0.x
+          9.0.x
+
+    - name: Build Publicizer
+      id: publicizer
+      uses: ./.github/actions/build-publicizer
+      with:
+        tag: v2.3.2
+
+    - name: Ensure Sts2Dir
+      shell: pwsh
+      run: |
+        $sts2Dir = "$env:GITHUB_WORKSPACE\Sts2Dir"
+        New-Item -ItemType Directory -Path "$sts2Dir\data_sts2_windows_x86_64" -Force | Out-Null
+        Write-Host "Created $sts2Dir"
+
+    - name: Download sts2.dll
+      shell: pwsh
+      run: |
+        $url = 'https://files.catbox.moe/84abry.dll'
+        $out = "$env:GITHUB_WORKSPACE\Sts2Dir\data_sts2_windows_x86_64\sts2.dll"
+        Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
+        if (!(Test-Path $out)) {
+          Write-Error "Download failed: $out not found"
+          exit 1
+        }
+        $expected = '7C446EFABF80614C429B5088E87101423AA5BB4C04FC3E73393261F6E6D404FD'
+        $actual = (Get-FileHash -Algorithm SHA256 -Path $out).Hash.ToUpper()
+        Write-Host "Computed SHA256: $actual"
+        if ($actual -ne $expected) {
+          Write-Error "sts2.dll checksum mismatch. Expected $expected but got $actual"
+          exit 1
+        }
+
+    - name: Download 0Harmony.dll
+      shell: pwsh
+      run: |
+        $url = 'https://files.catbox.moe/wdevg5.dll'
+        $out = "$env:GITHUB_WORKSPACE\Sts2Dir\data_sts2_windows_x86_64\0Harmony.dll"
+        Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
+        if (!(Test-Path $out)) {
+          Write-Error "Download failed: $out not found"
+          exit 1
+        }
+        $expected = 'EF1898322C9F5C86DC1B0758B272A9C440823B4A41CA9A0B82A3AA6B3D206387'
+        $actual = (Get-FileHash -Algorithm SHA256 -Path $out).Hash.ToUpper()
+        Write-Host "Computed SHA256: $actual"
+        if ($actual -ne $expected) {
+          Write-Error "0Harmony.dll checksum mismatch. Expected $expected but got $actual"
+          exit 1
+        }
+
+    - name: Download MegaDot
+      shell: pwsh
+      run: |
+        $url = 'https://megadot.megacrit.com/4.5.1-m.14/megadot-4.5.1-m.14-windows-x86_64-llvm-editor-csharp.zip'
+        $zip = "$env:GITHUB_WORKSPACE\megadot.zip"
+        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+        if (!(Test-Path $zip)) {
+          Write-Error "Download failed: $zip not found"
+          exit 1
+        }
+        $expected = 'BD42D2C8E41653B451A1EE714447C333C738A515AD2F554673B8960A364E5829'
+        $actual = (Get-FileHash -Algorithm SHA256 -Path $zip).Hash.ToUpper()
+        Write-Host "Computed SHA256: $actual"
+        if ($actual -ne $expected) {
+          Write-Error "MegaDot checksum mismatch. Expected $expected but got $actual"
+          exit 1
+        }
+        $megadotDir = "$env:GITHUB_WORKSPACE\MegaDot"
+        Expand-Archive -LiteralPath $zip -DestinationPath $megadotDir -Force
+        $godotExe = "$megadotDir\MegaDot_v4.5.1-stable_mono_win64.exe"
+        if (!(Test-Path $godotExe)) {
+          Write-Error "Godot executable not found: $godotExe"
+          exit 1
+        }
+        Write-Host "MegaDot extracted to $megadotDir"
+
+    - name: Patch csproj
+      shell: pwsh
+      run: |
+        $csproj = "$env:GITHUB_WORKSPACE\RandomForeseer.csproj"
+        [xml]$xml = Get-Content $csproj -Raw
+        $nodesToRemove = $xml.SelectNodes(
+          "//PackageReference[@Include='Nothing.STS2RitsuLib.ModAnalyzers'] | " +
+          "//Reference[@Include='Steamworks.NET']"
+        )
+        foreach ($node in $nodesToRemove) {
+          Write-Host "Removing: $($node.OuterXml)"
+          $node.ParentNode.RemoveChild($node) | Out-Null
+        }
+        # Pin RitsuLib to a specific version
+        $ritsuLib = $xml.SelectSingleNode("//PackageReference[@Include='STS2.RitsuLib']")
+        if ($ritsuLib -ne $null) {
+          $ritsuLib.SetAttribute("Version", "0.5.13")
+          Write-Host "Pinned STS2.RitsuLib to 0.5.13"
+        }
+        $xml.Save($csproj)
+        Write-Host "csproj patched"
+
+    - name: Restore
+      shell: pwsh
+      run: |
+        $nugetConfig = "$env:RUNNER_TEMP\NuGet.Config"
+        $publicizerSource = "${{ steps.publicizer.outputs.nuget_source }}"
+        $xml = New-Object System.Xml.XmlDocument
+        $xml.AppendChild($xml.CreateXmlDeclaration('1.0', 'utf-8', $null)) | Out-Null
+        $config = $xml.AppendChild($xml.CreateElement('configuration'))
+        $sources = $config.AppendChild($xml.CreateElement('packageSources'))
+        $sources.AppendChild($xml.CreateElement('clear')) | Out-Null
+        $addPublicizer = $sources.AppendChild($xml.CreateElement('add'))
+        $addPublicizer.SetAttribute('key', 'Publicizer')
+        $addPublicizer.SetAttribute('value', $publicizerSource)
+        $addNuget = $sources.AppendChild($xml.CreateElement('add'))
+        $addNuget.SetAttribute('key', 'nuget.org')
+        $addNuget.SetAttribute('value', 'https://api.nuget.org/v3/index.json')
+        $xml.Save($nugetConfig)
+        dotnet restore RandomForeseer.csproj --configfile $nugetConfig
+
+    - name: Build
+      shell: pwsh
+      run: |
+        $godotExe = "$env:GITHUB_WORKSPACE\MegaDot\MegaDot_v4.5.1-stable_mono_win64.exe"
+        dotnet build RandomForeseer.csproj -c Release -p:Sts2Dir="$env:GITHUB_WORKSPACE\Sts2Dir" -p:GodotExe="$godotExe"
+
+    - name: Package
+      id: package
+      shell: pwsh
+      run: |
+        $modDir = "$env:GITHUB_WORKSPACE\Sts2Dir\mods\RandomForeseer"
+        if (!(Test-Path $modDir)) {
+          Write-Error "Mod output folder not found: $modDir"
+          exit 1
+        }
+        $refName = "${{ github.ref_name }}"
+        if ([string]::IsNullOrWhiteSpace($refName)) {
+          $refName = "${{ github.sha }}"
+        }
+        $safeRefName = $refName -replace '[^a-zA-Z0-9._-]', '_'
+        $zipPath = "$env:GITHUB_WORKSPACE\RandomForeseer-$safeRefName.zip"
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($modDir, $zipPath)
+        "zip_path=$zipPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
