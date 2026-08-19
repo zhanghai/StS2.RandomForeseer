@@ -19,6 +19,8 @@ runs:
     - name: Build Publicizer
       id: publicizer
       uses: ./.github/actions/build-publicizer
+      with:
+        tag: v2.3.2
 
     - name: Ensure Sts2Dir
       shell: pwsh

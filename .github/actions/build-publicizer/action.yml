@@ -2,10 +2,9 @@ name: Build Publicizer
 description: Build a local Krafs.Publicizer package from an upstream release source zip
 
 inputs:
-  release_tag:
+  tag:
     description: Krafs.Publicizer release tag to build
-    required: false
-    default: v2.3.2
+    required: true
 
 outputs:
   nuget_source:
@@ -19,7 +18,7 @@ runs:
       id: build
       shell: pwsh
       run: |
-        $publicizerTag = '${{ inputs.release_tag }}'
+        $publicizerTag = '${{ inputs.tag }}'
         $publicizerVersion = $publicizerTag.TrimStart('v')
         $archive = "$env:RUNNER_TEMP\Publicizer-$publicizerTag.zip"
         $sourceRoot = "$env:RUNNER_TEMP\Publicizer-src"
